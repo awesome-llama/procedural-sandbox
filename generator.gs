@@ -1,17 +1,26 @@
 # Converted from sb3 file
 #%include common/common.gs
+costumes "costumes/blank.svg" as "blank";
 
+# test palette of colours
 list temp_1 = ["6e7b6e", "ccbe99", "8bc338", "c18644", "3eb13e", "5f5a70", "ed885e", "e17644"];
 
-costumes "costumes/blank.svg" as "blank";
 
 # script qK (1101,368)
 proc clear_canvas  {
+    delete canvas_col;
+    delete canvas_alpha;
+    repeat (canvas_size_x * canvas_size_y * canvas_size_z) {
+        add col_RGB {r:1, g:1, b:1} to canvas_col;
+        add 0 to canvas_alpha;
+    }
+
+    # original:
     delete _1_r;
     delete _2_g;
     delete _3_b;
     delete _4_a;
-    repeat (canvas_size_x*(canvas_size_y * canvas_size_z)) {
+    repeat (canvas_size_x * canvas_size_y * canvas_size_z) {
         add 1 to _1_r;
         add 1 to _2_g;
         add 1 to _3_b;

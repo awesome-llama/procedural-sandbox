@@ -8,13 +8,13 @@ onflag {
     __dev = round((username() == "awesome-llama"));
     render_resolution = 1;
     zoom_extents;
-    refresh_screen_ = 1;
+    refresh_screen_required = 1;
     forever {
-        wait_until (refresh_screen_ > 0);
+        wait_until (refresh_screen_required > 0);
         erase_all;
         broadcast "render canvas";
         broadcast "render world text";
-        refresh_screen_ = 0;
+        refresh_screen_required = 0;
     }
 }
 
@@ -25,10 +25,10 @@ onkey "any" {
         until (not (touching("d") or (touching("a") or (touching("w") or touching("s"))))) {
             cam_x += ((4/cam_scale)*(touching("a")-touching("d")));
             cam_y += ((4/cam_scale)*(touching("s")-touching("w")));
-            refresh_screen_ = 1;
+            refresh_screen_required = 1;
         }
         render_resolution = 1;
-        refresh_screen_ = 1;
+        refresh_screen_required = 1;
     }
 }
 
@@ -41,7 +41,7 @@ on "stage clicked" {
         cam_y += ((mouse_y()-_mouse_y)/cam_scale);
         _mouse_x = mouse_x();
         _mouse_y = mouse_y();
-        refresh_screen_ = 1;
+        refresh_screen_required = 1;
     }
 }
 
@@ -50,7 +50,7 @@ onkey "up arrow" {
         cam_scale = (cam_scale*2);
         limit_scroll;
     }
-    refresh_screen_ = 1;
+    refresh_screen_required = 1;
 }
 
 onkey "down arrow" {
@@ -58,7 +58,7 @@ onkey "down arrow" {
         cam_scale = (cam_scale/2);
         limit_scroll;
     }
-    refresh_screen_ = 1;
+    refresh_screen_required = 1;
 }
 
 # limit camera position to within the canvas
@@ -78,7 +78,7 @@ proc limit_scroll  {
 
 onkey "space" {
     broadcast "composite";
-    refresh_screen_ = 1;
+    refresh_screen_required = 1;
 }
 
 on "zoom extents" {zoom_extents;}
@@ -94,7 +94,7 @@ proc zoom_extents  {
         cam_scale = ceil((0.5+(ln((360/canvas_size_y))/ln(2))));
     }
 
-    refresh_screen_ = 1;
+    refresh_screen_required = 1;
 }
 
 
