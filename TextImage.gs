@@ -191,50 +191,46 @@ proc read_TextImage TextImage_file {
         if ($TextImage_file[i] == ",") {
             add str to TI_header;
             str = "";
-        } else {
-            if ($TextImage_file[i] == ":") {
-                add ("!" & str) to TI_header;
-                str = "";
-            } else {
-                if ($TextImage_file[i] == "|") {
-                    add str to TI_header;
-                    str = "";
-                    if (TI_header[2] == "txtimg") {
-                        if (TI_header[1+("!v" in TI_header)] == 0) {
-                            # read header
-                            TI_image_size_x = floor(TI_header[1+("!x" in TI_header)]);
-                            TI_image_size_y = floor(TI_header[1+("!y" in TI_header)]);
-                            # convert header and data streams into a list of layers
-                            i++;
-                            j = (1+("!p" in TI_header));
-                            repeat (TI_header[j]/4) {
-                                # sets of 6 items... !purpose, purpose, type, version, length, index_start;
-                                add ("!" & TI_header[(j+1)]) to layers;
-                                add TI_header[(j+1)] to layers;
-                                add TI_header[(j+2)] to layers;
-                                add TI_header[(j+3)] to layers;
-                                add TI_header[(j+4)] to layers;
-                                add i to layers;
-                                i += TI_header[(j+4)];
-                                j += 4;
-                            }
-                            # now load data streams based on purpose
-                            # this part is for the user to modify for their use case
-                            read_layer_from_TextImage $TextImage_file, "main", "RGB";
-                            read_layer_from_TextImage $TextImage_file, "alpha", "A";
-                            delete layers;
-                            data_stream = "";
-                        } else {
-                            # error "unknown version";
-                        }
-                    } else {
-                        # error "invalid magic number";
+        } elif ($TextImage_file[i] == ":") {
+            add ("!" & str) to TI_header;
+            str = "";
+        } elif ($TextImage_file[i] == "|") {
+            add str to TI_header;
+            str = "";
+            if (TI_header[2] == "txtimg") {
+                if (TI_header[1+("!v" in TI_header)] == 0) {
+                    # read header
+                    TI_image_size_x = floor(TI_header[1+("!x" in TI_header)]);
+                    TI_image_size_y = floor(TI_header[1+("!y" in TI_header)]);
+                    # convert header and data streams into a list of layers
+                    i++;
+                    j = (1+("!p" in TI_header));
+                    repeat (TI_header[j]/4) {
+                        # sets of 6 items... !purpose, purpose, type, version, length, index_start;
+                        add ("!" & TI_header[(j+1)]) to layers;
+                        add TI_header[(j+1)] to layers;
+                        add TI_header[(j+2)] to layers;
+                        add TI_header[(j+3)] to layers;
+                        add TI_header[(j+4)] to layers;
+                        add i to layers;
+                        i += TI_header[(j+4)];
+                        j += 4;
                     }
-                    stop_this_script;
+                    # now load data streams based on purpose
+                    # this part is for the user to modify for their use case
+                    read_layer_from_TextImage $TextImage_file, "main", "RGB";
+                    read_layer_from_TextImage $TextImage_file, "alpha", "A";
+                    delete layers;
+                    data_stream = "";
                 } else {
-                    str &= $TextImage_file[i];
+                    # error "unknown version";
                 }
+            } else {
+                # error "invalid magic number";
             }
+            stop_this_script;
+        } else {
+            str &= $TextImage_file[i];
         }
         i++;
     }
