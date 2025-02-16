@@ -1,16 +1,20 @@
 costumes "costumes/cmd/icon.svg" as "icon", "costumes/cmd/dev.svg" as "dev";
 
-list args = [];
-list command = [];
+list args;
+list command;
 
-
-
-on "! initalise" {
+on "initalise" {
     hide;
     switch_costume "icon";
     delete command;
+    delete args;
 }
 
+on "hard reset" {
+    delete command;
+    delete args;
+    cmd_string = "";
+}
 
 onkey "/" {
     broadcast "open commands";
@@ -21,8 +25,8 @@ onkey "/" {
 onkey "i" {
     stop_other_scripts;
     ask "paste heightmap";
-    if (not (answer() == "")) {
-        TextImage = answer();
+    if (answer() != "") {
+        TextImage_file = answer();
         broadcast_and_wait "import as heightmap";
         broadcast "composite";
     }
@@ -31,8 +35,8 @@ onkey "i" {
 onkey "j" {
     stop_other_scripts;
     ask "paste 2D colmap";
-    if (not (answer() == "")) {
-        TextImage = answer();
+    if (answer() != "") {
+        TextImage_file = answer();
         broadcast_and_wait "import as color map";
         broadcast "composite";
     }
@@ -43,8 +47,8 @@ onkey "j" {
 proc _read_command_until_semicolon {
     # split a single command into its components
     delete command;
-    inside_quotes = 0;
-    substring = "";
+    local inside_quotes = 0;
+    local substring = "";
     # ignore preceding spaces and slashes
     until not ("/" in cmd_string[i]) {
         i += 1;
@@ -74,14 +78,14 @@ proc _read_command_until_semicolon {
         }
     } 
     add substring to command;
-    substring = "";
+    substring = ""; # clear data, no longer needed
 }
 
 
 
 proc evaluate_command {
     # evaluate the command stored in the command list
-    command_name = command[1];
+    local command_name = command[1];
     if command_name[1] == "#" {
         stop_this_script;
     }
@@ -158,7 +162,7 @@ on "open commands" {
     switch_costume "icon";
     stop_other_scripts;
     ask "(DEV TOOLS) enter command:";
-    if answer() != "" {
+    if (answer() != "") {
         cmd_string = answer();
         i = 1;
         until i >= length(cmd_string) {
@@ -173,7 +177,7 @@ on "open commands" {
 on "update cmd messages" {update_cmd_messages;}
 proc update_cmd_messages {
     # update list of messages, not for rendering them
-    msg_i = 1;
+    local msg_i = 1;
     repeat (length project_messages) / 2 {
         project_messages[msg_i+1] -= 0.033; # replace this with delta time
         if project_messages[msg_i+1] < 0 {

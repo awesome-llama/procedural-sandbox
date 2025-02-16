@@ -3,12 +3,15 @@
 
 costumes "costumes/compositor/compositor.svg" as "compositor";
 
-list canvas_1_r = [];
-list canvas_2_g = [];
-list canvas_3_b = [];
+#list canvas_1_r = [];
+#list canvas_2_g = [];
+#list canvas_3_b = [];
 
 list brightness; # 
 
+on "initalise" {
+    hide;
+}
 
 onkey "1" {
     compositor_mode = "color";
@@ -62,10 +65,10 @@ proc composite_shaded_color  {
         iz = 0;
         brightness_index = 1;
         repeat canvas_size_z {
-            if (_4_a[(i+iz)] > 0) {
-                canvas_1_r[i] = (canvas_1_r[i]+(_4_a[(i+iz)]*((brightness[brightness_index]*_1_r[(i+iz)])-canvas_1_r[i])));
-                canvas_2_g[i] = (canvas_2_g[i]+(_4_a[(i+iz)]*((brightness[brightness_index]*_2_g[(i+iz)])-canvas_2_g[i])));
-                canvas_3_b[i] = (canvas_3_b[i]+(_4_a[(i+iz)]*((brightness[brightness_index]*_3_b[(i+iz)])-canvas_3_b[i])));
+            if (canvas_4_a[(i+iz)] > 0) {
+                canvas_1_r[i] = (canvas_1_r[i]+(canvas_4_a[(i+iz)]*((brightness[brightness_index]*canvas_1_r[(i+iz)])-canvas_1_r[i])));
+                canvas_2_g[i] = (canvas_2_g[i]+(canvas_4_a[(i+iz)]*((brightness[brightness_index]*canvas_2_g[(i+iz)])-canvas_2_g[i])));
+                canvas_3_b[i] = (canvas_3_b[i]+(canvas_4_a[(i+iz)]*((brightness[brightness_index]*canvas_3_b[(i+iz)])-canvas_3_b[i])));
             }
             iz += layer_size;
             brightness_index += 1;
@@ -123,7 +126,7 @@ proc composite_penetration  {
         brightness_index = 1;
         until (iz < 0) {
             iz += layer_size;
-            brightness_index = (brightness_index*(1 - _4_a[(i+iz)]));
+            brightness_index = (brightness_index*(1 - canvas_4_a[(i+iz)]));
         }
         canvas_1_r[i] = brightness_index;
         canvas_2_g[i] = brightness_index;
@@ -180,7 +183,7 @@ proc raycast_ao x, y, z, dx, dy, dz, r {
                 raycast_iz += step_z;
             }
         }
-        _temp_1 = _4_a[(1+((raycast_iz*layer_size)+(((raycast_iy%canvas_size_y)*canvas_size_x)+(raycast_ix%canvas_size_x))))];
+        _temp_1 = canvas_4_a[(1+((raycast_iz*layer_size)+(((raycast_iy%canvas_size_y)*canvas_size_x)+(raycast_ix%canvas_size_x))))];
         if (_temp_1 == "") {
             stop_this_script;
         }
@@ -240,7 +243,7 @@ proc generate_topmost_voxel_pass  {
     repeat abs(layer_size) {
         i_offset = ((canvas_size_z-1)*(1-layer_size));
         iz = canvas_size_z;
-        until ((iz < 1) or (_4_a[(i+i_offset)] > 1)) {
+        until ((iz < 1) or (canvas_4_a[(i+i_offset)] > 1)) {
             i_offset += layer_size;
             iz += -1;
         }
@@ -257,9 +260,9 @@ proc composite_topmost_colour  {
     i = 1;
     repeat layer_size {
         local index = (i+((render_cache_topmost[i]-1) * layer_size));
-        canvas_1_r[i] = _1_r[index];
-        canvas_2_g[i] = _2_g[index];
-        canvas_3_b[i] = _3_b[index];
+        canvas_1_r[i] = canvas_1_r[index];
+        canvas_2_g[i] = canvas_2_g[index];
+        canvas_3_b[i] = canvas_3_b[index];
         i++;
     }
 }

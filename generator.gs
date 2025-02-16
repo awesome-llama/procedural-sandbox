@@ -5,26 +5,31 @@ costumes "costumes/blank.svg" as "blank";
 # test palette of colours
 list temp_1 = ["6e7b6e", "ccbe99", "8bc338", "c18644", "3eb13e", "5f5a70", "ed885e", "e17644"];
 
+list palette; # TODO
+
+on "initalise" {
+    hide;
+}
 
 # script qK (1101,368)
 proc clear_canvas  {
-    delete canvas_col;
-    delete canvas_alpha;
-    repeat (canvas_size_x * canvas_size_y * canvas_size_z) {
-        add col_RGB {r:1, g:1, b:1} to canvas_col;
-        add 0 to canvas_alpha;
-    }
+    #delete canvas_col;
+    #delete canvas_alpha;
+    #repeat (canvas_size_x * canvas_size_y * canvas_size_z) {
+    #    add col_RGB {r:1, g:1, b:1} to canvas_col;
+    #    add 0 to canvas_alpha;
+    #}
 
     # original:
-    delete _1_r;
-    delete _2_g;
-    delete _3_b;
-    delete _4_a;
+    delete canvas_1_r;
+    delete canvas_2_g;
+    delete canvas_3_b;
+    delete canvas_4_a;
     repeat (canvas_size_x * canvas_size_y * canvas_size_z) {
-        add 1 to _1_r;
-        add 1 to _2_g;
-        add 1 to _3_b;
-        add 0 to _4_a;
+        add 1 to canvas_1_r;
+        add 1 to canvas_2_g;
+        add 1 to canvas_3_b;
+        add 0 to canvas_4_a;
     }
 }
 
@@ -67,10 +72,10 @@ proc set_pixel__s__s__s_depth__s_col__s__s__s__s x, y, z, depth, r, g, b, a {
     }
     set_px__i = ("1"+(((canvas_size_x*canvas_size_y)*set_px__z)+((canvas_size_x*(floor($y)%canvas_size_y))+(floor($x)%canvas_size_x))));
     repeat "1" {
-        _1_r[set_px__i] = ($r+($r == ""));
-        _2_g[set_px__i] = ($g+($g == ""));
-        _3_b[set_px__i] = ($b+($b == ""));
-        _4_a[set_px__i] = ($a+($a == ""));
+        canvas_1_r[set_px__i] = ($r+($r == ""));
+        canvas_2_g[set_px__i] = ($g+($g == ""));
+        canvas_3_b[set_px__i] = ($b+($b == ""));
+        canvas_4_a[set_px__i] = ($a+($a == ""));
         set_px__i += ("0"-(canvas_size_x*canvas_size_y));
         if (set_px__i < "1") {
             stop_this_script;
