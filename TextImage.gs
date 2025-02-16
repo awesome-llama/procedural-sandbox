@@ -1,7 +1,5 @@
 # github.com/awesome-llama/TextImage
 
-# this should be a standalone module file
-
 costumes "costumes/TextImage/icon.svg" as "icon", "costumes/blank.svg" as "@ascii/";
 
 list layers;
@@ -46,38 +44,38 @@ proc _decompress_RGB8 data_stream, width {
 
         if (op_index < 21) {
             # raw
-            dec = ((830584*op_index)+((8836*data_stream_list[(i+1)])+((94*data_stream_list[(i+2)])+data_stream_list[(i+3)])));
+            dec = ((830584*op_index)+((8836*data_stream_list[i+1])+((94*data_stream_list[i+2])+data_stream_list[i+3])));
             _add_RGB floor((dec/65536)), (floor((dec/256))%256), (dec % 256);
             op_size = 3;
         } elif (op_index == 22) {
             # prev
-            _add_RGB round(image_buffer[((length image_buffer)-2)]), round(image_buffer[((length image_buffer)-1)]), round(image_buffer["last"]);
+            _add_RGB round(image_buffer[(length image_buffer)-2]), round(image_buffer[(length image_buffer)-1]), round(image_buffer["last"]);
             op_size = 0;
         } elif (op_index < 26) {
             # copy vert fwd/mid/back
-            _add_RGB round(image_buffer[((3*((((length image_buffer)/3)-$width)+(25-op_index)))-2)]), round(image_buffer[((3*((((length image_buffer)/3)-$width)+(25-op_index)))-1)]), round(image_buffer[((3*((((length image_buffer)/3)-$width)+(25-op_index)))-0)]);
+            _add_RGB round(image_buffer[(3*((((length image_buffer)/3)-$width) + (25-op_index))) - 2]), round(image_buffer[((3*((((length image_buffer)/3)-$width)+(25-op_index)))-1)]), round(image_buffer[(3*((((length image_buffer)/3)-$width) + (25-op_index))) - 0]);
             op_size = 0;
         } elif (op_index == 26) {
             # hash
-            dec = hash_table[(1+data_stream_list[(i+1)])];
+            dec = hash_table[1+data_stream_list[i+1]];
             _add_RGB floor((dec/65536)), (floor((dec/256))%256), (dec%256);
             op_size = 1;
         } elif (op_index == 27) {
             # RLE
-            op_index = data_stream_list[(i+1)];
-            _repeat = data_stream_list[(i+2)];
+            op_index = data_stream_list[i+1];
+            _repeat = data_stream_list[i+2];
             op_size = 2;
         } elif (op_index < 91) {
             # vol
             vol_index = (1+((op_index-28)*8));
             if (op_index < 73) {
-                _vol_index_to_col data_stream_list[(i+1)], volumes[(1+vol_index)], volumes[(2+vol_index)], volumes[(3+vol_index)], 5, 4, 4;
+                _vol_index_to_col data_stream_list[i+1], volumes[1+vol_index], volumes[2+vol_index], volumes[3+vol_index], 5, 4, 4;
                 op_size = 1;
             } else {
-                _vol_index_to_col ((94*data_stream_list[(i+1)])+data_stream_list[(i+2)]), volumes[(1+vol_index)], volumes[(2+vol_index)], volumes[(3+vol_index)], 21, 20, 20;
+                _vol_index_to_col ((94*data_stream_list[i+1])+data_stream_list[i+2]), volumes[1+vol_index], volumes[2+vol_index], volumes[3+vol_index], 21, 20, 20;
                 op_size = 2;
             }
-            _add_RGB (image_buffer[((length image_buffer)-2)]+(return_v+return_Y_)), (image_buffer[((length image_buffer)-1)]+return_Y_), (image_buffer["last"]+(return_u+return_Y_));
+            _add_RGB (image_buffer[(length image_buffer)-2]+(return_v+return_Y_)), (image_buffer[(length image_buffer)-1]+return_Y_), (image_buffer["last"]+(return_u+return_Y_));
 
         } else {
             # error "unknown chunk
@@ -95,7 +93,7 @@ proc _add_RGB r, g, b {
     add $r to image_buffer;
     add $g to image_buffer;
     add $b to image_buffer;
-    hash_table[(1+((((3*$r)+(5*$g))+(7*$b))%94))] = (((65536*$r)+(256*$g))+$b);
+    hash_table[1+((((3*$r)+(5*$g))+(7*$b))%94)] = (((65536*$r)+(256*$g))+$b);
 }
 
 
@@ -123,7 +121,7 @@ proc _decompress_A8 data_stream, width {
         
         if (op_index < 3) {
             # raw
-            add ((94 * op_index)+data_stream_list[(i+1)]) to image_buffer;
+            add ((94 * op_index)+data_stream_list[i+1]) to image_buffer;
             op_size = 1;
             
         } elif (op_index == 3) { 
@@ -133,13 +131,13 @@ proc _decompress_A8 data_stream, width {
 
         } elif (op_index < 7) {
             # copy vert fwd/mid/back
-            add round(image_buffer[(((length image_buffer)-$width)+(6-op_index))]) to image_buffer;
+            add round(image_buffer[((length image_buffer)-$width) + (6-op_index)]) to image_buffer;
             op_size = 0;
 
         } elif (op_index == 7) {
             # RLE
-            op_index = data_stream_list[(i+1)];
-            _repeat = data_stream_list[(i+2)];
+            op_index = data_stream_list[i+1];
+            _repeat = data_stream_list[i+2];
             op_size = 2;
 
         } else {
@@ -207,13 +205,13 @@ proc read_TextImage TextImage_file {
                     j = (1+("!p" in TI_header));
                     repeat (TI_header[j]/4) {
                         # sets of 6 items... !purpose, purpose, type, version, length, index_start;
-                        add ("!" & TI_header[(j+1)]) to layers;
-                        add TI_header[(j+1)] to layers;
-                        add TI_header[(j+2)] to layers;
-                        add TI_header[(j+3)] to layers;
-                        add TI_header[(j+4)] to layers;
+                        add ("!" & TI_header[j+1]) to layers;
+                        add TI_header[j+1] to layers;
+                        add TI_header[j+2] to layers;
+                        add TI_header[j+3] to layers;
+                        add TI_header[j+4] to layers;
                         add i to layers;
-                        i += TI_header[(j+4)];
+                        i += TI_header[j+4];
                         j += 4;
                     }
                     # now load data streams based on purpose
@@ -451,7 +449,7 @@ proc _data_stream_compress_RGB8_from_buffer width {
                 add vol_index to data_stream_list;
             }
         }
-        hash_table[(1+((((3*image_buffer[i+1])+(5*image_buffer[i+2]))+(7*image_buffer[i+3]))%94))] = dec;
+        hash_table[1 + ((((3*image_buffer[i+1])+(5*image_buffer[i+2])) + (7*image_buffer[i+3])) % 94)] = dec;
         i += 3;
     }
     
