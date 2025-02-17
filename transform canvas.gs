@@ -12,6 +12,12 @@ on "initalise" {
     hide;
 }
 
+on "zzz" {
+    scale_along_xy_nearest_neighbour 1;
+    translate canvas_size_x/2, canvas_size_y/2;
+
+}
+
 on "hard reset" {
     delete temp_1_r;
     delete temp_2_g;
@@ -55,11 +61,15 @@ proc translate dx, dy {
     delete temp_2_g;
     delete temp_3_b;
     delete temp_4_a;
+
+    local dx = floor($dx);
+    local dy = floor($dy);
+    
     iz = 0;
     repeat canvas_size_z {
-        iy = (0-$dy);
+        iy = (0-dy);
         repeat canvas_size_y {
-            ix = (0-$dx);
+            ix = (0-dx);
             repeat canvas_size_x {
                 i = (1+(((canvas_size_x*canvas_size_y)*iz)+((canvas_size_x*(floor(iy)%canvas_size_y))+(floor(ix)%canvas_size_x))));
                 add canvas_1_r[i] to temp_1_r;
