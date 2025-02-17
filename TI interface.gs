@@ -42,10 +42,10 @@ proc copy_render_buffer_to_TI_buffer  {
     delete TI_3_b;
     delete TI_4_a;
     i = 1;
-    repeat (length render_cache_col) {
-        add (floor((render_cache_col[i]/65536))%256) to TI_1_r;
-        add (floor((render_cache_col[i]/256))%256) to TI_2_g;
-        add (render_cache_col[i]%256) to TI_3_b;
+    repeat (length render_cache_final_col) {
+        add (floor((render_cache_final_col[i]/65536))%256) to TI_1_r;
+        add (floor((render_cache_final_col[i]/256))%256) to TI_2_g;
+        add (render_cache_final_col[i]%256) to TI_3_b;
         add 255 to TI_4_a;
         i++;
     }

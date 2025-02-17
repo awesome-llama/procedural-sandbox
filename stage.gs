@@ -29,9 +29,12 @@ list canvas_3_b;
 list canvas_4_a;
 
 # The render cache is a 2D projection of the canvas for displaying on screen.
-list render_cache_col; # color
 list render_cache_ao; # ambient occlusion
 list render_cache_topmost; # elevation index of topmost voxel (really just a heightmap)
+list render_cache_1_r; # 2D color maps
+list render_cache_2_g;
+list render_cache_3_b;
+list render_cache_final_col; # final color to render on screen
 
 
 # TextImage shared lists:

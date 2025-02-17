@@ -3,54 +3,55 @@
 
 costumes "costumes/compositor/compositor.svg" as "compositor";
 
-#list canvas_1_r = [];
-#list canvas_2_g = [];
-#list canvas_3_b = [];
-
-list brightness; # 
+list brightness; # LUT
 
 on "initalise" {
     hide;
 }
 
 onkey "1" {
-    compositor_mode = "color";
+    compositor_mode = CompositorMode.COLOR;
     broadcast "composite";
 }
 
 onkey "2" {
-    compositor_mode = "shaded";
+    compositor_mode = CompositorMode.SHADED;
     broadcast "composite";
 }
 
 onkey "3" {
-    compositor_mode = "height";
+    compositor_mode = CompositorMode.HEIGHT;
     broadcast "composite";
 }
 
 onkey "4" {
-    compositor_mode = "ao";
+    compositor_mode = CompositorMode.AO;
     broadcast "composite";
 }
 
 onkey "5" {
-    compositor_mode = "penetration";
+    compositor_mode = CompositorMode.PENETRATION;
+    broadcast "composite";
+}
+
+onkey "6" {
+    compositor_mode = CompositorMode.THICKNESS;
     broadcast "composite";
 }
 
 
 # if the canvas lists are the wrong size, create it again
 proc regenerate_cache_for_current_canvas_size  {
-    if (not ((length render_cache_col) == (canvas_size_x*canvas_size_y))) {
-        delete render_cache_col;
-        delete canvas_1_r;
-        delete canvas_2_g;
-        delete canvas_3_b;
-        repeat (canvas_size_x*canvas_size_y) {
-            add 0 to render_cache_col;
-            add 0 to canvas_1_r;
-            add 0 to canvas_2_g;
-            add 0 to canvas_3_b;
+    if (not ((length render_cache_final_col) == (canvas_size_x * canvas_size_y))) {
+        delete render_cache_final_col;
+        delete render_cache_1_r;
+        delete render_cache_2_g;
+        delete render_cache_3_b;
+        repeat (canvas_size_x * canvas_size_y) {
+            add 0 to render_cache_final_col;
+            add 0 to render_cache_1_r;
+            add 0 to render_cache_2_g;
+            add 0 to render_cache_3_b;
         }
     }
 }
@@ -59,24 +60,24 @@ proc regenerate_cache_for_current_canvas_size  {
 proc composite_shaded_color  {
     make_brightness_LUT 0.8, 1;
     set_render_base 0.5, 0.5, 0.5;
-    layer_size = (canvas_size_x*canvas_size_y);
+    layer_size = (canvas_size_x * canvas_size_y);
     i = 1;
     repeat layer_size {
         iz = 0;
         brightness_index = 1;
         repeat canvas_size_z {
-            if (canvas_4_a[(i+iz)] > 0) {
-                canvas_1_r[i] = (canvas_1_r[i]+(canvas_4_a[(i+iz)]*((brightness[brightness_index]*canvas_1_r[(i+iz)])-canvas_1_r[i])));
-                canvas_2_g[i] = (canvas_2_g[i]+(canvas_4_a[(i+iz)]*((brightness[brightness_index]*canvas_2_g[(i+iz)])-canvas_2_g[i])));
-                canvas_3_b[i] = (canvas_3_b[i]+(canvas_4_a[(i+iz)]*((brightness[brightness_index]*canvas_3_b[(i+iz)])-canvas_3_b[i])));
+            if (canvas_4_a[i+iz] > 0) {
+                render_cache_1_r[i] = (canvas_1_r[i]+(canvas_4_a[i+iz]*((brightness[brightness_index]*canvas_1_r[i+iz])-canvas_1_r[i])));
+                render_cache_2_g[i] = (canvas_2_g[i]+(canvas_4_a[i+iz]*((brightness[brightness_index]*canvas_2_g[i+iz])-canvas_2_g[i])));
+                render_cache_3_b[i] = (canvas_3_b[i]+(canvas_4_a[i+iz]*((brightness[brightness_index]*canvas_3_b[i+iz])-canvas_3_b[i])));
             }
             iz += layer_size;
             brightness_index += 1;
         }
         local ao_fac = (0.7 + (0.3 * render_cache_ao[i]));
-        canvas_1_r[i] = (canvas_1_r[i] * ao_fac);
-        canvas_2_g[i] = (canvas_2_g[i] * ao_fac);
-        canvas_3_b[i] = (canvas_3_b[i] * ao_fac);
+        render_cache_1_r[i] = (render_cache_1_r[i] * ao_fac);
+        render_cache_2_g[i] = (render_cache_2_g[i] * ao_fac);
+        render_cache_3_b[i] = (render_cache_3_b[i] * ao_fac);
         i++;
     }
 }
@@ -85,9 +86,9 @@ proc composite_shaded_color  {
 proc set_render_base r, g, b {
     i = 1;
     repeat (canvas_size_x * canvas_size_y) {
-        canvas_1_r[i] = $r;
-        canvas_2_g[i] = $g;
-        canvas_3_b[i] = $b;
+        render_cache_1_r[i] = $r;
+        render_cache_2_g[i] = $g;
+        render_cache_3_b[i] = $b;
         i++;
     }
 }
@@ -106,12 +107,12 @@ proc make_brightness_LUT start, end {
 # a pure heightmap of the topmost non-transparent voxel
 proc composite_heightmap  {
     make_brightness_LUT 0, 1;
-    _repeat = (canvas_size_x*canvas_size_y);
+    _repeat = (canvas_size_x * canvas_size_y);
     i = 1;
     repeat _repeat {
-        canvas_1_r[i] = brightness[render_cache_topmost[i]];
-        canvas_2_g[i] = brightness[render_cache_topmost[i]];
-        canvas_3_b[i] = brightness[render_cache_topmost[i]];
+        render_cache_1_r[i] = brightness[render_cache_topmost[i]];
+        render_cache_2_g[i] = brightness[render_cache_topmost[i]];
+        render_cache_3_b[i] = brightness[render_cache_topmost[i]];
         i++;
     }
 }
@@ -120,13 +121,13 @@ proc composite_heightmap  {
 proc composite_penetration  {
     set_render_base 1, 1, 1;
     i = 1;
-    layer_size = 0-(canvas_size_x*canvas_size_y);
+    layer_size = 0-(canvas_size_x * canvas_size_y);
     repeat abs(layer_size) {
         iz = ((canvas_size_z-1)*(-layer_size));
         brightness_index = 1;
         until (iz < 0) {
             iz += layer_size;
-            brightness_index = (brightness_index*(1 - canvas_4_a[(i+iz)]));
+            brightness_index = (brightness_index*(1 - canvas_4_a[i+iz]));
         }
         canvas_1_r[i] = brightness_index;
         canvas_2_g[i] = brightness_index;
@@ -135,12 +136,29 @@ proc composite_penetration  {
     }
 }
 
-# script tt (4003,90)
+proc composite_thickness {
+    set_render_base 1, 1, 1;
+    i = 1;
+    layer_size = 0-(canvas_size_x * canvas_size_y);
+    repeat abs(layer_size) {
+        iz = ((canvas_size_z-1)*(-layer_size));
+        brightness_index = 1;
+        until (iz < 0) {
+            iz += layer_size;
+            brightness_index = (brightness_index*(1 - canvas_4_a[i+iz]));
+        }
+        canvas_1_r[i] = brightness_index;
+        canvas_2_g[i] = brightness_index;
+        canvas_3_b[i] = brightness_index;
+        i++;
+    }
+}
+
 proc raycast_ao x, y, z, dx, dy, dz, r {
     local total_distance = sqrt((($dx*$dx)+(($dy*$dy)+($dz*$dz))));
-    local scale_x = abs((total_distance/$dx));
-    local scale_y = abs((total_distance/$dy));
-    local scale_z = abs((total_distance/$dz));
+    local scale_x = abs(total_distance/$dx);
+    local scale_y = abs(total_distance/$dy);
+    local scale_z = abs(total_distance/$dz);
     local raycast_ix = floor($x);
     local raycast_iy = floor($y);
     local raycast_iz = floor($z);
@@ -166,7 +184,7 @@ proc raycast_ao x, y, z, dx, dy, dz, r {
         len_z = ((1-($z%1))*scale_z);
     }
     local total_distance = 1;
-    ray_light = 1; # returned
+    ray_light = 1; # returned, not local to this script
     until (total_distance > $r) {
         if ((len_x < len_y) and (len_x < len_z)) {
             len_x += scale_x;
@@ -183,11 +201,11 @@ proc raycast_ao x, y, z, dx, dy, dz, r {
                 raycast_iz += step_z;
             }
         }
-        _temp_1 = canvas_4_a[(1+((raycast_iz*layer_size)+(((raycast_iy%canvas_size_y)*canvas_size_x)+(raycast_ix%canvas_size_x))))];
-        if (_temp_1 == "") {
+        local alpha = canvas_4_a[1 + ((raycast_iz*layer_size)+(((raycast_iy%canvas_size_y)*canvas_size_x)+(raycast_ix%canvas_size_x)))];
+        if (alpha == "") {
             stop_this_script;
         }
-        ray_light = (ray_light*(1-_temp_1));
+        ray_light = (ray_light*(1-alpha));
         if (ray_light < 0.0001) {
             stop_this_script;
         }
@@ -200,7 +218,7 @@ proc raycast_ao x, y, z, dx, dy, dz, r {
 # script t_ (2073,195)
 proc generate_ao_pass  {
     delete render_cache_ao;
-    layer_size = (canvas_size_x*canvas_size_y);
+    layer_size = (canvas_size_x * canvas_size_y);
     i = 1;
     iy = 1;
     _repeat = 64;
@@ -214,17 +232,17 @@ proc generate_ao_pass  {
                 cumulative_light += (ray_light/_repeat);
             }
             add cumulative_light to render_cache_ao;
-            ix += 1;
-            i += 1;
+            ix++;
+            i++;
         }
-        iy += 1;
+        iy++;
     }
 }
 
 # script t| (3006,179)
 proc composite_ao_pass  {
     make_brightness_LUT 1, 1;
-    _repeat = (canvas_size_x*canvas_size_y);
+    _repeat = (canvas_size_x * canvas_size_y);
     i = 1;
     repeat _repeat {
         local ao_fac = (1 * render_cache_ao[i]);
@@ -239,16 +257,16 @@ proc composite_ao_pass  {
 proc generate_topmost_voxel_pass  {
     delete render_cache_topmost;
     i = 1;
-    layer_size = (1-(canvas_size_x*canvas_size_y));
+    layer_size = (1-(canvas_size_x * canvas_size_y));
     repeat abs(layer_size) {
         i_offset = ((canvas_size_z-1)*(1-layer_size));
         iz = canvas_size_z;
-        until ((iz < 1) or (canvas_4_a[(i+i_offset)] > 1)) {
+        until ((iz < 1) or (canvas_4_a[i+i_offset] > 1)) {
             i_offset += layer_size;
             iz += -1;
         }
         add iz to render_cache_topmost;
-        i += 1;
+        i++;
     }
 }
 
@@ -260,9 +278,9 @@ proc composite_topmost_colour  {
     i = 1;
     repeat layer_size {
         local index = (i+((render_cache_topmost[i]-1) * layer_size));
-        canvas_1_r[i] = canvas_1_r[index];
-        canvas_2_g[i] = canvas_2_g[index];
-        canvas_3_b[i] = canvas_3_b[index];
+        render_cache_1_r[i] = canvas_1_r[index];
+        render_cache_2_g[i] = canvas_2_g[index];
+        render_cache_3_b[i] = canvas_3_b[index];
         i++;
     }
 }
@@ -308,16 +326,18 @@ proc composite  {
         composite_ao_pass;
 
     } elif (compositor_mode == CompositorMode.PENETRATION) {
-            composite_penetration;
+        composite_penetration;
+
+    } elif (compositor_mode == CompositorMode.THICKNESS) {
+        composite_thickness;
 
     } else {}
 
     # make combined values
-    _repeat = (canvas_size_x*canvas_size_y);
     i = 1;
-    repeat _repeat {
+    repeat (canvas_size_x * canvas_size_y) {
         # handles gamma
-        render_cache_col[i] = ((65536*floor((255*antiln((2.2*ln(canvas_1_r[i]))))))+((256*floor((255*antiln((2.2*ln(canvas_2_g[i]))))))+floor((255*antiln((2.2*ln(canvas_3_b[i])))))));
+        render_cache_final_col[i] = ((65536*floor((255*antiln((2.2*ln(render_cache_1_r[i]))))))+((256*floor((255*antiln((2.2*ln(render_cache_2_g[i]))))))+floor((255*antiln((2.2*ln(render_cache_3_b[i])))))));
         i++;
     }
     
