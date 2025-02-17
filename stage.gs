@@ -2,11 +2,17 @@
 costumes "costumes/stage/darkchecker.png" as "darkchecker";
 
 # (red, green, blue) color
-struct col_RGBA {
+struct RGBA {
     r,
     g,
     b,
     a
+}
+
+struct pos {
+    x,
+    y,
+    z
 }
 
 enum CompositorMode {
@@ -22,7 +28,7 @@ enum CompositorMode {
 # The "canvas" is the 3D voxel environment that can be drawn to with color and opacity. 
 list col_RGBA canvas; # TODO use this 
 
-# The "canvas" is the environment that can be drawn to with color and opacity. 
+# The "canvas" is the environment that can be drawn to with color and opacity. Stored linear 0-1.
 list canvas_1_r;
 list canvas_2_g;
 list canvas_3_b;
@@ -31,10 +37,10 @@ list canvas_4_a;
 # The render cache is a 2D projection of the canvas for displaying on screen.
 list render_cache_ao; # ambient occlusion
 list render_cache_topmost; # elevation index of topmost voxel (really just a heightmap)
-list render_cache_1_r; # 2D color maps
+list render_cache_1_r; # 2D color maps, linear 0-1
 list render_cache_2_g;
 list render_cache_3_b;
-list render_cache_final_col; # final color to render on screen
+list render_cache_final_col; # final color to render on screen, 24-bit nonlinear.
 
 
 # TextImage shared lists:
@@ -46,7 +52,7 @@ list TI_header;
 
 ####
 
-list copy_this; # list for copying outputted text
+list copy_this; # output list for copying text
 list project_messages; # console messages
 
 

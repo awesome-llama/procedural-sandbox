@@ -24,7 +24,7 @@ onkey "/" {
 
 onkey "i" {
     stop_other_scripts;
-    ask "paste heightmap";
+    ask "paste 2D heightmap";
     if (answer() != "") {
         TextImage_file = answer();
         broadcast_and_wait "import as heightmap";
