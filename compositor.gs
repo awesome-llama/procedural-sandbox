@@ -123,7 +123,7 @@ proc generate_pass_topmost  {
     i = 1;
     repeat layer_size {
         iz = canvas_size_z;
-        until ((iz < 1) or (canvas_4_a[i + (iz * layer_size)] > 0)) {
+        until ((iz < 0) or (canvas_4_a[i + (iz * layer_size)] > 0)) {
             iz += -1;
         }
         render_cache_topmost[i] = iz;
@@ -167,10 +167,16 @@ proc composite_topmost_colour  {
     layer_size = (canvas_size_x * canvas_size_y);
     i = 1;
     repeat layer_size {
-        local index = (i + (render_cache_topmost[i] * layer_size));
-        render_cache_1_r[i] = canvas_1_r[index];
-        render_cache_2_g[i] = canvas_2_g[index];
-        render_cache_3_b[i] = canvas_3_b[index];
+        local index = render_cache_topmost[i];
+        if index < 0 { # no topmost
+            render_cache_1_r[i] = 0.5;
+            render_cache_2_g[i] = 0.5;
+            render_cache_3_b[i] = 0.5;
+        } else {
+            render_cache_1_r[i] = canvas_1_r[i + index*layer_size];
+            render_cache_2_g[i] = canvas_2_g[i + index*layer_size];
+            render_cache_3_b[i] = canvas_3_b[i + index*layer_size];
+        }
         i++;
     }
 }
@@ -206,9 +212,10 @@ proc composite_shaded_color  {
 proc composite_heightmap  {
     i = 1;
     repeat (canvas_size_x * canvas_size_y) {
-        render_cache_1_r[i] = render_cache_topmost[i] / canvas_size_z;
-        render_cache_2_g[i] = render_cache_topmost[i] / canvas_size_z;
-        render_cache_3_b[i] = render_cache_topmost[i] / canvas_size_z;
+        local height = (render_cache_topmost[i]+1) / canvas_size_z;
+        render_cache_1_r[i] = height;
+        render_cache_2_g[i] = height;
+        render_cache_3_b[i] = height;
         i++;
     }
 }
