@@ -9,6 +9,10 @@ on "initalise" {
     hide;
 }
 
+on "hard reset" {
+    delete brightness;
+}
+
 onkey "1" {
     compositor_mode = CompositorMode.COLOR;
     broadcast "composite";
@@ -30,41 +34,156 @@ onkey "4" {
 }
 
 onkey "5" {
-    compositor_mode = CompositorMode.PENETRATION;
+    compositor_mode = CompositorMode.DENSITY;
     broadcast "composite";
 }
 
 onkey "6" {
-    compositor_mode = CompositorMode.THICKNESS;
+    compositor_mode = CompositorMode.PENETRATION;
     broadcast "composite";
 }
 
 
-# if the canvas lists are the wrong size, create it again
-proc regenerate_cache_for_current_canvas_size  {
-    if (not ((length render_cache_final_col) == (canvas_size_x * canvas_size_y))) {
-        delete render_cache_final_col;
+
+################################
+#             Main             #
+################################
+
+on "composite" { composite; }
+proc composite  {
+    
+    # if the canvas lists are the wrong size, create them again
+    # this doesn't happen often enough to optimise?
+    if ((length render_cache_final_col) != (canvas_size_x * canvas_size_y)) {
+        delete render_cache_ao;
+        delete render_cache_topmost;
         delete render_cache_1_r;
         delete render_cache_2_g;
         delete render_cache_3_b;
+        delete render_cache_final_col;
         repeat (canvas_size_x * canvas_size_y) {
-            add 0 to render_cache_final_col;
+            add 0 to render_cache_ao;
+            add 0 to render_cache_topmost;
             add 0 to render_cache_1_r;
             add 0 to render_cache_2_g;
             add 0 to render_cache_3_b;
+            add 0 to render_cache_final_col;
         }
+    }
+
+    # run different custom blocks depending on mode
+    if (compositor_mode == CompositorMode.COLOR) {
+        generate_pass_topmost;
+        composite_topmost_colour;
+
+    } elif (compositor_mode == CompositorMode.SHADED) {
+        generate_pass_topmost;
+        generate_pass_ao; # TODO raycast instead of using 2D AO, or make a separate mode for it (because translucency)
+        composite_shaded_color;
+
+    } elif (compositor_mode == CompositorMode.HEIGHT) {
+        generate_pass_topmost;
+        composite_heightmap;
+
+    } elif (compositor_mode == CompositorMode.AO) {
+        generate_pass_topmost;
+        generate_pass_ao;
+        composite_ao;
+
+    } elif (compositor_mode == CompositorMode.DENSITY) {
+        composite_density;
+
+    } elif (compositor_mode == CompositorMode.PENETRATION) {
+        composite_penetration;
+
+    } else {}
+
+    # make combined values
+    i = 1;
+    repeat (canvas_size_x * canvas_size_y) {
+        
+        # linear Rec.709 to sRGB (not piecewise)
+        render_cache_final_col[i] = COMBINE_RGB_CHANNELS(POW(render_cache_1_r[i], 2.2), POW(render_cache_2_g[i], 2.2), POW(render_cache_3_b[i], 2.2));
+        i++;
+    }
+    
+    refresh_screen_required = 1;
+}
+
+
+
+################################
+#            Passes            #
+################################
+
+
+# the topmost non-0-opacity voxel, found by raycasting downwards. The index of the solid voxel, not the air above it.
+proc generate_pass_topmost  {
+    layer_size = (canvas_size_x * canvas_size_y);
+    i = 1;
+    repeat layer_size {
+        iz = canvas_size_z;
+        until ((iz < 1) or (canvas_4_a[i + (iz * layer_size)] > 0)) {
+            iz += -1;
+        }
+        render_cache_topmost[i] = iz;
+        i++;
     }
 }
 
-# script sm (-373,868)
+
+# ambient occlusion in 2D
+proc generate_pass_ao  {
+    layer_size = (canvas_size_x * canvas_size_y);
+    i = 1;
+    iy = 1;
+    local samples = 64;
+    repeat canvas_size_y {
+        ix = 1;
+        repeat canvas_size_x {
+            local cumulative_light = 0;
+            repeat samples {
+                local bearing = random(1, "360.0"); # needs to be a float. This is not deterministic
+                raycast_ao ix, iy, render_cache_topmost[i]+1, sin(bearing), cos(bearing), tan(random("18.43", "90.0")), (3 * canvas_size_z);
+                cumulative_light += ray_light;
+            }
+            render_cache_ao[i] = cumulative_light / samples;
+            ix++;
+            i++;
+        }
+        iy++;
+    }
+}
+
+
+
+################################
+#      Final compositing       #
+################################
+
+
+# simply the colour map looking down, no translucency handling
+proc composite_topmost_colour  {
+    layer_size = (canvas_size_x * canvas_size_y);
+    i = 1;
+    repeat layer_size {
+        local index = (i + (render_cache_topmost[i] * layer_size));
+        render_cache_1_r[i] = canvas_1_r[index];
+        render_cache_2_g[i] = canvas_2_g[index];
+        render_cache_3_b[i] = canvas_3_b[index];
+        i++;
+    }
+}
+
+
+# a semi-realistic shaded style, accounting for translucency and AO.
 proc composite_shaded_color  {
     make_brightness_LUT 0.8, 1;
-    set_render_base 0.5, 0.5, 0.5;
     layer_size = (canvas_size_x * canvas_size_y);
     i = 1;
     repeat layer_size {
         iz = 0;
-        brightness_index = 1;
+        local brightness_index = 1; # brightness is slightly altered by depth
         repeat canvas_size_z {
             if (canvas_4_a[i+iz] > 0) {
                 render_cache_1_r[i] = (canvas_1_r[i]+(canvas_4_a[i+iz]*((brightness[brightness_index]*canvas_1_r[i+iz])-canvas_1_r[i])));
@@ -82,16 +201,72 @@ proc composite_shaded_color  {
     }
 }
 
-# Reset the canvas with a base colour
-proc set_render_base r, g, b {
+
+# heightmap of the topmost non-transparent voxel, normalised to greyscale 0-1
+proc composite_heightmap  {
     i = 1;
     repeat (canvas_size_x * canvas_size_y) {
-        render_cache_1_r[i] = $r;
-        render_cache_2_g[i] = $g;
-        render_cache_3_b[i] = $b;
+        render_cache_1_r[i] = render_cache_topmost[i] / canvas_size_z;
+        render_cache_2_g[i] = render_cache_topmost[i] / canvas_size_z;
+        render_cache_3_b[i] = render_cache_topmost[i] / canvas_size_z;
         i++;
     }
 }
+
+
+# ambient occlusion, normalised to greyscale 0-1
+proc composite_ao  {
+    i = 1;
+    repeat (canvas_size_x * canvas_size_y) {
+        local ao_fac = (1 * render_cache_ao[i]);
+        render_cache_1_r[i] = ao_fac;
+        render_cache_2_g[i] = ao_fac;
+        render_cache_3_b[i] = ao_fac;
+        i++;
+    }
+}
+
+# sum of opacity, normalised to greyscale 0-1
+proc composite_density {
+    i = 1;
+    layer_size = (canvas_size_x * canvas_size_y);
+    repeat layer_size {
+        local density = 0;
+        local zoffset = 0;
+        repeat canvas_size_z {
+            density += canvas_4_a[i + zoffset];
+            zoffset += layer_size;
+        }
+        render_cache_1_r[i] = density / canvas_size_z;
+        render_cache_2_g[i] = density / canvas_size_z;
+        render_cache_3_b[i] = density / canvas_size_z;
+        i++;
+    }
+}
+
+# raycast down, for visualising transparency, normalised to greyscale 0-1
+proc composite_penetration  {
+    i = 1;
+    layer_size = 0-(canvas_size_x * canvas_size_y);
+    repeat abs(layer_size) {
+        iz = ((canvas_size_z-1)*(-layer_size));
+        local brightness_index = 1;
+        until (iz < 0) {
+            iz += layer_size;
+            brightness_index = (brightness_index*(1 - canvas_4_a[i+iz]));
+        }
+        render_cache_1_r[i] = brightness_index;
+        render_cache_2_g[i] = brightness_index;
+        render_cache_3_b[i] = brightness_index;
+        i++;
+    }
+}
+
+
+
+################################
+#            Utils             #
+################################
 
 # A list of brightnesses for each Z value.
 # It should be quicker to find index than interpolate... probably (remember we need control of both start and end, it's not normalised)
@@ -104,56 +279,8 @@ proc make_brightness_LUT start, end {
     }
 }
 
-# a pure heightmap of the topmost non-transparent voxel
-proc composite_heightmap  {
-    make_brightness_LUT 0, 1;
-    _repeat = (canvas_size_x * canvas_size_y);
-    i = 1;
-    repeat _repeat {
-        render_cache_1_r[i] = brightness[render_cache_topmost[i]];
-        render_cache_2_g[i] = brightness[render_cache_topmost[i]];
-        render_cache_3_b[i] = brightness[render_cache_topmost[i]];
-        i++;
-    }
-}
 
-# colour by how much light penetrates through, for visualising transparency
-proc composite_penetration  {
-    set_render_base 1, 1, 1;
-    i = 1;
-    layer_size = 0-(canvas_size_x * canvas_size_y);
-    repeat abs(layer_size) {
-        iz = ((canvas_size_z-1)*(-layer_size));
-        brightness_index = 1;
-        until (iz < 0) {
-            iz += layer_size;
-            brightness_index = (brightness_index*(1 - canvas_4_a[i+iz]));
-        }
-        canvas_1_r[i] = brightness_index;
-        canvas_2_g[i] = brightness_index;
-        canvas_3_b[i] = brightness_index;
-        i++;
-    }
-}
-
-proc composite_thickness {
-    set_render_base 1, 1, 1;
-    i = 1;
-    layer_size = 0-(canvas_size_x * canvas_size_y);
-    repeat abs(layer_size) {
-        iz = ((canvas_size_z-1)*(-layer_size));
-        brightness_index = 1;
-        until (iz < 0) {
-            iz += layer_size;
-            brightness_index = (brightness_index*(1 - canvas_4_a[i+iz]));
-        }
-        canvas_1_r[i] = brightness_index;
-        canvas_2_g[i] = brightness_index;
-        canvas_3_b[i] = brightness_index;
-        i++;
-    }
-}
-
+# returns ray_light
 proc raycast_ao x, y, z, dx, dy, dz, r {
     local total_distance = sqrt((($dx*$dx)+(($dy*$dy)+($dz*$dz))));
     local scale_x = abs(total_distance/$dx);
@@ -213,133 +340,4 @@ proc raycast_ao x, y, z, dx, dy, dz, r {
             stop_this_script;
         }
     }
-}
-
-# script t_ (2073,195)
-proc generate_ao_pass  {
-    delete render_cache_ao;
-    layer_size = (canvas_size_x * canvas_size_y);
-    i = 1;
-    iy = 1;
-    _repeat = 64;
-    repeat canvas_size_y {
-        ix = 1;
-        repeat canvas_size_x {
-            cumulative_light = 1;
-            repeat _repeat {
-                local bearing = random(1, "360.0"); # needs to be a float
-                raycast_ao ix, iy, render_cache_topmost[i], sin(bearing), cos(bearing), tan(random("18.43", "90.0")), (3 * canvas_size_z);
-                cumulative_light += (ray_light/_repeat);
-            }
-            add cumulative_light to render_cache_ao;
-            ix++;
-            i++;
-        }
-        iy++;
-    }
-}
-
-# script t| (3006,179)
-proc composite_ao_pass  {
-    make_brightness_LUT 1, 1;
-    _repeat = (canvas_size_x * canvas_size_y);
-    i = 1;
-    repeat _repeat {
-        local ao_fac = (1 * render_cache_ao[i]);
-        canvas_1_r[i] = ao_fac;
-        canvas_2_g[i] = ao_fac;
-        canvas_3_b[i] = ao_fac;
-        i++;
-    }
-}
-
-# script ui (2063,1421)
-proc generate_topmost_voxel_pass  {
-    delete render_cache_topmost;
-    i = 1;
-    layer_size = (1-(canvas_size_x * canvas_size_y));
-    repeat abs(layer_size) {
-        i_offset = ((canvas_size_z-1)*(1-layer_size));
-        iz = canvas_size_z;
-        until ((iz < 1) or (canvas_4_a[i+i_offset] > 1)) {
-            i_offset += layer_size;
-            iz += -1;
-        }
-        add iz to render_cache_topmost;
-        i++;
-    }
-}
-
-
-# simply the colour map looking down, no translucency handling
-proc composite_topmost_colour  {
-    set_render_base 0.5, 0.5, 0.5;
-    layer_size = (canvas_size_x * canvas_size_y);
-    i = 1;
-    repeat layer_size {
-        local index = (i+((render_cache_topmost[i]-1) * layer_size));
-        render_cache_1_r[i] = canvas_1_r[index];
-        render_cache_2_g[i] = canvas_2_g[index];
-        render_cache_3_b[i] = canvas_3_b[index];
-        i++;
-    }
-}
-
-
-# script z~ (162,425)
-# if false {
-#     iz = 1;
-#     repeat canvas_size_z {
-#         iy = 1;
-#         repeat canvas_size_y {
-#             ix = 1;
-#             repeat canvas_size_x {
-#                 ix += 1;
-#             }
-#             iy += 1;
-#         }
-#         iz += 1;
-#     }
-# }
-
-
-on "composite" { composite; }
-proc composite  {
-    regenerate_cache_for_current_canvas_size;
-
-    if (compositor_mode == CompositorMode.COLOR) {
-        generate_topmost_voxel_pass;
-        composite_topmost_colour;
-
-    } elif (compositor_mode == CompositorMode.SHADED) {
-        generate_topmost_voxel_pass;
-        generate_ao_pass;
-        composite_shaded_color;
-
-    } elif (compositor_mode == CompositorMode.HEIGHT) {
-        generate_topmost_voxel_pass;
-        composite_heightmap;
-
-    } elif (compositor_mode == CompositorMode.AO) {
-        generate_topmost_voxel_pass;
-        generate_ao_pass;
-        composite_ao_pass;
-
-    } elif (compositor_mode == CompositorMode.PENETRATION) {
-        composite_penetration;
-
-    } elif (compositor_mode == CompositorMode.THICKNESS) {
-        composite_thickness;
-
-    } else {}
-
-    # make combined values
-    i = 1;
-    repeat (canvas_size_x * canvas_size_y) {
-        # handles gamma
-        render_cache_final_col[i] = ((65536*floor((255*antiln((2.2*ln(render_cache_1_r[i]))))))+((256*floor((255*antiln((2.2*ln(render_cache_2_g[i]))))))+floor((255*antiln((2.2*ln(render_cache_3_b[i])))))));
-        i++;
-    }
-    
-    refresh_screen_required = 1;
 }

@@ -34,6 +34,8 @@ proc clear_canvas  {
         add 1 to canvas_3_b;
         add 0 to canvas_4_a;
     }
+
+    refresh_screen_required = 1;
 }
 
 
@@ -58,12 +60,13 @@ on "generate pipes" {
     canvas_size_z = 8;
     clear_canvas;
     repeat 100 {
-        col_r = random(0,1.0);
-        col_g = random(0,1.0);
-        col_b = random(0,1.0);
-        col_a = random(0.5,1.0);
+        col_r = random(0, "1.0");
+        col_g = random(0, "1.0");
+        col_b = random(0, "1.0");
+        col_a = random(0.5, "1.0");
         random_walk_taxicab 20, 5;
     }
+    broadcast "composite";
 }
 
 

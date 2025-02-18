@@ -1,18 +1,15 @@
 costumes "costumes/cmd/icon.svg" as "icon", "costumes/cmd/dev.svg" as "dev";
 
-list args;
 list command;
 
 on "initalise" {
     hide;
     switch_costume "icon";
     delete command;
-    delete args;
 }
 
 on "hard reset" {
     delete command;
-    delete args;
     cmd_string = "";
 }
 
@@ -112,24 +109,24 @@ proc evaluate_command {
 
     } elif (command_name == "export") {
 
-        if (args[1] == "canvas") {
+        if (command[1] == "canvas") {
             broadcast "export canvas";
-        } elif (args[1] == "render") {
+        } elif (command[1] == "render") {
             broadcast "export render";
         } else {}
         
     } elif (command_name == "size") {
         
-        if (args[1] == "x") {
-            canvas_size_x = args[2];
-        } elif (args[1] == "y") {
-            canvas_size_y = args[2];
-        } elif (args[1] == "z") {
-            canvas_size_z = args[2];
+        if (command[1] == "x") {
+            canvas_size_x = command[2];
+        } elif (command[1] == "y") {
+            canvas_size_y = command[2];
+        } elif (command[1] == "z") {
+            canvas_size_z = command[2];
         } else {
-            canvas_size_x = args[1];
-            canvas_size_y = args[2];
-            canvas_size_z = args[3];
+            canvas_size_x = command[1];
+            canvas_size_y = command[2];
+            canvas_size_z = command[3];
         }
         broadcast "composite";
 

@@ -3,11 +3,10 @@
 costumes "costumes/stage/darkchecker.png" as "darkchecker";
 
 
-# The "canvas" is the 3D voxel environment that can be drawn to with color and opacity. 
+# The "canvas" is the 3D voxel environment that can be drawn to with color and opacity. Stored linear using Rec 709 primaries.
 list voxel canvas; # TODO use this <<<<<<<<<<
 
-# The "canvas" is the environment that can be drawn to with color and opacity. Stored linear 0-1.
-list canvas_1_r;
+list canvas_1_r; # remove these
 list canvas_2_g;
 list canvas_3_b;
 list canvas_4_a;

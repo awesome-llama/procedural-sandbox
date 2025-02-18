@@ -344,19 +344,24 @@ proc write_TextImage {
     
     # A8:
     delete image_buffer;
+    local alpha_sum = 0; # CUSTOM IMPLEMENTATION FOR THIS PROJECT -- only store alpha if needed
     i = 1;
     repeat (TI_image_size_x * TI_image_size_y) {
-        add round((255-((255-(TI_4_a[i]*(TI_4_a[i] > 0)))*(TI_4_a[i] < 255)))) to image_buffer;
+        local a = round((255-((255-(TI_4_a[i]*(TI_4_a[i] > 0)))*(TI_4_a[i] < 255))));
+        alpha_sum += a;
+        add a to image_buffer;
         i++;
     }
-    _data_stream_compress_A8_from_buffer TI_image_size_x;
-    add_layer "alpha", "A8", 0, data_stream;
-    
+    if alpha_sum != 255 * (TI_image_size_x * TI_image_size_y) {
+        _data_stream_compress_A8_from_buffer TI_image_size_x;
+        add_layer "alpha", "A8", 0, data_stream;
+    }
+
     # create file
     TextImage_file = ("txtimg,v:0," & ((("x:" & TI_image_size_x) & (",y:" & TI_image_size_y)) & ","));
     
     # you can define custom properties like this:
-    # TextImage_file &= (("_z:" & "example") & ",");
+    TextImage_file &= (("_project:" & "PSB") & ","); # just a simple way to track it came from this project
     
     # layers (sets of 6 items)
     TextImage_file &= ("p:" & (4*((length layers)/6)));
