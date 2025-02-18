@@ -1,32 +1,10 @@
+%include common/common.gs
 
 costumes "costumes/stage/darkchecker.png" as "darkchecker";
 
-# (red, green, blue) color
-struct RGBA {
-    r,
-    g,
-    b,
-    a
-}
-
-struct pos {
-    x,
-    y,
-    z
-}
-
-enum CompositorMode {
-    NONE = "",
-    COLOR = "COLOR", # RGB & Alpha only
-    SHADED = "SHADED", # fully processed colour
-    HEIGHT = "HEIGHT", # heightmap, topmost voxel elevation
-    AO = "AO", # ambient occlusion
-    PENETRATION = "PENETRATION", # colour by how much light penetrates through, for visualising transparency
-    THICKNESS = "THICKNESS" # number of voxels in the column
-}
 
 # The "canvas" is the 3D voxel environment that can be drawn to with color and opacity. 
-list col_RGBA canvas; # TODO use this 
+list voxel canvas; # TODO use this <<<<<<<<<<
 
 # The "canvas" is the environment that can be drawn to with color and opacity. Stored linear 0-1.
 list canvas_1_r;

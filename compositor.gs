@@ -163,25 +163,25 @@ proc raycast_ao x, y, z, dx, dy, dz, r {
     local raycast_iy = floor($y);
     local raycast_iz = floor($z);
     if ($dx < 0) {
-        step_x = -1;
-        len_x = (($x%1)*scale_x);
+        local step_x = -1;
+        local len_x = (($x%1)*scale_x);
     } else {
-        step_x = 1;
-        len_x = ((1-($x%1))*scale_x);
+        local step_x = 1;
+        local len_x = ((1-($x%1))*scale_x);
     }
     if ($dy < 0) {
-        step_y = -1;
-        len_y = (($y%1)*scale_y);
+        local step_y = -1;
+        local len_y = (($y%1)*scale_y);
     } else {
-        step_y = 1;
-        len_y = ((1-($y%1))*scale_y);
+        local step_y = 1;
+        local len_y = ((1-($y%1))*scale_y);
     }
     if ($dz < 0) {
-        step_z = -1;
-        len_z = (($z%1)*scale_z);
+        local step_z = -1;
+        local len_z = (($z%1)*scale_z);
     } else {
-        step_z = 1;
-        len_z = ((1-($z%1))*scale_z);
+        local step_z = 1;
+        local len_z = ((1-($z%1))*scale_z);
     }
     local total_distance = 1;
     ray_light = 1; # returned, not local to this script

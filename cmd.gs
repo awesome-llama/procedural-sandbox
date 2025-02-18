@@ -23,7 +23,7 @@ onkey "/" {
 # PSB specific
 
 onkey "i" {
-    if 1==1 {stop_other_scripts;} # temp fix for missing mutation
+    stop_other_scripts;
     ask "paste 2D heightmap";
     if (answer() != "") {
         TextImage_file = answer();
@@ -33,7 +33,7 @@ onkey "i" {
 }
 
 onkey "j" {
-    if 1==1 {stop_other_scripts;} # temp fix for missing mutation
+    stop_other_scripts;
     ask "paste 2D colmap";
     if (answer() != "") {
         TextImage_file = answer();
