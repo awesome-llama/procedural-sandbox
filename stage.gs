@@ -4,12 +4,7 @@ costumes "costumes/stage/darkchecker.png" as "darkchecker";
 
 
 # The "canvas" is the 3D voxel environment that can be drawn to with color and opacity. Stored linear using Rec 709 primaries.
-list voxel canvas; # TODO use this <<<<<<<<<<
-
-list canvas_1_r; # remove these
-list canvas_2_g;
-list canvas_3_b;
-list canvas_4_a;
+list voxel canvas;
 
 # The render cache is a 2D projection of the canvas for displaying on screen.
 list render_cache_ao; # ambient occlusion
@@ -44,15 +39,13 @@ on "initalise" {
     refresh_screen_required = 1;
 
     compositor_mode = CompositorMode.SHADED;
+
+    voxel voxel_brush = voxel { opacity:1, r:1, g:1, b:1, emission:0 };
 }
 
 
 on "hard reset" {
     delete canvas;
-    delete canvas_1_r;
-    delete canvas_2_g;
-    delete canvas_3_b;
-    delete canvas_4_a;
 
     canvas_size_x = 0;
     canvas_size_y = 0;

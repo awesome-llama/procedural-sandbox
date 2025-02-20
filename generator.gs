@@ -1,4 +1,5 @@
 %include common/common.gs
+
 costumes "costumes/blank.svg" as "blank";
 
 # test palette of colours
@@ -10,28 +11,19 @@ on "initalise" {
     hide;
 }
 
+on "hard reset" {
+    
+}
+
+
 on "clear canvas" {
     clear_canvas;
     broadcast "composite";
 }
 proc clear_canvas  {
-    #delete canvas_col;
-    #delete canvas_alpha;
-    #repeat (canvas_size_x * canvas_size_y * canvas_size_z) {
-    #    add col_RGB {r:1, g:1, b:1} to canvas_col;
-    #    add 0 to canvas_alpha;
-    #}
-
-    # original:
-    delete canvas_1_r;
-    delete canvas_2_g;
-    delete canvas_3_b;
-    delete canvas_4_a;
+    delete canvas;
     repeat (canvas_size_x * canvas_size_y * canvas_size_z) {
-        add 1 to canvas_1_r;
-        add 1 to canvas_2_g;
-        add 1 to canvas_3_b;
-        add 0 to canvas_4_a;
+        add VOXEL_NONE() to canvas;
     }
 
     refresh_screen_required = 1;
@@ -80,10 +72,10 @@ proc set_voxel x, y, z, depth, r, g, b, a {
     }
     local set_px_i = (1+(((canvas_size_x*canvas_size_y) * set_px_z)+((canvas_size_x*(floor($y) % canvas_size_y))+(floor($x) % canvas_size_x))));
     repeat 1 {
-        canvas_1_r[set_px_i] = ($r+($r == ""));
-        canvas_2_g[set_px_i] = ($g+($g == ""));
-        canvas_3_b[set_px_i] = ($b+($b == ""));
-        canvas_4_a[set_px_i] = ($a+($a == ""));
+        canvas[set_px_i].r = ($r+($r == ""));
+        canvas[set_px_i].g = ($g+($g == ""));
+        canvas[set_px_i].b = ($b+($b == ""));
+        canvas[set_px_i].opacity = ($a+($a == ""));
         set_px_i += (0-(canvas_size_x*canvas_size_y));
         if (set_px_i < 1) {
             stop_this_script;
@@ -94,29 +86,29 @@ proc set_voxel x, y, z, depth, r, g, b, a {
 
 # some of these may be better moved to a separate file, import them in (if the lists allow this)
 
-proc random_walk_taxicab turns, _length {
-    random_pos___depth___s__s 0, canvas_size_z;
+proc random_walk_taxicab turns, steps {
+    random_pos_xyz 0, canvas_size_z;
     repeat $turns {
         if (random(0, 1) == 0) {
             if (random(0, 1) == 0) {
-                repeat random(1, $_length) {
+                repeat random(1, $steps) {
                     _temp_x += 1;
                     set_voxel _temp_x, _temp_y, _temp_z, 1, col_r, col_g, col_b, col_a;
                 }
             } else {
-                repeat random(1, $_length) {
+                repeat random(1, $steps) {
                     _temp_x += -1;
                     set_voxel _temp_x, _temp_y, _temp_z, 1, col_r, col_g, col_b, col_a;
                 }
             }
         } else {
             if (random(0, 1) == 0) {
-                repeat random(1, $_length) {
+                repeat random(1, $steps) {
                     _temp_y += 1;
                     set_voxel _temp_x, _temp_y, _temp_z, 1, col_r, col_g, col_b, col_a;
                 }
             } else {
-                repeat random(1, $_length) {
+                repeat random(1, $steps) {
                     _temp_y += -1;
                     set_voxel _temp_x, _temp_y, _temp_z, 1, col_r, col_g, col_b, col_a;
                 }
@@ -125,7 +117,8 @@ proc random_walk_taxicab turns, _length {
     }
 }
 
-proc random_pos___depth___s__s min, max {
+
+proc random_pos_xyz min, max {
     _temp_x = random(0, (canvas_size_x-1));
     _temp_y = random(0, (canvas_size_y-1));
     _temp_z = random($min, ($max-1));

@@ -1,4 +1,5 @@
 %include common/common.gs
+
 costumes "costumes/blank.svg" as "blank";
 
 
@@ -12,16 +13,10 @@ on "generate debug pattern" {
     canvas_size_y = 64;
     canvas_size_z = 8;
 
-    delete canvas_1_r;
-    delete canvas_2_g;
-    delete canvas_3_b;
-    delete canvas_4_a;
+    delete canvas;
 
     repeat (canvas_size_x * canvas_size_y * canvas_size_z) {
-        add 0.311 to canvas_1_r;
-        add 0.611 to canvas_2_g;
-        add 0.711 to canvas_3_b;
-        add 0 to canvas_4_a;
+        add voxel {opacity:0, r:0.311, g:0.611, b:0.711, emission:0} to canvas;
     }
 
     i = 0;
@@ -40,8 +35,8 @@ on "generate debug pattern" {
 proc set_voxel x, y, z, r, g, b, a {
     local set_px_i = (1+(((canvas_size_x*canvas_size_y) * $z)+((canvas_size_x*(floor($y) % canvas_size_y))+(floor($x) % canvas_size_x))));
 
-    canvas_1_r[set_px_i] = ($r+($r == ""));
-    canvas_2_g[set_px_i] = ($g+($g == ""));
-    canvas_3_b[set_px_i] = ($b+($b == ""));
-    canvas_4_a[set_px_i] = ($a+($a == ""));
+    canvas[set_px_i].r = ($r+($r == ""));
+    canvas[set_px_i].g = ($g+($g == ""));
+    canvas[set_px_i].b = ($b+($b == ""));
+    canvas[set_px_i].opacity = ($a+($a == ""));
 }

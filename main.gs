@@ -1,4 +1,4 @@
-#%include common/common.gs
+%include common/common.gs
 
 costumes "costumes/main/main.svg" as "main";
 

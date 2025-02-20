@@ -1,11 +1,9 @@
+%include common/common.gs
 
 costumes "costumes/transform canvas/icon.svg" as "icon";
 
 # lists used to store the canvas temporarily
-list temp_1_r;
-list temp_2_g;
-list temp_3_b;
-list temp_4_a;
+list voxel temp;
 
 
 on "initalise" {
@@ -19,20 +17,15 @@ on "zzz" {
 }
 
 on "hard reset" {
-    delete temp_1_r;
-    delete temp_2_g;
-    delete temp_3_b;
-    delete temp_4_a;
+    delete temp;
 }
 
 
 proc scale_along_xy_nearest_neighbour scale_fac {
     local _scale = ($scale_fac+(2*(($scale_fac+"0") == 0))); # default value is x2
     local _step = 1/_scale;
-    delete temp_1_r;
-    delete temp_2_g;
-    delete temp_3_b;
-    delete temp_4_a;
+    delete temp;
+
     iz = 0;
     repeat canvas_size_z {
         iy = 0;
@@ -40,10 +33,7 @@ proc scale_along_xy_nearest_neighbour scale_fac {
             ix = 0;
             repeat (canvas_size_x * _scale) {
                 i = (1+(((canvas_size_x*canvas_size_y)*iz)+((canvas_size_x*(floor(iy)%canvas_size_y))+(floor(ix)%canvas_size_x))));
-                add canvas_1_r[i] to temp_1_r;
-                add canvas_2_g[i] to temp_2_g;
-                add canvas_3_b[i] to temp_3_b;
-                add canvas_4_a[i] to temp_4_a;
+                add canvas[i] to temp;
                 ix += _step;
             }
             iy += _step;
@@ -57,10 +47,7 @@ proc scale_along_xy_nearest_neighbour scale_fac {
 }
 
 proc translate dx, dy {
-    delete temp_1_r;
-    delete temp_2_g;
-    delete temp_3_b;
-    delete temp_4_a;
+    delete temp;
 
     local dx = floor($dx);
     local dy = floor($dy);
@@ -72,10 +59,7 @@ proc translate dx, dy {
             ix = (0-dx);
             repeat canvas_size_x {
                 i = (1+(((canvas_size_x*canvas_size_y)*iz)+((canvas_size_x*(floor(iy)%canvas_size_y))+(floor(ix)%canvas_size_x))));
-                add canvas_1_r[i] to temp_1_r;
-                add canvas_2_g[i] to temp_2_g;
-                add canvas_3_b[i] to temp_3_b;
-                add canvas_4_a[i] to temp_4_a;
+                add canvas[i] to temp;
                 ix++;
             }
             iy++;
@@ -89,21 +73,12 @@ proc translate dx, dy {
 
 # final cleanup after the operation was run
 proc _write_temp_lists_to_canvas  {
-    delete canvas_1_r;
-    delete canvas_2_g;
-    delete canvas_3_b;
-    delete canvas_4_a;
+    delete canvas;
     i = 1;
-    repeat (length temp_4_a) {
-        add temp_1_r[i] to canvas_1_r;
-        add temp_2_g[i] to canvas_2_g;
-        add temp_3_b[i] to canvas_3_b;
-        add temp_4_a[i] to canvas_4_a;
+    repeat (length temp) {
+        add temp[i] to canvas;
         i++;
     }
-    delete temp_1_r;
-    delete temp_2_g;
-    delete temp_3_b;
-    delete temp_4_a;
+    delete temp;
 }
 

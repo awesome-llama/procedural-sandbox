@@ -1,4 +1,3 @@
-
 %include common/common.gs
 
 costumes "costumes/compositor/compositor.svg" as "compositor";
@@ -78,7 +77,7 @@ proc composite  {
 
     } elif (compositor_mode == CompositorMode.SHADED) {
         generate_pass_topmost;
-        generate_pass_ao; # TODO raycast instead of using 2D AO, or make a separate mode for it (because translucency)
+        generate_pass_ao;
         composite_shaded_color;
 
     } elif (compositor_mode == CompositorMode.HEIGHT) {
@@ -94,6 +93,7 @@ proc composite  {
         composite_density;
 
     } elif (compositor_mode == CompositorMode.PENETRATION) {
+        generate_pass_topmost;
         composite_penetration;
 
     } else {}
@@ -123,7 +123,7 @@ proc generate_pass_topmost  {
     i = 1;
     repeat layer_size {
         iz = canvas_size_z;
-        until ((iz < 0) or (canvas_4_a[i + (iz * layer_size)] > 0)) {
+        until ((iz < 0) or (canvas[i + (iz * layer_size)].opacity > 0)) {
             iz += -1;
         }
         render_cache_topmost[i] = iz;
@@ -173,9 +173,9 @@ proc composite_topmost_colour  {
             render_cache_2_g[i] = 0.5;
             render_cache_3_b[i] = 0.5;
         } else {
-            render_cache_1_r[i] = canvas_1_r[i + index*layer_size];
-            render_cache_2_g[i] = canvas_2_g[i + index*layer_size];
-            render_cache_3_b[i] = canvas_3_b[i + index*layer_size];
+            render_cache_1_r[i] = canvas[i + index*layer_size].r;
+            render_cache_2_g[i] = canvas[i + index*layer_size].g;
+            render_cache_3_b[i] = canvas[i + index*layer_size].b;
         }
         i++;
     }
@@ -190,19 +190,23 @@ proc composite_shaded_color  {
     repeat layer_size {
         iz = 0;
         local brightness_index = 1; # brightness is slightly altered by depth
+        local r = 0.5; # the background colour
+        local g = 0.5;
+        local b = 0.5;
+
         repeat canvas_size_z {
-            if (canvas_4_a[i+iz] > 0) {
-                render_cache_1_r[i] = (canvas_1_r[i]+(canvas_4_a[i+iz]*((brightness[brightness_index]*canvas_1_r[i+iz])-canvas_1_r[i])));
-                render_cache_2_g[i] = (canvas_2_g[i]+(canvas_4_a[i+iz]*((brightness[brightness_index]*canvas_2_g[i+iz])-canvas_2_g[i])));
-                render_cache_3_b[i] = (canvas_3_b[i]+(canvas_4_a[i+iz]*((brightness[brightness_index]*canvas_3_b[i+iz])-canvas_3_b[i])));
+            if (canvas[i+iz].opacity > 0) {
+                r += (canvas[i+iz].opacity * ((brightness[brightness_index]*canvas[i+iz].r)-r));
+                g += (canvas[i+iz].opacity * ((brightness[brightness_index]*canvas[i+iz].g)-g));
+                b += (canvas[i+iz].opacity * ((brightness[brightness_index]*canvas[i+iz].b)-b));
             }
             iz += layer_size;
             brightness_index += 1;
         }
         local ao_fac = (0.7 + (0.3 * render_cache_ao[i]));
-        render_cache_1_r[i] = (render_cache_1_r[i] * ao_fac);
-        render_cache_2_g[i] = (render_cache_2_g[i] * ao_fac);
-        render_cache_3_b[i] = (render_cache_3_b[i] * ao_fac);
+        render_cache_1_r[i] = (r * ao_fac);
+        render_cache_2_g[i] = (g * ao_fac);
+        render_cache_3_b[i] = (b * ao_fac);
         i++;
     }
 }
@@ -235,13 +239,13 @@ proc composite_ao  {
 
 # sum of opacity, normalised to greyscale 0-1
 proc composite_density {
-    i = 1;
     layer_size = (canvas_size_x * canvas_size_y);
+    i = 1;
     repeat layer_size {
         local density = 0;
         local zoffset = 0;
         repeat canvas_size_z {
-            density += canvas_4_a[i + zoffset];
+            density += canvas[i + zoffset].opacity;
             zoffset += layer_size;
         }
         render_cache_1_r[i] = density / canvas_size_z;
@@ -253,18 +257,13 @@ proc composite_density {
 
 # raycast down, for visualising transparency, normalised to greyscale 0-1
 proc composite_penetration  {
+    layer_size = (canvas_size_x * canvas_size_y);
     i = 1;
-    layer_size = 0-(canvas_size_x * canvas_size_y);
-    repeat abs(layer_size) {
-        iz = ((canvas_size_z-1)*(-layer_size));
-        local brightness_index = 1;
-        until (iz < 0) {
-            iz += layer_size;
-            brightness_index = (brightness_index*(1 - canvas_4_a[i+iz]));
-        }
-        render_cache_1_r[i] = brightness_index;
-        render_cache_2_g[i] = brightness_index;
-        render_cache_3_b[i] = brightness_index;
+    repeat layer_size {
+        local penetration_val = canvas[i+(layer_size*render_cache_topmost[i])].opacity;
+        render_cache_1_r[i] = penetration_val;
+        render_cache_2_g[i] = penetration_val;
+        render_cache_3_b[i] = penetration_val;
         i++;
     }
 }
@@ -335,7 +334,7 @@ proc raycast_ao x, y, z, dx, dy, dz, r {
                 raycast_iz += step_z;
             }
         }
-        local alpha = canvas_4_a[1 + ((raycast_iz*layer_size)+(((raycast_iy%canvas_size_y)*canvas_size_x)+(raycast_ix%canvas_size_x)))];
+        local alpha = canvas[1 + ((raycast_iz*layer_size)+(((raycast_iy%canvas_size_y)*canvas_size_x)+(raycast_ix%canvas_size_x)))].opacity;
         if (alpha == "") {
             stop_this_script;
         }

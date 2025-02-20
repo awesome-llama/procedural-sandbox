@@ -1,4 +1,4 @@
-# Converted from sb3 file
+%include common/common.gs
 
 costumes "costumes/renderer/full.svg" as "full", "costumes/blank.svg" as "blank";
 

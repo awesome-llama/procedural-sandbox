@@ -1,4 +1,7 @@
+%include common/common.gs
+
 # For more info see: https://scratch.mit.edu/projects/934459716/
+
 
 costumes 
 "costumes/PTE/icon.svg" as "icon", 

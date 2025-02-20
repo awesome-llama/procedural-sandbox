@@ -1,3 +1,5 @@
+%include common/common.gs
+
 costumes "costumes/cmd/icon.svg" as "icon", "costumes/cmd/dev.svg" as "dev";
 
 list command;
