@@ -1,4 +1,5 @@
-# Common library for all sprites in this project
+# Common library of miscellaneous items for all sprites in this project.
+# Not a valid sprite by iself.
 
 #costumes "costumes/blank.svg";
 

@@ -16,6 +16,7 @@ on "start main loop" {
     zoom_extents;
     refresh_screen_required = 1;
     forever {
+        # if composite
         wait_until (refresh_screen_required > 0);
         erase_all;
         broadcast "render canvas";
@@ -38,6 +39,11 @@ onkey "any" {
     }
 }
 
+
+onkey "p" {
+    broadcast "generate refinery"; # debug
+    broadcast "zoom extents";
+}
 
 # click and drag to pan
 on "stage clicked" {

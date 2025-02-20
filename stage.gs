@@ -38,7 +38,7 @@ on "initalise" {
     render_resolution = 1;
     refresh_screen_required = 1;
 
-    compositor_mode = CompositorMode.SHADED;
+    compositor_mode = CompositorMode.COLOR;
 
     voxel voxel_brush = voxel { opacity:1, r:1, g:1, b:1, emission:0 };
 }

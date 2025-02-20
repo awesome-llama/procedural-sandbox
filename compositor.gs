@@ -136,14 +136,14 @@ proc generate_pass_topmost  {
 proc generate_pass_ao  {
     layer_size = (canvas_size_x * canvas_size_y);
     i = 1;
-    iy = 1;
+    iy = 0.5; # center of voxel
     local samples = 64;
     repeat canvas_size_y {
-        ix = 1;
+        ix = 0.5; # center of voxel
         repeat canvas_size_x {
             local cumulative_light = 0;
             repeat samples {
-                local bearing = random(1, "360.0"); # needs to be a float. This is not deterministic
+                local bearing = random("0", "360.0"); # needs to be a float. This is not deterministic
                 raycast_ao ix, iy, render_cache_topmost[i]+1, sin(bearing), cos(bearing), tan(random("18.43", "90.0")), (3 * canvas_size_z);
                 cumulative_light += ray_light;
             }
