@@ -78,7 +78,7 @@ proc _decompress_RGB8 data_stream, width {
             _add_RGB (image_buffer[(length image_buffer)-2]+(return_v+return_Y_)), (image_buffer[(length image_buffer)-1]+return_Y_), (image_buffer["last"]+(return_u+return_Y_));
 
         } else {
-            # error "unknown chunk
+            error "unknown chunk";
             stop_this_script;
         }
         i += ((_repeat == 0)+op_size);
@@ -204,7 +204,7 @@ proc read_TextImage TextImage_file {
                     i++;
                     j = (1+("!p" in TI_header));
                     repeat (TI_header[j]/4) {
-                        # sets of 6 items... !purpose, purpose, type, version, length, index_start;
+                        # sets of 6 items... !purpose, purpose, type, version, length, index_start
                         add ("!" & TI_header[j+1]) to layers;
                         add TI_header[j+1] to layers;
                         add TI_header[j+2] to layers;
@@ -221,10 +221,10 @@ proc read_TextImage TextImage_file {
                     delete layers;
                     data_stream = "";
                 } else {
-                    # error "unknown version";
+                    error "unknown version";
                 }
             } else {
-                # error "invalid magic number";
+                error "invalid magic number";
             }
             stop_this_script;
         } else {
@@ -232,7 +232,7 @@ proc read_TextImage TextImage_file {
         }
         i++;
     }
-    # error "datastream not found";
+    error "datastream not found";
 }
 
 
@@ -243,14 +243,14 @@ proc read_TextImage TextImage_file {
 proc read_layer_from_TextImage TextImage_file, purpose, buffer_target_list {
     i = (("!" & $purpose) in layers);
     if (i > 0) {
-        # get data stream from TextImage";
+        # get data stream from TextImage
         data_stream = "";
         j = layers[i+5];
         repeat layers[i+4] {
             data_stream = (data_stream & $TextImage_file[j]);
             j++;
         }
-        # process data stream";
+        # process data stream
         if ((layers[i+2] == "RGB8") and (layers[i+3] == 0)) {
             _decompress_RGB8 data_stream, TI_image_size_x;
             if ($buffer_target_list == "RGB") {
@@ -258,7 +258,7 @@ proc read_layer_from_TextImage TextImage_file, purpose, buffer_target_list {
             } elif ($buffer_target_list == "A") {
                 _a_unpack_from_image_buffer 3, 2;
             } else {
-                # error "buffer target list does not exist";
+                error "buffer target list does not exist";
             }
             delete image_buffer;
             stop_this_script;
@@ -270,7 +270,7 @@ proc read_layer_from_TextImage TextImage_file, purpose, buffer_target_list {
                 } elif ($buffer_target_list == "A") {
                     _a_unpack_from_image_buffer 1, 1;
                 } else {
-                    # error "buffer target list does not exist";
+                    error "buffer target list does not exist";
                 }
                 delete image_buffer;
                 stop_this_script;
@@ -279,7 +279,7 @@ proc read_layer_from_TextImage TextImage_file, purpose, buffer_target_list {
             }
         }
     }
-    # defaults";
+    # defaults
     if ($buffer_target_list == "RGB") {
         _rgb_unpack_from_image_buffer 1, 1, 1, 1;
     } else {
@@ -291,7 +291,7 @@ proc read_layer_from_TextImage TextImage_file, purpose, buffer_target_list {
 
 # script n( (673,4005)
 proc _rgb_unpack_from_image_buffer step, ri, gi, bi {
-    # REQUIRES (image size x) (image size y) [1 r] [2 g] [3 b]";
+    # REQUIRES (image size x) (image size y) [1 r] [2 g] [3 b]
     delete TI_1_r;
     delete TI_2_g;
     delete TI_3_b;
@@ -344,24 +344,19 @@ proc write_TextImage {
     
     # A8:
     delete image_buffer;
-    local alpha_sum = 0; # CUSTOM IMPLEMENTATION FOR THIS PROJECT -- only store alpha if needed
     i = 1;
     repeat (TI_image_size_x * TI_image_size_y) {
-        local a = round((255-((255-(TI_4_a[i]*(TI_4_a[i] > 0)))*(TI_4_a[i] < 255))));
-        alpha_sum += a;
-        add a to image_buffer;
+        add round((255-((255-(TI_4_a[i]*(TI_4_a[i] > 0)))*(TI_4_a[i] < 255)))) to image_buffer;
         i++;
     }
-    if alpha_sum != 255 * (TI_image_size_x * TI_image_size_y) {
-        _data_stream_compress_A8_from_buffer TI_image_size_x;
-        add_layer "alpha", "A8", 0, data_stream;
-    }
-
+    _data_stream_compress_A8_from_buffer TI_image_size_x;
+    add_layer "alpha", "A8", 0, data_stream;
+    
     # create file
     TextImage_file = ("txtimg,v:0," & ((("x:" & TI_image_size_x) & (",y:" & TI_image_size_y)) & ","));
     
     # you can define custom properties like this:
-    TextImage_file &= (("_project:" & "PSB") & ","); # just a simple way to track it came from this project
+    # TextImage_file &= (("_z:" & "example") & ",");
     
     # layers (sets of 6 items)
     TextImage_file &= ("p:" & (4*((length layers)/6)));
