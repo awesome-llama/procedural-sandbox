@@ -36,10 +36,10 @@ on "generate pipes" {
     canvas_size_z = 8;
     clear_canvas;
     repeat 100 {
-        voxel_brush.r = random(0, "1.0");
-        voxel_brush.g = random(0, "1.0");
-        voxel_brush.b = random(0, "1.0");
-        voxel_brush.opacity = random(0.5, "1.0");
+        depositor_voxel.r = random(0, "1.0");
+        depositor_voxel.g = random(0, "1.0");
+        depositor_voxel.b = random(0, "1.0");
+        depositor_voxel.opacity = random(0.5, "1.0");
 
         random_walk_taxicab random(0, (canvas_size_x-1)), random(0, (canvas_size_y-1)), random(0, (canvas_size_z-1)), 20, 5;
     }
@@ -58,7 +58,7 @@ on "generate refinery" {
     # spherical tanks
     repeat 5 {
         brightness = random(0.9, 1);
-        voxel_brush = VOXEL_SOLID(brightness, brightness, brightness);
+        depositor_voxel = VOXEL_SOLID(brightness, brightness, brightness);
         
         tank_x = random(0,(canvas_size_x-1));
         tank_y = random(0,(canvas_size_y-1));
@@ -66,7 +66,7 @@ on "generate refinery" {
         draw_sphere tank_x, tank_y, tank_rad/2, tank_rad;
 
         brightness = random(0.5, 1);
-        voxel_brush = VOXEL_SOLID(brightness, brightness, brightness);
+        depositor_voxel = VOXEL_SOLID(brightness, brightness, brightness);
 
         random_walk_taxicab tank_x+tank_rad, tank_y, random(1, tank_rad/2), 12, 16;
         random_walk_taxicab tank_x-tank_rad, tank_y, random(1, tank_rad/2), 12, 16;
@@ -132,13 +132,24 @@ proc random_pos_xyz min, max {
 }
 
 
+
+# set a canvas voxel at a given position using the current depositor.
 proc set_voxel x, y, z {
     local set_px_z = floor($z);
     
     if ($z >= 0 and $z < canvas_size_z) { # only set the voxel if z is in range
-        local set_px_i = 1 + (((canvas_size_x*canvas_size_y) * set_px_z) + ((canvas_size_x*(floor($y) % canvas_size_y))+(floor($x) % canvas_size_x)));
+        local set_canvas_index = INDEX_FROM_3D_CANVAS($x, $y, $z, canvas_size_x, canvas_size_y); 
 
-        canvas[set_px_i] = voxel_brush; # set voxel with brush
+        if (depositor_replace == true or canvas[set_canvas_index].opacity == 0) { # only place if replace OR the canvas is air
+            if (depositor_mode == DepositorMode.DRAW) {
+                canvas[set_canvas_index] = depositor_voxel; # set voxel with brush
+            } else {
+                # get the texture index which is ptr + 3D index
+                local tex_idx = depositor_texture_metadata[depositor_texture_index].ptr + INDEX_FROM_3D($x-depositor_texture_origin.x, $y-depositor_texture_origin.y, $z-depositor_texture_origin.z, depositor_texture_metadata[depositor_texture_index].sx, depositor_texture_metadata[depositor_texture_index].sy, depositor_texture_metadata[depositor_texture_index].sz);
+                
+                canvas[set_canvas_index] = depositor_texture_voxels[tex_idx];
+            }
+        }
     }
 }
 
@@ -163,3 +174,7 @@ proc draw_sphere x, y, z, radius {
         px_z++;
     }
 }
+
+
+
+#proc sample_noise x, y, z, scale, octaves {}

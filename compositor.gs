@@ -286,7 +286,7 @@ proc make_brightness_LUT start, end {
 }
 
 
-# returns ray_light
+# 3D DDA, returns ray_light
 proc raycast_ao x, y, z, dx, dy, dz, r {
     local total_distance = sqrt((($dx*$dx)+(($dy*$dy)+($dz*$dz))));
     local scale_x = abs(total_distance/$dx);
@@ -334,7 +334,8 @@ proc raycast_ao x, y, z, dx, dy, dz, r {
                 raycast_iz += step_z;
             }
         }
-        local alpha = canvas[1 + ((raycast_iz*layer_size)+(((raycast_iy%canvas_size_y)*canvas_size_x)+(raycast_ix%canvas_size_x)))].opacity;
+        local alpha = canvas[INDEX_FROM_3D_CANVAS(raycast_ix, raycast_iy, raycast_iz, canvas_size_x, canvas_size_y)].opacity;
+
         if (alpha == "") {
             stop_this_script;
         }
