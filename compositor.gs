@@ -15,32 +15,32 @@ on "hard reset" {
 
 onkey "1" {
     compositor_mode = CompositorMode.COLOR;
-    broadcast "composite";
+    require_composite = true;
 }
 
 onkey "2" {
     compositor_mode = CompositorMode.SHADED;
-    broadcast "composite";
+    require_composite = true;
 }
 
 onkey "3" {
     compositor_mode = CompositorMode.HEIGHT;
-    broadcast "composite";
+    require_composite = true;
 }
 
 onkey "4" {
     compositor_mode = CompositorMode.AO;
-    broadcast "composite";
+    require_composite = true;
 }
 
 onkey "5" {
     compositor_mode = CompositorMode.DENSITY;
-    broadcast "composite";
+    require_composite = true;
 }
 
 onkey "6" {
     compositor_mode = CompositorMode.PENETRATION;
-    broadcast "composite";
+    require_composite = true;
 }
 
 
@@ -108,7 +108,7 @@ proc composite  {
         i++;
     }
     
-    refresh_screen_required = 1;
+    require_screen_refresh = true;
 }
 
 

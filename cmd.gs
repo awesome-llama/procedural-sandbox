@@ -28,7 +28,7 @@ onkey "i" {
     if (answer() != "") {
         TextImage_file = answer();
         broadcast_and_wait "import as heightmap";
-        broadcast "composite";
+        require_composite = true;
     }
 }
 
@@ -38,7 +38,7 @@ onkey "j" {
     if (answer() != "") {
         TextImage_file = answer();
         broadcast_and_wait "import as color map";
-        broadcast "composite";
+        require_composite = true;
     }
 }
 
@@ -131,12 +131,12 @@ proc evaluate_command {
             canvas_size_y = command[2];
             canvas_size_z = command[3];
         }
-        broadcast "composite";
+        require_composite = true;
 
     } elif (command_name == "clear") {
         broadcast "clear canvas";
         broadcast "zoom extents";
-        broadcast "composite";
+        require_composite = true;
 
     } else {
         print "Unrecognised command: `" & command_name & "`", 4;

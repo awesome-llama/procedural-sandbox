@@ -17,17 +17,14 @@ on "hard reset" {
 }
 
 
-on "clear canvas" {
-    clear_canvas;
-    broadcast "composite";
-}
+on "clear canvas" { clear_canvas; }
 proc clear_canvas  {
     delete canvas;
     repeat (canvas_size_x * canvas_size_y * canvas_size_z) {
         add VOXEL_NONE() to canvas;
     }
 
-    broadcast "composite"; # TODO make this a variable
+    require_composite = true;
 }
 
 
@@ -44,7 +41,7 @@ on "generate pipes" {
 
         random_walk_taxicab random(0, (canvas_size_x-1)), random(0, (canvas_size_y-1)), random(0, (canvas_size_z-1)), 20, 5;
     }
-    broadcast "composite";
+    require_composite = true;
 }
 
 
@@ -75,7 +72,7 @@ on "generate refinery" {
         random_walk_taxicab tank_x, tank_y-tank_rad, random(1, tank_rad/2), 12, 16;
     }
     
-    broadcast "composite";
+    require_composite = true;
 }
 
 

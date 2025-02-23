@@ -27,7 +27,7 @@ on "generate debug pattern" {
     }
 
 
-    broadcast "composite";
+    require_composite = true;
 }
 
 

@@ -38,7 +38,9 @@ on "initalise" {
     cam_scale = 1;
 
     render_resolution = 1;
-    refresh_screen_required = 1;
+
+    require_composite = true;
+    require_screen_refresh = true;
 
     compositor_mode = CompositorMode.COLOR;
 

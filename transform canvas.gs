@@ -44,7 +44,7 @@ proc scale_along_xy_nearest_neighbour scale_fac {
     _write_temp_lists_to_canvas;
     canvas_size_x = (canvas_size_x*_scale);
     canvas_size_y = (canvas_size_y*_scale);
-    broadcast "composite";
+    require_composite = true;
 }
 
 proc translate dx, dy {
@@ -68,7 +68,7 @@ proc translate dx, dy {
         iz++;
     }
     _write_temp_lists_to_canvas;
-    broadcast "composite";
+    require_composite = true;
 }
 
 

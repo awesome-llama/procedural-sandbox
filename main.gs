@@ -14,14 +14,21 @@ on "hard reset" {
 on "start main loop" {
     render_resolution = 1;
     zoom_extents;
-    refresh_screen_required = 1;
+    
+    require_composite = true;
+    require_screen_refresh = true;
     forever {
-        # if composite
-        wait_until (refresh_screen_required > 0);
-        erase_all;
-        broadcast "render canvas";
-        broadcast "render world text";
-        refresh_screen_required = 0;
+        hide; # does this affect yielding?
+        if (require_composite == true) {
+            broadcast "composite";
+            require_composite = false;
+        }
+        if (require_screen_refresh == true) {
+            erase_all;
+            broadcast "render canvas";
+            broadcast "render world text";
+            require_screen_refresh = false;
+        }
     }
 }
 
@@ -32,10 +39,10 @@ onkey "any" {
         until (not (key_pressed("d") or (key_pressed("a") or (key_pressed("w") or key_pressed("s"))))) {
             cam_x += ((4/cam_scale)*(key_pressed("a")-key_pressed("d")));
             cam_y += ((4/cam_scale)*(key_pressed("s")-key_pressed("w")));
-            refresh_screen_required = 1;
+            require_screen_refresh = true;
         }
         render_resolution = 1;
-        refresh_screen_required = 1;
+        require_screen_refresh = true;
     }
 }
 
@@ -54,7 +61,7 @@ on "stage clicked" {
         cam_y += ((mouse_y()-prev_mouse_y)/cam_scale);
         prev_mouse_x = mouse_x();
         prev_mouse_y = mouse_y();
-        refresh_screen_required = 1;
+        require_screen_refresh = true;
     }
 }
 
@@ -64,7 +71,7 @@ onkey "up arrow" {
         cam_scale = (cam_scale*2);
         limit_scroll;
     }
-    refresh_screen_required = 1;
+    require_screen_refresh = true;
 }
 
 # zoom out
@@ -73,7 +80,7 @@ onkey "down arrow" {
         cam_scale = (cam_scale/2);
         limit_scroll;
     }
-    refresh_screen_required = 1;
+    require_screen_refresh = true;
 }
 
 # limit camera position to within the canvas
@@ -92,8 +99,7 @@ proc limit_scroll  {
 }
 
 onkey "space" {
-    broadcast "composite";
-    refresh_screen_required = 1;
+    require_screen_refresh = true;
 }
 
 on "zoom extents" {zoom_extents;}
@@ -109,7 +115,7 @@ proc zoom_extents {
         cam_scale = ceil((0.5+(ln((360/canvas_size_y))/ln(2))));
     }
 
-    refresh_screen_required = 1;
+    require_screen_refresh = true;
 }
 
 

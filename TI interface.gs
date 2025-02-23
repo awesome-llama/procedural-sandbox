@@ -73,7 +73,7 @@ proc copy_render_buffer_to_TI_buffer {
 on "import to canvas" {
     broadcast_and_wait "read TextImage";
     copy_TI_px_buffer_to_canvas;
-    broadcast "composite";
+    require_composite = true;
 }
 
 proc copy_TI_px_buffer_to_canvas {
@@ -96,7 +96,7 @@ proc copy_TI_px_buffer_to_canvas {
 on "import as heightmap" {
     broadcast_and_wait "read TextImage";
     copy_TI_px_buffer_to_canvas_as_heightmap;
-    broadcast "composite";
+    require_composite = true;
 }
 
 # replace opacity data
@@ -124,7 +124,7 @@ proc copy_TI_px_buffer_to_canvas_as_heightmap {
 on "import as color map" {
     broadcast_and_wait "read TextImage";
     read_TI_px_buffer_to_canvas_as_2D_color_map;
-    broadcast "composite";
+    require_composite = true;
 }
 
 # why isn't there a canvas size setter?
