@@ -26,14 +26,14 @@ struct voxel {
 # solid RGB
 %define VOXEL_SOLID(R,G,B) voxel { opacity:1, r:(R), g:(G), b:(B), emission:0 }
 
-# solid greyscale
+# solid greyscale (note that the input must return the same value for all uses)
 %define VOXEL_SOLID_GREY(VAL) voxel { opacity:1, r:(VAL), g:(VAL), b:(VAL), emission:0 } # greyscale
 
-# greyscale light
+# greyscale light (note that the input must return the same value for all uses)
 %define VOXEL_LIGHT(VAL) voxel { opacity:1, r:(VAL), g:(VAL), b:(VAL), emission:(VAL) } # greyscale
 
-# empty colourless air
-%define VOXEL_NONE() voxel { opacity:0, r:0, g:0, b:0, emission:0 }
+# empty colourless air, no parameters
+%define VOXEL_NONE voxel { opacity:0, r:0, g:0, b:0, emission:0 }
 
 
 # generic 3D point
@@ -67,6 +67,13 @@ struct texture_metadata {
 }
 
 
+# random positions
+
+%define RANDOM_X random(0, canvas_size_x-1)
+
+%define RANDOM_Y random(0, canvas_size_y-1)
+
+%define RANDOM_Z random(0, canvas_size_z-1)
 
 
 ################################
@@ -78,11 +85,18 @@ struct texture_metadata {
 
 %define POW(BASE,EXP) antiln(ln(BASE)*(EXP))
 
+# TODO find a better name
+%define ROOT(BASE,R) antiln(ln(BASE)/(R))
+
 # convert 3D coordinates into index, wrapping along all axes. Remember that lists are 1-indexed.
 %define INDEX_FROM_3D(X,Y,Z,SIZE_X,SIZE_Y,SIZE_Z) (1 + ((((SIZE_X)*(SIZE_Y)) * (floor(Z) % (SIZE_Z))) + (((SIZE_X)*(floor(Y) % (SIZE_Y))) + (floor(X) % (SIZE_X)))))
 
 # Same as INDEX_FROM_3D but for the canvas, which only wraps along X and Y.
 %define INDEX_FROM_3D_CANVAS(X,Y,Z,SIZE_X,SIZE_Y) (1 + ((((SIZE_X)*(SIZE_Y)) * floor(Z)) + (((SIZE_X)*(floor(Y) % (SIZE_Y))) + (floor(X) % (SIZE_X)))))
+
+
+# TODO HSV to linear RGB
+#func HSV_to_RGB
 
 
 ################################

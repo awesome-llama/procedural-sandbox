@@ -106,7 +106,7 @@ proc copy_TI_px_buffer_to_canvas_as_heightmap {
     # custom
     delete canvas;
     repeat (canvas_size_x * canvas_size_y * canvas_size_z) {
-        add VOXEL_NONE() to canvas;
+        add VOXEL_NONE to canvas;
     }
     layer_size = (canvas_size_x * canvas_size_y);
     i = 1;

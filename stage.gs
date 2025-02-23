@@ -47,7 +47,7 @@ on "initalise" {
     # the "depositor" (chose an obscure but relevant name) is a description of what voxel will be placed by the procedural tools. It may be a single voxel or it may be a 3D texture.
     depositor_mode = DepositorMode.DRAW;
     depositor_replace = true; # bool [false=keep existing intact | true=replace (incl. with new air)]
-    voxel depositor_voxel = voxel { opacity:1, r:1, g:1, b:1, emission:0 };
+    voxel depositor_voxel = VOXEL_SOLID_GREY(1);
     depositor_texture_index = 0;
     XYZ depositor_texture_origin = XYZ {x:0, y:0, z:0}; # origin of the texture in canvas space
 }
@@ -87,4 +87,4 @@ onclick {
 }
 
 
-
+# comment block generator https://blocks.jkniest.dev/

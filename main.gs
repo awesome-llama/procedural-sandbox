@@ -67,19 +67,21 @@ on "stage clicked" {
 
 # zoom in
 onkey "up arrow" {
-    if (cam_scale < 32) {
-        cam_scale = (cam_scale*2);
-        limit_scroll;
+    cam_scale = (cam_scale*2);
+    if (cam_scale > 32) {
+        cam_scale = 32;
     }
+    limit_scroll;
     require_screen_refresh = true;
 }
 
 # zoom out
 onkey "down arrow" {
-    if (cam_scale > 0.5) {
-        cam_scale = (cam_scale/2);
-        limit_scroll;
+    cam_scale = (cam_scale/2);
+    if (cam_scale < 0.125) {
+        cam_scale = 0.125;
     }
+    limit_scroll;
     require_screen_refresh = true;
 }
 
@@ -109,7 +111,7 @@ proc zoom_extents {
     
     if canvas_size_x == 0 or canvas_size_y == 0 {
         cam_scale = 1;
-    } elif ((canvas_size_x/canvas_size_y) > (4/3)) {
+    } elif ((canvas_size_x/canvas_size_y) > (4.0/3.0)) {
         cam_scale = ceil((0.5+(ln((480/canvas_size_x))/ln(2))));
     } else {
         cam_scale = ceil((0.5+(ln((360/canvas_size_y))/ln(2))));
