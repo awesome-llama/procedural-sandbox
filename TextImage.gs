@@ -275,7 +275,7 @@ proc read_layer_from_TextImage TextImage_file, purpose, buffer_target_list {
                 delete image_buffer;
                 stop_this_script;
             } else {
-                # warn "unknown data stream type and/or version";
+                warn "unknown data stream type and/or version";
             }
         }
     }
