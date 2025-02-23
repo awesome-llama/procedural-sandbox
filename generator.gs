@@ -1,6 +1,7 @@
 %include common/common.gs;
 
 costumes "costumes/blank.svg" as "blank";
+hide;
 
 # test palette of colours
 #list temp_1 = ["6e7b6e", "ccbe99", "8bc338", "c18644", "3eb13e", "5f5a70", "ed885e", "e17644"];

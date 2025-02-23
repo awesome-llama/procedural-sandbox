@@ -1,6 +1,7 @@
 %include common/common.gs
 
 costumes "costumes/TI interface/icon.svg" as "icon";
+hide;
 
 on "initalise" {
     hide;

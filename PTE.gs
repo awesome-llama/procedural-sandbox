@@ -2,12 +2,12 @@
 
 # For more info see: https://scratch.mit.edu/projects/934459716/
 
-
 costumes 
 "costumes/PTE/icon.svg" as "icon", 
 "costumes/large.svg" as "large",
 "costumes/blank.svg" as "",
 "costumes/blank.svg" as "@ascii/";
+hide;
 
 list PTE_font = file ```5x7 printable ASCII.txt```;
 

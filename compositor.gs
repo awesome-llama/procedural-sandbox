@@ -1,6 +1,7 @@
 %include common/common.gs
 
 costumes "costumes/compositor/compositor.svg" as "compositor";
+hide;
 
 list brightness; # LUT
 

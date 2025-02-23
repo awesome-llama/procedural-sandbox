@@ -1,6 +1,7 @@
 # github.com/awesome-llama/TextImage
 
 costumes "costumes/TextImage/icon.svg" as "icon", "costumes/blank.svg" as "@ascii/";
+hide;
 
 list layers;
 list image_buffer;

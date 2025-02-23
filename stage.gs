@@ -80,7 +80,7 @@ onflag {
 }
 
 onclick {
-    hide copy_this;
+    hide copy_this; # hide the list
     broadcast "stage clicked";
 }
 

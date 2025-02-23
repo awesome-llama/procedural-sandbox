@@ -1,6 +1,7 @@
 %include common/common.gs
 
 costumes "costumes/renderer/full.svg" as "full", "costumes/blank.svg" as "blank";
+hide;
 
 on "initalise" {
     hide;

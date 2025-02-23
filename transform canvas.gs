@@ -1,6 +1,7 @@
 %include common/common.gs
 
 costumes "costumes/transform canvas/icon.svg" as "icon";
+hide;
 
 # lists used to store the canvas temporarily
 list voxel temp;
