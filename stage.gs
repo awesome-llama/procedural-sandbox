@@ -77,12 +77,12 @@ on "hard reset" {
 }
 
 onflag {
-    broadcast "initalise";
+    broadcast "initalise"; # all receivers must complete within the frame, no loops allowed to start. Think of it as a soft reset.
     broadcast "start main loop";
 }
 
 onclick {
-    hide copy_this; # hide the list
+    hide copy_this; # hide the list to copy from
     broadcast "stage clicked";
 }
 

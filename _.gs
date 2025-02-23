@@ -9,7 +9,9 @@ on "initalise" {
 }
 
 on "*" {
-    broadcast_and_wait "hard reset"; # todo make a better reset system, separate by temp data (resets on flag) and long term data
+    log "run this script to reset the project for sharing";
+    broadcast "initalise";
+    broadcast_and_wait "hard reset";
     switch_costume "awesome-llama";
     show;
     stop_all;
