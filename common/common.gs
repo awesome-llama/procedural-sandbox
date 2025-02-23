@@ -56,10 +56,10 @@ enum CompositorMode {
 
 enum DepositorMode {
     DRAW = 0, # draw a voxel stored
-    TEXTURE = 1 # look up from texture list
+    TEMPLATE = 1 # look up from list of saved templates
 }
 
-struct texture_metadata {
+struct template_metadata {
     ptr,
     sx,
     sy,
@@ -79,6 +79,8 @@ struct texture_metadata {
 ################################
 #             Math             #
 ################################
+
+%define SIGN(VAL) ((VAL)/abs(VAL))
 
 # note the placement of numbers before args and the use of floor.
 %define COMBINE_RGB_CHANNELS(R,G,B) (65536*floor(255*(R)) + 256*floor(255*(G)) + floor(255*(B)))

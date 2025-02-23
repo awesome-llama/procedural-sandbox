@@ -128,7 +128,28 @@ proc generate_unknown {
     repeat 10 {
         draw_line_DDA RANDOM_X, RANDOM_Y, RANDOM_Z, random("-1.0","1.0"), random("-1.0","1.0"), 0, random(1, 20);
     }
+    draw_cylinder RANDOM_X, RANDOM_Y, 0, 10, 3;
+    jitter 0.2;
 }
+
+
+
+################################
+#          Templates           #
+################################
+
+
+proc delete_all_templates {
+    delete depositor_template_metadata;
+    delete depositor_template_voxels;
+}
+
+
+proc save_canvas_as_template slot_index {
+    # TODO
+}
+
+
 
 ################################
 #        Set depositor         #
@@ -139,8 +160,8 @@ proc reset_depositor {
     depositor_mode = DepositorMode.DRAW;
     depositor_replace = true;
     voxel depositor_voxel = VOXEL_SOLID_GREY(1);
-    depositor_texture_index = 0;
-    XYZ depositor_texture_origin = XYZ {x:0, y:0, z:0};
+    depositor_template_index = 0;
+    XYZ depositor_template_origin = XYZ {x:0, y:0, z:0};
 }
 
 # set from sRGB colour
@@ -148,6 +169,14 @@ proc set_depositor_from_sRGB r, g, b {
     depositor_mode = DepositorMode.DRAW;
     depositor_voxel = VOXEL_SOLID(ROOT($r, 2.2), ROOT($g, 2.2), ROOT($b, 2.2)); # convert to linear
 }
+
+
+proc set_depositor_to_template slot_index, ox, oy, oz {
+    depositor_mode = DepositorMode.TEMPLATE;
+    depositor_template_index = $slot_index;
+    depositor_template_origin = XYZ {x:$ox, y:$oy, z:$oz};
+}
+
 
 
 
@@ -169,10 +198,10 @@ proc set_voxel x, y, z {
             if (depositor_mode == DepositorMode.DRAW) {
                 canvas[set_canvas_index] = depositor_voxel; # set voxel with brush
             } else {
-                # get the texture index which is ptr + 3D index
-                local tex_idx = depositor_texture_metadata[depositor_texture_index].ptr + INDEX_FROM_3D($x-depositor_texture_origin.x, $y-depositor_texture_origin.y, $z-depositor_texture_origin.z, depositor_texture_metadata[depositor_texture_index].sx, depositor_texture_metadata[depositor_texture_index].sy, depositor_texture_metadata[depositor_texture_index].sz);
+                # get the template index which is ptr + 3D index
+                local tex_idx = depositor_template_metadata[depositor_template_index].ptr + INDEX_FROM_3D($x-depositor_template_origin.x, $y-depositor_template_origin.y, $z-depositor_template_origin.z, depositor_template_metadata[depositor_template_index].sx, depositor_template_metadata[depositor_template_index].sy, depositor_template_metadata[depositor_template_index].sz);
                 
-                canvas[set_canvas_index] = depositor_texture_voxels[tex_idx];
+                canvas[set_canvas_index] = depositor_template_voxels[tex_idx];
             }
         }
     }
@@ -205,12 +234,27 @@ proc set_base_layer r, g, b {
 }
 
 
-# draw a cylinder on the XY plane.
+# draw a cylinder on the XY plane, extruded along Z. Negative height allowed.
 proc draw_cylinder x, y, z, radius, height {
     local bb_width = round(2 * $radius); # bounding box width
     local bb_min = 0.5 + (bb_width * -0.5); # bounding box local minima
 
-    # TODO
+    local px_z = $z - (($height < 0)*round($height)); # handled differently, always start from base
+    repeat round($height) {
+        local px_y = bb_min;
+        repeat bb_width {
+            local px_x = bb_min;
+            repeat bb_width {
+                if sqrt(px_x*px_x + px_y*px_y) <= $radius { 
+                    # the distance calculation prevents px from being stored as canvas space coordinates
+                    set_voxel $x+px_x, $y+px_y, px_z;
+                }
+                px_x++;
+            }
+            px_y++;
+        }
+        px_z += zdir;
+    }
 }
 
 
@@ -366,5 +410,27 @@ proc draw_line_DDA x, y, z, dx, dy, dz, r {
     }
 }
 
+
+################################
+#           Effects            #
+################################
+
+
+proc spall probability {
+    # TODO
+    # is there a better name? it erodes the surfaces only
+}
+
+
+proc jitter probability {
+    # swaps neighbours
+    local canvas_voxel_count = (canvas_size_x * canvas_size_y * canvas_size_z);
+    repeat (canvas_voxel_count * $probability) {
+        local jitter_i = random(1, canvas_voxel_count);
+        local voxel temp_voxel = canvas[jitter_i];
+        canvas[jitter_i] = canvas[jitter_i+1];
+        canvas[jitter_i+1] = temp_voxel;
+    }
+}
 
 

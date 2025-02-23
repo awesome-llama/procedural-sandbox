@@ -27,8 +27,8 @@ list TI_header;
 list copy_this; # output list for copying text
 list project_messages; # console messages
 
-list texture_metadata depositor_texture_metadata; # pointers into the texture list
-list voxel depositor_texture_voxels; 
+list template_metadata depositor_template_metadata; # pointers into the template list
+list voxel depositor_template_voxels; 
 
 on "initalise" {
     dev = round((username() == "awesome-llama")); # developer mode
@@ -44,12 +44,12 @@ on "initalise" {
 
     compositor_mode = CompositorMode.COLOR;
 
-    # the "depositor" (chose an obscure but relevant name) is a description of what voxel will be placed by the procedural tools. It may be a single voxel or it may be a 3D texture.
+    # the "depositor" (chose an obscure but relevant name) is a description of what voxel will be placed by the procedural tools. It may be a single voxel or it may be a 3D template.
     depositor_mode = DepositorMode.DRAW;
     depositor_replace = true; # bool [false=keep existing intact | true=replace (incl. with new air)]
     voxel depositor_voxel = VOXEL_SOLID_GREY(1);
-    depositor_texture_index = 0;
-    XYZ depositor_texture_origin = XYZ {x:0, y:0, z:0}; # origin of the texture in canvas space
+    depositor_template_index = 0; # which template to use, 1-indexed
+    XYZ depositor_template_origin = XYZ {x:0, y:0, z:0}; # origin of the template in canvas space
 }
 
 
@@ -71,8 +71,8 @@ on "hard reset" {
     delete TI_4_a;
     delete TI_header;
 
-    delete depositor_texture_metadata;
-    delete depositor_texture_voxels;
+    delete depositor_template_metadata;
+    delete depositor_template_voxels;
 
 }
 
