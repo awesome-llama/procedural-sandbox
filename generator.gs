@@ -19,6 +19,8 @@ on "generate pipes" {
     canvas_size_z = 8;
     clear_canvas;
     set_base_layer 0.7, 0.7, 0.6;
+    reset_depositor;
+
     repeat 100 {
         depositor_voxel.r = random(0, "1.0");
         depositor_voxel.g = random(0, "1.0");
@@ -37,6 +39,7 @@ on "generate refinery" {
     canvas_size_z = 16;
     clear_canvas;
     set_base_layer 0.7, 0.7, 0.6;
+    reset_depositor;
 
     tank_rad = 8;
     # spherical tanks
@@ -44,8 +47,8 @@ on "generate refinery" {
         brightness = random(0.9, 1);
         depositor_voxel = VOXEL_SOLID(brightness, brightness, brightness);
         
-        tank_x = RANDOM_X;
-        tank_y = RANDOM_Y;
+        tank_x = floor(RANDOM_X * 16)/16;
+        tank_y = floor(RANDOM_Y * 16)/16;
 
         draw_sphere tank_x, tank_y, tank_rad/2, tank_rad;
 
@@ -62,18 +65,69 @@ on "generate refinery" {
 }
 
 
-on "generate unknown" {
+on "generate city" { generate_city; }
+proc generate_city {
     canvas_size_x = 128;
     canvas_size_y = 128;
     canvas_size_z = 16;
     clear_canvas;
     set_base_layer 0.7, 0.7, 0.6;
+    reset_depositor;
+
+    repeat 300 { # cuboids and low pipes
+        brightness = random(0.5, 0.9);
+        depositor_voxel = VOXEL_SOLID(brightness, brightness, brightness);
+
+
+        local c1x = RANDOM_X;
+        local c1y = RANDOM_Y;
+        local cube_x = random(2,16);
+        local cube_y = random(2,16);
+        local cube_z = random(1, 15);
+
+        draw_cuboid_corner_size c1x, c1y, 0, cube_x, cube_y, cube_z-1;
+        draw_cuboid_corner_size c1x+1, c1y+1, 0, cube_x-2, cube_y-2, cube_z;
+    }
+    repeat 90 { # pipes, grey
+        brightness = random(0.5, 0.7);
+        set_depositor_from_sRGB brightness+random(-0.1, 0.1), brightness+random(-0.1, 0.1), brightness+random(-0.1, 0.1);
+        random_walk_taxicab RANDOM_X, RANDOM_Y, random(1, 12), 16, 20;
+    }
+    repeat 10 { # pipes multicolor
+        set_depositor_from_sRGB random(0.4, 0.9), random(0.4, 0.9), random(0.4, 0.9);
+        random_walk_taxicab RANDOM_X, RANDOM_Y, random(1, 16), 16, 20;
+    }
+    repeat 10 { # high pipes
+        set_depositor_from_sRGB random(0.4, 0.8), random(0.4, 0.8), random(0.4, 0.8);
+        random_walk_taxicab RANDOM_X, RANDOM_Y, random(1, 16), 16, 20;
+    }
+    set_depositor_from_sRGB 0.65, 0.65, 0.75;
+    repeat 30 {
+        draw_sphere floor(RANDOM_X * 16)/16, floor(RANDOM_Y * 16)/16, random(1, 6), random(1, 6);
+    }
+    
+    require_composite = true;
+}
+
+
+
+
+on "generate unknown" { generate_unknown; }
+proc generate_unknown {
+    canvas_size_x = 128;
+    canvas_size_y = 128;
+    canvas_size_z = 16;
+    clear_canvas;
+    set_base_layer 0.7, 0.7, 0.6;
+    reset_depositor;
 
     repeat 10 {
-        draw_cuboid_corner_size RANDOM_X, RANDOM_Y, 0, random(1,8), random(1,8), random(1, canvas_size_z*0.5);
+        draw_cuboid_corner_size RANDOM_X, RANDOM_Y, 0, random(1,18), random(1,18), random(1, canvas_size_z*0.5);
     }
 
-
+    repeat 10 {
+        draw_line_DDA RANDOM_X, RANDOM_Y, RANDOM_Z, random("-1.0","1.0"), random("-1.0","1.0"), 0, random(1, 20);
+    }
 }
 
 ################################

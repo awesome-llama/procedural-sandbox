@@ -31,8 +31,7 @@ proc render_image x, y, scale, res {
             repeat (canvas_size_x/$res) {
                 i = (((iy+0)*canvas_size_x)+(ix + 1));
                 set_pen_color render_cache_final_col[i];
-                #set_pen_color (65536 * canvas_1_r[i] + 256 * canvas_2_g[i] + canvas_3_b[i]);
-                #set_pen_transparency 100-(canvas_4_a[i]/2.55);
+                #set_pen_transparency 0;
                 pen_down;
                 pen_up;
                 change_x ($scale*$res);
