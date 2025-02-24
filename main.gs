@@ -101,6 +101,7 @@ proc limit_scroll  {
 }
 
 onkey "space" {
+    require_composite = true;
     require_screen_refresh = true;
 }
 

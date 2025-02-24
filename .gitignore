@@ -8,6 +8,7 @@ test/
 test*.py
 project.json
 *.sb3
+notes.txt
 
 # MS Excel
 ~$ops.xlsx

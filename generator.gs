@@ -129,7 +129,9 @@ proc generate_unknown {
         draw_line_DDA RANDOM_X, RANDOM_Y, RANDOM_Z, random("-1.0","1.0"), random("-1.0","1.0"), 0, random(1, 20);
     }
     draw_cylinder RANDOM_X, RANDOM_Y, 0, 10, 3;
-    jitter 0.2;
+    glbfx_jitter 0.2;
+    glbfx_spall 0.2;
+    glbfx_color_noise "0.9", "1.1";
 }
 
 
@@ -189,8 +191,6 @@ proc set_depositor_to_template slot_index, ox, oy, oz {
 
 # set a canvas voxel at a given position using the current depositor. Accounts for wrapping on X, Y
 proc set_voxel x, y, z {
-    local set_px_z = floor($z);
-    
     if ($z >= 0 and $z < canvas_size_z) { # only set the voxel if z is in range
         local set_canvas_index = INDEX_FROM_3D_CANVAS($x, $y, $z, canvas_size_x, canvas_size_y); 
 
@@ -205,6 +205,25 @@ proc set_voxel x, y, z {
             }
         }
     }
+}
+
+
+func is_voxel_air(x, y, z) {
+    if ($z >= 0 and $z < canvas_size_z) { # only set the voxel if z is in range
+        return (canvas[INDEX_FROM_3D_CANVAS($x, $y, $z, canvas_size_x, canvas_size_y)].opacity == 0);
+    }
+    return true;
+}
+
+
+func is_voxel_exposed(x, y, z) {
+    if (canvas[INDEX_FROM_3D_CANVAS($x+1, $y, $z, canvas_size_x, canvas_size_y)].opacity == 0) { return true; }
+    if (canvas[INDEX_FROM_3D_CANVAS($x-1, $y, $z, canvas_size_x, canvas_size_y)].opacity == 0) { return true; }
+    if (canvas[INDEX_FROM_3D_CANVAS($x, $y+1, $z, canvas_size_x, canvas_size_y)].opacity == 0) { return true; }
+    if (canvas[INDEX_FROM_3D_CANVAS($x, $y-1, $z, canvas_size_x, canvas_size_y)].opacity == 0) { return true; }
+    if (canvas[INDEX_FROM_3D_CANVAS($x, $y, $z+1, canvas_size_x, canvas_size_y)].opacity == 0) { return true; }
+    if (canvas[INDEX_FROM_3D_CANVAS($x, $y, $z-1, canvas_size_x, canvas_size_y)].opacity == 0) { return true; }
+    return false;
 }
 
 
@@ -224,10 +243,10 @@ proc clear_canvas  {
 
 
 proc set_base_layer r, g, b {
-    i = 1;
+    local bl_i = 1;
     repeat (canvas_size_x * canvas_size_y) {
-        canvas[i] = VOXEL_SOLID($r, $g, $b);
-        i++;
+        canvas[bl_i] = VOXEL_SOLID($r, $g, $b);
+        bl_i++;
     }
     
     require_composite = true;
@@ -253,7 +272,7 @@ proc draw_cylinder x, y, z, radius, height {
             }
             px_y++;
         }
-        px_z += zdir;
+        px_z++;
     }
 }
 
@@ -412,21 +431,51 @@ proc draw_line_DDA x, y, z, dx, dy, dz, r {
 
 
 ################################
-#           Effects            #
+#       Global effects         #
 ################################
+# (glbfx)
 
 
-proc spall probability {
-    # TODO
-    # is there a better name? it erodes the surfaces only
+# swap two voxels
+proc swap_canvas_voxels v1, v2 {
+    local voxel temp_voxel = canvas[v1];
+    canvas[v1] = canvas[v2];
+    canvas[v2] = temp_voxel;
 }
 
 
-proc jitter probability {
-    # swaps neighbours
+# erode ("spall") exposed surfaces
+proc glbfx_spall probability {
+
+    local i = 1;
+    local px_z = 0;
+    repeat canvas_size_z {
+        local px_y = 0;
+        repeat canvas_size_y {
+            local px_x = 0;
+            repeat canvas_size_x {
+                if (random("0.0","1.0") < $probability and canvas[i].opacity > 0) {
+                    if is_voxel_exposed(px_x, px_y, px_z) { # this is really expensive, probably don't use this
+                        canvas[i] = VOXEL_NONE; # set to 0
+                    }
+                }
+                i++;
+                px_x++;
+            }
+            px_y++;
+        }
+        px_z++;
+    }
+}
+
+# TODO jitter in all directions, find a way to randomly pair voxels, skip z limits
+# randomly shift voxels, swapping with neighbours
+proc glbfx_jitter probability {
+    
     local canvas_voxel_count = (canvas_size_x * canvas_size_y * canvas_size_z);
     repeat (canvas_voxel_count * $probability) {
         local jitter_i = random(1, canvas_voxel_count);
+
         local voxel temp_voxel = canvas[jitter_i];
         canvas[jitter_i] = canvas[jitter_i+1];
         canvas[jitter_i+1] = temp_voxel;
@@ -434,3 +483,26 @@ proc jitter probability {
 }
 
 
+# average pairs of voxels
+#proc glbfx_melt
+
+
+# darken voxels randomly
+proc glbfx_color_noise min, max {
+    local i = 1;
+    repeat (canvas_size_x * canvas_size_y * canvas_size_z) {
+        canvas[i].r *= random($min, $max);
+        if canvas[i].r < 0 { canvas[i].r = 0; }
+        if canvas[i].r > 1 { canvas[i].r = 1; }
+
+        canvas[i].g *= random($min, $max);
+        if canvas[i].g < 0 { canvas[i].g = 0; }
+        if canvas[i].g > 1 { canvas[i].g = 1; }
+
+        canvas[i].b *= random($min, $max);
+        if canvas[i].b < 0 { canvas[i].b = 0; }
+        if canvas[i].b > 1 { canvas[i].b = 1; }
+        
+        i++;
+    }
+}
