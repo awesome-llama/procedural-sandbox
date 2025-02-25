@@ -29,6 +29,7 @@ on "generate pipes" {
 
         random_walk_taxicab RANDOM_X, RANDOM_Y, RANDOM_Z, 20, 5;
     }
+
     require_composite = true;
 }
 
@@ -132,6 +133,33 @@ proc generate_unknown {
     glbfx_jitter 0.2;
     glbfx_spall 0.2;
     glbfx_color_noise "0.9", "1.1";
+
+    require_composite = true;
+}
+
+
+
+on "generate carpet" { generate_carpet; }
+proc generate_carpet {
+    canvas_size_x = 64;
+    canvas_size_y = 64;
+    canvas_size_z = 12;
+
+    clear_canvas;
+    set_base_layer 0.9, 0.9, 0.9;
+    glbfx_color_noise "0.9", "1.1";
+
+    reset_depositor;
+
+    repeat 100 {
+        set_depositor_from_sRGB random(0, "0.2"), random(0.2, 0.9), random(0.2, 0.9);
+        repeat 10 {
+            draw_line_DDA RANDOM_X, RANDOM_Y, RANDOM_Z, random("-1.0","1.0"), random("-1.0","1.0"), 0, random(1, 20);
+        }
+        glbfx_jitter 0.003;
+    }
+    
+    require_composite = true;
 }
 
 
@@ -374,10 +402,10 @@ proc random_walk_any x, y, z, turns, steps, angle {
 
 # 3D DDA
 proc draw_line_DDA x, y, z, dx, dy, dz, r {
-    local total_distance = sqrt((($dx*$dx)+(($dy*$dy)+($dz*$dz))));
-    local scale_x = abs(total_distance/$dx);
-    local scale_y = abs(total_distance/$dy);
-    local scale_z = abs(total_distance/$dz);
+    local vec_len = sqrt((($dx*$dx)+(($dy*$dy)+($dz*$dz))));
+    local scale_x = abs(vec_len/$dx);
+    local scale_y = abs(vec_len/$dy);
+    local scale_z = abs(vec_len/$dz);
     local raycast_ix = floor($x);
     local raycast_iy = floor($y);
     local raycast_iz = floor($z);
@@ -403,28 +431,31 @@ proc draw_line_DDA x, y, z, dx, dy, dz, r {
         local len_z = ((1-($z%1))*scale_z);
     }
 
-    local total_distance = 1;
-    until (total_distance > $r) {
-        if ((len_x < len_y) and (len_x < len_z)) {
-            len_x += scale_x;
-            total_distance += scale_x;
-            raycast_ix += step_x;
-        } else {
-            if ((len_y < len_x) and (len_y < len_z)) {
+    until (len_x > $r and len_y > $r and len_z > $r) {
+        
+        set_voxel raycast_ix, raycast_iy, raycast_iz; # set voxel at current location
+
+        # find the shortest len variable and increase it:
+        if (len_x < len_z) {
+            if (len_x < len_y) {
+                len_x += scale_x;
+                raycast_ix += step_x;
+            } else {
                 len_y += scale_y;
-                total_distance += scale_y;
+                raycast_iy += step_y;
+            }
+        } else {
+            if (len_y < len_y) {
+                len_y += scale_y;
                 raycast_iy += step_y;
             } else {
                 len_z += scale_z;
-                total_distance += scale_z;
                 raycast_iz += step_z;
             }
         }
 
-        set_voxel raycast_ix, raycast_iy, raycast_iz;
-
         if (raycast_iz > canvas_size_z or raycast_iz < 0) {
-            stop_this_script;
+            stop_this_script; # reached canvas height limits
         }
     }
 }

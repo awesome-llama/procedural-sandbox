@@ -48,7 +48,7 @@ onkey "any" {
 
 
 onkey "p" {
-    broadcast "generate city"; # debug
+    broadcast "generate carpet"; # debug
     broadcast "zoom extents";
 }
 

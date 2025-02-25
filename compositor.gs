@@ -289,10 +289,10 @@ proc make_brightness_LUT start, end {
 
 # 3D DDA, returns ray_light
 proc raycast_ao x, y, z, dx, dy, dz, r {
-    local total_distance = sqrt((($dx*$dx)+(($dy*$dy)+($dz*$dz))));
-    local scale_x = abs(total_distance/$dx);
-    local scale_y = abs(total_distance/$dy);
-    local scale_z = abs(total_distance/$dz);
+    local vec_len = sqrt((($dx*$dx)+(($dy*$dy)+($dz*$dz))));
+    local scale_x = abs(vec_len/$dx);
+    local scale_y = abs(vec_len/$dy);
+    local scale_z = abs(vec_len/$dz);
     local raycast_ix = floor($x);
     local raycast_iy = floor($y);
     local raycast_iz = floor($z);
@@ -317,35 +317,37 @@ proc raycast_ao x, y, z, dx, dy, dz, r {
         local step_z = 1;
         local len_z = ((1-($z%1))*scale_z);
     }
-    local total_distance = 1;
+
     ray_light = 1; # returned, not local to this script
-    until (total_distance > $r) {
-        if ((len_x < len_y) and (len_x < len_z)) {
-            len_x += scale_x;
-            total_distance += scale_x;
-            raycast_ix += step_x;
-        } else {
-            if ((len_y < len_x) and (len_y < len_z)) {
+    
+    until (len_x > $r and len_y > $r and len_z > $r) {
+
+        # find the shortest len variable and increase it:
+        if (len_x < len_z) {
+            if (len_x < len_y) {
+                len_x += scale_x;
+                raycast_ix += step_x;
+            } else {
                 len_y += scale_y;
-                total_distance += scale_y;
+                raycast_iy += step_y;
+            }
+        } else {
+            if (len_y < len_z) {
+                len_y += scale_y;
                 raycast_iy += step_y;
             } else {
                 len_z += scale_z;
-                total_distance += scale_z;
                 raycast_iz += step_z;
             }
         }
+
         local alpha = canvas[INDEX_FROM_3D_CANVAS(raycast_ix, raycast_iy, raycast_iz, canvas_size_x, canvas_size_y)].opacity;
 
-        if (alpha == "") {
-            stop_this_script;
-        }
+        if (alpha == "") { stop_this_script; } # did not get a list item, therefore out of bounds
+        
         ray_light = (ray_light*(1-alpha));
-        if (ray_light < 0.0001) {
-            stop_this_script;
-        }
-        if (raycast_iz > canvas_size_z) {
-            stop_this_script;
-        }
+        
+        if (ray_light < 0.0001) { stop_this_script; } # too dark
+        if (raycast_iz > canvas_size_z) { stop_this_script; } # out of bounds, assume air
     }
 }
