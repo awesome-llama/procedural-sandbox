@@ -18,8 +18,9 @@ on "generate pipes" {
     canvas_size_y = 64;
     canvas_size_z = 8;
     clear_canvas;
-    set_base_layer 0.7, 0.7, 0.6;
     reset_depositor;
+    set_depositor_from_sRGB 0.7, 0.7, 0.6;
+    draw_base_layer;
 
     repeat 100 {
         depositor_voxel.r = random(0, "1.0");
@@ -39,8 +40,9 @@ on "generate refinery" {
     canvas_size_y = 64;
     canvas_size_z = 16;
     clear_canvas;
-    set_base_layer 0.7, 0.7, 0.6;
     reset_depositor;
+    set_depositor_from_sRGB 0.7, 0.7, 0.6;
+    draw_base_layer;
 
     tank_rad = 8;
     # spherical tanks
@@ -72,8 +74,9 @@ proc generate_city {
     canvas_size_y = 128;
     canvas_size_z = 16;
     clear_canvas;
-    set_base_layer 0.7, 0.7, 0.6;
     reset_depositor;
+    set_depositor_from_sRGB 0.7, 0.7, 0.6;
+    draw_base_layer;
 
     repeat 300 { # cuboids and low pipes
         brightness = random(0.5, 0.9);
@@ -119,8 +122,9 @@ proc generate_unknown {
     canvas_size_y = 128;
     canvas_size_z = 16;
     clear_canvas;
-    set_base_layer 0.7, 0.7, 0.6;
     reset_depositor;
+    set_depositor_from_sRGB 0.7, 0.7, 0.6;
+    draw_base_layer;
 
     repeat 10 {
         draw_cuboid_corner_size RANDOM_X, RANDOM_Y, 0, random(1,18), random(1,18), random(1, canvas_size_z*0.5);
@@ -144,12 +148,12 @@ proc generate_carpet {
     canvas_size_x = 64;
     canvas_size_y = 64;
     canvas_size_z = 12;
-
     clear_canvas;
-    set_base_layer 0.9, 0.9, 0.9;
-    glbfx_color_noise "0.9", "1.1";
-
     reset_depositor;
+    set_depositor_from_sRGB 0.9, 0.9, 0.9;
+    draw_base_layer;
+
+    glbfx_color_noise "0.9", "1.1";
 
     repeat 100 {
         set_depositor_from_sRGB random(0, "0.2"), random(0.2, 0.9), random(0.2, 0.9);
@@ -157,6 +161,31 @@ proc generate_carpet {
             draw_line_DDA RANDOM_X, RANDOM_Y, RANDOM_Z, random("-1.0","1.0"), random("-1.0","1.0"), 0, random(1, 20);
         }
         glbfx_jitter 0.003;
+    }
+    
+    require_composite = true;
+}
+
+
+on "generate green weave" { generate_gw; }
+proc generate_gw {
+    canvas_size_x = 128;
+    canvas_size_y = 128;
+    canvas_size_z = 12;
+    clear_canvas;
+    reset_depositor;
+    set_depositor_from_sRGB 0.3, 0.6, 0.3;
+    draw_base_layer;
+    glbfx_color_noise 0.5, 1;
+
+    repeat 600 {
+        set_depositor_from_sRGB 0.2, random(0.2, 0.5), 0.2;
+        random_walk_any RANDOM_X, RANDOM_Y, RANDOM_Z, 0, 20, 5, 45;
+    }
+    
+    repeat 15 {
+    set_depositor_from_sRGB 0.7, random(0.9, 1.0), 0.7;
+        random_walk_any RANDOM_X, RANDOM_Y, RANDOM_Z, 0, 20, 5, 45;
     }
     
     require_composite = true;
@@ -270,13 +299,16 @@ proc clear_canvas  {
 }
 
 
-proc set_base_layer r, g, b {
-    local bl_i = 1;
-    repeat (canvas_size_x * canvas_size_y) {
-        canvas[bl_i] = VOXEL_SOLID($r, $g, $b);
-        bl_i++;
+proc draw_base_layer {
+    local px_y = 0;
+    repeat canvas_size_y {
+        local px_x = 0;
+        repeat canvas_size_x {
+            set_voxel px_x, px_y, 0;
+            px_x++;
+        }
+        px_y++;
     }
-    
     require_composite = true;
 }
 
@@ -356,35 +388,42 @@ proc draw_cuboid_centered x, y, z, size_x, size_y, size_z {
 
 
 
+# randomly deposit molecules through breadth-first search
+proc crystal_growth x, y, z, size_x, size_y, size_z {
+    # TODO
+    # store list of voxels to explore
+}
+
+
+
 # random walk in a 2D plane using taxicab movement (X and Y axis only)
 proc random_walk_taxicab x, y, z, turns, steps {
     local agent_x = $x;
     local agent_y = $y;
-    local agent_z = $z;
 
     repeat $turns {
         if (random(0, 1) == 0) {
             if (random(0, 1) == 0) {
                 repeat random(1, $steps) {
                     agent_x += 1;
-                    set_voxel agent_x, agent_y, agent_z;
+                    set_voxel agent_x, agent_y, $z;
                 }
             } else {
                 repeat random(1, $steps) {
                     agent_x += -1;
-                    set_voxel agent_x, agent_y, agent_z;
+                    set_voxel agent_x, agent_y, $z;
                 }
             }
         } else {
             if (random(0, 1) == 0) {
                 repeat random(1, $steps) {
                     agent_y += 1;
-                    set_voxel agent_x, agent_y, agent_z;
+                    set_voxel agent_x, agent_y, $z;
                 }
             } else {
                 repeat random(1, $steps) {
                     agent_y += -1;
-                    set_voxel agent_x, agent_y, agent_z;
+                    set_voxel agent_x, agent_y, $z;
                 }
             }
         }
@@ -393,9 +432,19 @@ proc random_walk_taxicab x, y, z, turns, steps {
 
 
 
-# random walk snapping to particular angles
-proc random_walk_any x, y, z, turns, steps, angle {
-    
+# random XY walk, snapping to particular angles
+proc random_walk_any x, y, z, start_dir, turns, steps, angle {
+    local agent_x = $x;
+    local agent_y = $y;
+    local agent_dir = $start_dir;
+
+    repeat $turns {
+        local dist = random(1, $steps);
+        draw_line_DDA agent_x, agent_y, $z, cos(agent_dir), sin(agent_dir), 0, dist;
+        agent_x += dist * cos(agent_dir);
+        agent_y += dist * sin(agent_dir);
+        agent_dir += random(-1,1)*$angle;
+    }
 }
 
 
@@ -445,7 +494,7 @@ proc draw_line_DDA x, y, z, dx, dy, dz, r {
                 raycast_iy += step_y;
             }
         } else {
-            if (len_y < len_y) {
+            if (len_y < len_z) {
                 len_y += scale_y;
                 raycast_iy += step_y;
             } else {
@@ -498,6 +547,42 @@ proc glbfx_spall probability {
         px_z++;
     }
 }
+
+
+# would some adjacency structure be more efficient? yes if above a threshold
+# for some it's ok as a single pass over static data
+# iterate over voxels, store add its state to adjacent in a 3d array
+# this just requires knowing the adjcant voxel's index
+
+
+
+# deposit voxels on any solid surface, the opposite of spall
+proc glbfx_spatter probability {
+    
+    local i = 1;
+    local px_z = 0;
+    repeat canvas_size_z {
+        local px_y = 0;
+        repeat canvas_size_y {
+            local px_x = 0;
+            repeat canvas_size_x {
+                if (random("0.0","1.0") < $probability and canvas[i].opacity == 0) { # is air
+                    # TODO check if adjacent is solid
+                }
+                i++;
+                px_x++;
+            }
+            px_y++;
+        }
+        px_z++;
+    }
+}
+
+
+
+
+
+
 
 # TODO jitter in all directions, find a way to randomly pair voxels, skip z limits
 # randomly shift voxels, swapping with neighbours

@@ -1,5 +1,7 @@
 %include common/common.gs
 
+# TODO move this into generator because it can benefit from these too (or maybe it's better to copy over the needed ones)
+
 costumes "costumes/transform canvas/icon.svg" as "icon";
 hide;
 
@@ -33,17 +35,18 @@ proc scale_along_xy_nearest_neighbour scale_fac {
         repeat (canvas_size_y * _scale) {
             ix = 0;
             repeat (canvas_size_x * _scale) {
-                i = (1+(((canvas_size_x*canvas_size_y)*iz)+((canvas_size_x*(floor(iy)%canvas_size_y))+(floor(ix)%canvas_size_x))));
-                add canvas[i] to temp;
+                add canvas[INDEX_FROM_3D_CANVAS(ix, iy, iz, canvas_size_x, canvas_size_y)] to temp;
                 ix += _step;
             }
             iy += _step;
         }
         iz++;
     }
+    canvas_size_x *= _scale;
+    canvas_size_y *= _scale;
+
     _write_temp_lists_to_canvas;
-    canvas_size_x = (canvas_size_x*_scale);
-    canvas_size_y = (canvas_size_y*_scale);
+    
     require_composite = true;
 }
 
@@ -59,8 +62,7 @@ proc translate dx, dy {
         repeat canvas_size_y {
             ix = (0-dx);
             repeat canvas_size_x {
-                i = (1+(((canvas_size_x*canvas_size_y)*iz)+((canvas_size_x*(floor(iy)%canvas_size_y))+(floor(ix)%canvas_size_x))));
-                add canvas[i] to temp;
+                add canvas[INDEX_FROM_3D_CANVAS(ix, iy, iz, canvas_size_x, canvas_size_y)] to temp;
                 ix++;
             }
             iy++;
@@ -70,6 +72,35 @@ proc translate dx, dy {
     _write_temp_lists_to_canvas;
     require_composite = true;
 }
+
+
+# sample rotated 
+proc resample a, b, c, d, e, f, g, h, i {
+    delete temp;
+
+    iz = 0;
+    repeat canvas_size_z {
+        iy = 0;
+        repeat canvas_size_y {
+            ix = 0;
+            repeat canvas_size_x {
+                # TODO calculate new 2d pt
+                add canvas[INDEX_FROM_3D_CANVAS(ix, iy, iz, canvas_size_x, canvas_size_y)] to temp;
+                ix++;
+            }
+            iy++;
+        }
+        iz++;
+    }
+}
+
+
+# mirror and copy the left side (closer to 0)
+proc mirror_x keep_lower {
+    
+    delete temp;
+}
+
 
 
 # final cleanup after the operation was run
