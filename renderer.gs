@@ -59,7 +59,7 @@ proc render_edge_lines  {
     pen_down;
     set_y 180;
     pen_up;
-    goto_world_space (canvas_size_x-1), 0;
+    goto_world_space (canvas_size_x), 0;
     set_y -180;
     pen_down;
     set_y 180;
@@ -69,7 +69,7 @@ proc render_edge_lines  {
     pen_down;
     set_x 240;
     pen_up;
-    goto_world_space 0, (canvas_size_y-1);
+    goto_world_space 0, (canvas_size_y);
     set_x -240;
     pen_down;
     set_x 240;

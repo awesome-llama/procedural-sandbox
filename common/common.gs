@@ -96,9 +96,36 @@ struct template_metadata {
 # Same as INDEX_FROM_3D but for the canvas, which only wraps along X and Y.
 %define INDEX_FROM_3D_CANVAS(X,Y,Z,SIZE_X,SIZE_Y) (1 + ((((SIZE_X)*(SIZE_Y)) * floor(Z)) + (((SIZE_X)*(floor(Y) % (SIZE_Y))) + (floor(X) % (SIZE_X)))))
 
+# Clamp above 0
+%define POSITIVE_CLAMP(VAL) (((VAL)>0)*(VAL))
 
-# TODO HSV to linear RGB
-#func HSV_to_RGB
+# Clamp between 0 and 1
+%define CLAMP_0_1(VAL) (1 - (((VAL)<1) * (1-POSITIVE_CLAMP(VAL))) )
+
+# HSV to RGB transformation
+# https://stackoverflow.com/questions/3018313/algorithm-to-convert-rgb-to-hsv-and-hsv-to-rgb-in-range-0-255-for-both
+func HSV_to_RGB(h, s, v) RGB {
+    local hue = ($h % 1)*6; # [0,6)
+    local sat = CLAMP_0_1($s); # [0,1]
+    local val = POSITIVE_CLAMP($v); # [0,+Inf)
+    if (hue < 3) {
+        if (hue < 1) {
+            return RGB { r:val, g:val*(1-(sat*(1-(hue%1)))), b:val*(1-sat) };
+        } elif (hue < 2) {
+            return RGB { r:val*(1-(sat*(hue%1))), g:val, b:val*(1-sat) };
+        } else {
+            return RGB { r:val*(1-sat), g:val, b:val*(1-(sat*(1-(hue%1)))) };
+        }
+    } else {
+        if (hue < 4) {
+            return RGB { r:val*(1-sat), g:val*(1-(sat*(hue%1))), b:val };
+        } elif (hue < 5) {
+            return RGB { r:val*(1-(sat*(1-(hue%1)))), g:val*(1-sat), b:val };
+        } else {
+            return RGB { r:val, g:val*(1-sat), b:val*(1-(sat*(hue%1))) };
+        }
+    }
+}
 
 
 ################################

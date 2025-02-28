@@ -198,6 +198,30 @@ proc generate_gw {
 }
 
 
+on "generate grad" { generate_grad; }
+proc generate_grad {
+    canvas_size_x = 101;
+    canvas_size_y = 101;
+    canvas_size_z = 2;
+    clear_canvas;
+    reset_depositor;
+    set_depositor_from_sRGB 0.5, 0.5, 0.5;
+    draw_base_layer;
+
+    local px_y = 0;
+    repeat 101 {
+        local px_x = 0;
+        repeat 101 {
+            set_depositor_from_HSV px_x/100, px_y/100, 1;
+            set_voxel px_x, px_y, 0;
+            px_x++;
+        }
+        px_y++;
+    }
+    
+    require_composite = true;
+}
+
 
 ################################
 #          Templates           #
@@ -255,12 +279,16 @@ proc reset_depositor {
     XYZ depositor_template_origin = XYZ {x:0, y:0, z:0};
 }
 
-# set from sRGB colour
 proc set_depositor_from_sRGB r, g, b {
     depositor_mode = DepositorMode.DRAW;
     depositor_voxel = VOXEL_SOLID(ROOT($r, 2.2), ROOT($g, 2.2), ROOT($b, 2.2)); # convert to linear
 }
 
+proc set_depositor_from_HSV h, s, v {
+    local RGB col = HSV_to_RGB($h, $s, $v); 
+    depositor_mode = DepositorMode.DRAW;
+    depositor_voxel = VOXEL_SOLID(ROOT(col.r, 2.2), ROOT(col.g, 2.2), ROOT(col.b, 2.2)); # convert to linear
+}
 
 proc set_depositor_to_template slot_index, ox, oy, oz {
     depositor_mode = DepositorMode.TEMPLATE;
