@@ -12,6 +12,12 @@ on "hard reset" {
     
 }
 
+on "*" {
+    delete_all_templates;
+    add_canvas_as_template;
+    load_template_to_canvas 0;
+}
+
 
 on "generate pipes" {
     canvas_size_x = 64;
@@ -196,17 +202,43 @@ proc generate_gw {
 ################################
 #          Templates           #
 ################################
-
+# Templates are used to temporarily store canvases to be loaded later or drawn by the depositor. They may be used for storing textures, shapes, etc.
 
 proc delete_all_templates {
     delete depositor_template_metadata;
     delete depositor_template_voxels;
 }
 
-
-proc save_canvas_as_template slot_index {
-    # TODO
+proc add_canvas_as_template {
+    # metadata
+    add template_metadata { ptr:(1+length depositor_template_voxels), sx:canvas_size_x, sy:canvas_size_y, sz:canvas_size_z } to depositor_template_metadata;
+    
+    # copy canvas
+    local i = 1;
+    repeat (canvas_size_x * canvas_size_y * canvas_size_z) {
+        add canvas[i] to depositor_template_voxels;
+        i++;
+    }
 }
+
+proc load_template_to_canvas index {
+    local i = depositor_template_metadata[$index].ptr;
+
+    if (i != "") {
+        # read metadata
+        canvas_size_x = depositor_template_metadata[$index].sx;
+        canvas_size_y = depositor_template_metadata[$index].sy;
+        canvas_size_z = depositor_template_metadata[$index].sz;
+
+        # copy template
+        delete canvas;
+        repeat (canvas_size_x * canvas_size_y * canvas_size_z) {
+            add depositor_template_voxels[i] to canvas;
+            i++;
+        }
+    }
+}
+
 
 
 
