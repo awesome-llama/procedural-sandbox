@@ -384,7 +384,7 @@ proc draw_cylinder x, y, z, radius, height {
         repeat bb_width {
             local px_x = bb_min;
             repeat bb_width {
-                if sqrt(px_x*px_x + px_y*px_y) <= $radius { 
+                if VEC2_LEN(px_x, px_y) <= $radius { 
                     # the distance calculation prevents px from being stored as canvas space coordinates
                     set_voxel $x+px_x, $y+px_y, px_z;
                 }
@@ -409,7 +409,7 @@ proc draw_sphere x, y, z, radius {
         repeat bb_width {
             local px_x = bb_min;
             repeat bb_width {
-                if sqrt(px_x*px_x + px_y*px_y + px_z*px_z) <= $radius { 
+                if VEC3_LEN(px_x, px_y, px_z) <= $radius { 
                     # the distance calculation prevents px from being stored as canvas space coordinates
                     set_voxel $x+px_x, $y+px_y, $z+px_z;
                 }
@@ -511,7 +511,7 @@ proc random_walk_any x, y, z, start_dir, turns, steps, angle {
 
 # 3D DDA
 proc draw_line_DDA x, y, z, dx, dy, dz, r {
-    local vec_len = sqrt((($dx*$dx)+(($dy*$dy)+($dz*$dz))));
+    local vec_len = VEC3_LEN($dx, $dy, $dz);
     local scale_x = abs(vec_len/$dx);
     local scale_y = abs(vec_len/$dy);
     local scale_z = abs(vec_len/$dz);

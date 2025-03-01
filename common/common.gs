@@ -80,27 +80,45 @@ struct template_metadata {
 #             Math             #
 ################################
 
+# 1 if positive, -1 if negative
 %define SIGN(VAL) ((VAL)/abs(VAL))
 
-# note the placement of numbers before args and the use of floor.
+# floored RGB channels to integer
 %define COMBINE_RGB_CHANNELS(R,G,B) (65536*floor(255*(R)) + 256*floor(255*(G)) + floor(255*(B)))
 
+# Power
 %define POW(BASE,EXP) antiln(ln(BASE)*(EXP))
 
-# TODO find a better name
+# 
 %define ROOT(BASE,R) antiln(ln(BASE)/(R))
 
-# convert 3D coordinates into index, wrapping along all axes. Remember that lists are 1-indexed.
-%define INDEX_FROM_3D(X,Y,Z,SIZE_X,SIZE_Y,SIZE_Z) (1 + ((((SIZE_X)*(SIZE_Y)) * (floor(Z) % (SIZE_Z))) + (((SIZE_X)*(floor(Y) % (SIZE_Y))) + (floor(X) % (SIZE_X)))))
+# Dot product
+%define DOT_PRODUCT_2D(X1,Y1,X2,Y2) ((X1)*(X2) + (Y1)*(Y2))
 
-# Same as INDEX_FROM_3D but for the canvas, which only wraps along X and Y.
-%define INDEX_FROM_3D_CANVAS(X,Y,Z,SIZE_X,SIZE_Y) (1 + ((((SIZE_X)*(SIZE_Y)) * floor(Z)) + (((SIZE_X)*(floor(Y) % (SIZE_Y))) + (floor(X) % (SIZE_X)))))
+# Length of a 2D vector
+%define VEC2_LEN(VX,VY) sqrt((VX)*(VX) + (VY)*(VY))
+
+# Length of a 3D vector
+%define VEC3_LEN(VX,VY,VZ) sqrt((VX)*(VX) + (VY)*(VY) + (VZ)*(VZ))
+
+# Vector angle
+%define ATAN2(Y,X) (atan((Y)/((X)+0)) + 180*((X)<0))
+
 
 # Clamp above 0
 %define POSITIVE_CLAMP(VAL) (((VAL)>0)*(VAL))
 
 # Clamp between 0 and 1
 %define CLAMP_0_1(VAL) (1 - (((VAL)<1) * (1-POSITIVE_CLAMP(VAL))) )
+
+
+### Specific to this project:
+
+# Convert 3D coordinates into index, wrapping along all axes. Remember that lists are 1-indexed.
+%define INDEX_FROM_3D(X,Y,Z,SIZE_X,SIZE_Y,SIZE_Z) (1 + ((((SIZE_X)*(SIZE_Y)) * (floor(Z) % (SIZE_Z))) + (((SIZE_X)*(floor(Y) % (SIZE_Y))) + (floor(X) % (SIZE_X)))))
+
+# Same as INDEX_FROM_3D but for the canvas, which only wraps along X and Y.
+%define INDEX_FROM_3D_CANVAS(X,Y,Z,SIZE_X,SIZE_Y) (1 + ((((SIZE_X)*(SIZE_Y)) * floor(Z)) + (((SIZE_X)*(floor(Y) % (SIZE_Y))) + (floor(X) % (SIZE_X)))))
 
 # HSV to RGB transformation
 # https://stackoverflow.com/questions/3018313/algorithm-to-convert-rgb-to-hsv-and-hsv-to-rgb-in-range-0-255-for-both
