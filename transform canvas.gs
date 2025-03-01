@@ -13,40 +13,38 @@ on "initalise" {
     hide;
 }
 
-on "zzz" {
-    scale_along_xy_nearest_neighbour 1;
-    translate canvas_size_x/2, canvas_size_y/2;
-
-}
-
 on "hard reset" {
     delete temp;
 }
 
+on "*" {
+    scale_along_xy_nearest_neighbour 1;
+    translate canvas_size_x/2, canvas_size_y/2;
+    mirror_x 1;
+}
+
 
 proc scale_along_xy_nearest_neighbour scale_fac {
-    local _scale = ($scale_fac+(2*(($scale_fac+"0") == 0))); # default value is x2
-    local _step = 1/_scale;
+    local step = 1/$scale_fac;
     delete temp;
 
     iz = 0;
     repeat canvas_size_z {
         iy = 0;
-        repeat (canvas_size_y * _scale) {
+        repeat (canvas_size_y * $scale_fac) {
             ix = 0;
-            repeat (canvas_size_x * _scale) {
+            repeat (canvas_size_x * $scale_fac) {
                 add canvas[INDEX_FROM_3D_CANVAS(ix, iy, iz, canvas_size_x, canvas_size_y)] to temp;
-                ix += _step;
+                ix += step;
             }
-            iy += _step;
+            iy += step;
         }
         iz++;
     }
-    canvas_size_x *= _scale;
-    canvas_size_y *= _scale;
+    canvas_size_x *= $scale_fac;
+    canvas_size_y *= $scale_fac;
 
     _write_temp_lists_to_canvas;
-    
     require_composite = true;
 }
 
@@ -85,20 +83,48 @@ proc resample a, b, c, d, e, f, g, h, i {
             ix = 0;
             repeat canvas_size_x {
                 # TODO calculate new 2d pt
-                add canvas[INDEX_FROM_3D_CANVAS(ix, iy, iz, canvas_size_x, canvas_size_y)] to temp;
+                #add canvas[INDEX_FROM_3D_CANVAS(ix, iy, iz, canvas_size_x, canvas_size_y)] to temp;
                 ix++;
             }
             iy++;
         }
         iz++;
     }
+    require_composite = true;
 }
 
 
-# mirror and copy the left side (closer to 0)
+# copy one side to the other (closer to 0)
 proc mirror_x keep_lower {
+    # this doesn't need to replace
+    iz = 0;
+    repeat canvas_size_z {
+        iy = 0;
+        repeat canvas_size_y {
+            local row_index = ((canvas_size_x * canvas_size_y) * iz) + (canvas_size_x * iy);
+            ix = 0;
+            if $keep_lower {
+                repeat canvas_size_x//2 {
+                    local source_index = row_index + ix + 1;
+                    local dest_index = row_index + (canvas_size_x-ix);
+                    canvas[dest_index] = canvas[source_index];
+                    ix++;
+                }
+            } else {
+                repeat canvas_size_x//2 {
+                    local source_index = row_index + (canvas_size_x-ix);
+                    local dest_index = row_index + ix + 1;
+                    canvas[dest_index] = canvas[source_index];
+                    ix++;
+                }
+            }
+            iy++;
+        }
+        iz++;
+    }
     
-    delete temp;
+    # no rewrite or temp list required
+    require_composite = true;
 }
 
 
