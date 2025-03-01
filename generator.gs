@@ -29,9 +29,7 @@ on "generate pipes" {
     draw_base_layer;
 
     repeat 100 {
-        depositor_voxel.r = random(0, "1.0");
-        depositor_voxel.g = random(0, "1.0");
-        depositor_voxel.b = random(0, "1.0");
+        set_depositor_from_sRGB random(0, "1.0"), random(0, "1.0"), random(0, "1.0");
         depositor_voxel.opacity = random(0.5, "1.0");
 
         random_walk_taxicab RANDOM_X, RANDOM_Y, RANDOM_Z, 20, 5;
@@ -52,9 +50,9 @@ on "generate refinery" {
 
     tank_rad = 8;
     # spherical tanks
-    repeat 5 {
+    repeat 3 {
         brightness = random(0.9, 1);
-        depositor_voxel = VOXEL_SOLID(brightness, brightness, brightness);
+        set_depositor_from_sRGB brightness, brightness, brightness;
         
         tank_x = floor(RANDOM_X * 16)/16;
         tank_y = floor(RANDOM_Y * 16)/16;
@@ -62,7 +60,7 @@ on "generate refinery" {
         draw_sphere tank_x, tank_y, tank_rad/2, tank_rad;
 
         brightness = random(0.5, 1);
-        depositor_voxel = VOXEL_SOLID(brightness, brightness, brightness);
+        set_depositor_from_sRGB brightness, brightness, brightness;
 
         random_walk_taxicab tank_x+tank_rad, tank_y, random(1, tank_rad/2), 12, 16;
         random_walk_taxicab tank_x-tank_rad, tank_y, random(1, tank_rad/2), 12, 16;
@@ -86,8 +84,7 @@ proc generate_city {
 
     repeat 300 { # cuboids and low pipes
         brightness = random(0.5, 0.9);
-        depositor_voxel = VOXEL_SOLID(brightness, brightness, brightness);
-
+        set_depositor_from_sRGB brightness, brightness, brightness;
 
         local c1x = RANDOM_X;
         local c1y = RANDOM_Y;
