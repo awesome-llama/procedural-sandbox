@@ -18,39 +18,51 @@ on "hard reset" {
 }
 
 on "*" {
-    scale_along_xy_nearest_neighbour 1;
-    translate canvas_size_x/2, canvas_size_y/2;
+    scale_uniform_xy 1;
+    translate_xy canvas_size_x/2, canvas_size_y/2;
     mirror_x 1;
     revolve 0;
+    crop_centered 10, 10, canvas_size_z;
 }
 
 
-proc scale_along_xy_nearest_neighbour scale_fac {
-    local step = 1/$scale_fac;
+# scale independently along x, y, z, axes
+proc scale scale_x, scale_y, scale_z {
+    local step_x = 1/$scale_x;
+    local step_y = 1/$scale_y;
+    local step_z = 1/$scale_z;
     delete temp;
 
     iz = 0;
-    repeat canvas_size_z {
+    repeat round(canvas_size_z * $scale_z) {
         iy = 0;
-        repeat (canvas_size_y * $scale_fac) {
+        repeat round(canvas_size_y * $scale_y) {
             ix = 0;
-            repeat (canvas_size_x * $scale_fac) {
+            repeat round(canvas_size_x * $scale_x) {
                 add canvas[INDEX_FROM_3D_CANVAS(ix, iy, iz, canvas_size_x, canvas_size_y)] to temp;
-                ix += step;
+                ix += step_x;
             }
-            iy += step;
+            iy += step_y;
         }
-        iz++;
+        iz += step_z;
     }
-    canvas_size_x *= $scale_fac;
-    canvas_size_y *= $scale_fac;
+    canvas_size_x = round(canvas_size_z * $scale_x);
+    canvas_size_y = round(canvas_size_z * $scale_y);
+    canvas_size_z = round(canvas_size_z * $scale_z);
 
     _write_temp_lists_to_canvas;
     require_composite = true;
 }
 
 
-proc translate dx, dy {
+# scale uniformly along all 3 axes
+proc scale_uniform_xy scale_fac {
+    scale $scale_fac, $scale_fac, $scale_fac;
+}
+
+
+# translate along x and y axis with wrapping
+proc translate_xy dx, dy {
     delete temp;
 
     local dx = floor($dx);
@@ -70,28 +82,6 @@ proc translate dx, dy {
         iz++;
     }
     _write_temp_lists_to_canvas;
-    require_composite = true;
-}
-
-
-# sample using matrix, TODO
-proc resample a, b, c, d, e, f, g, h, i {
-    delete temp;
-
-    iz = 0;
-    repeat canvas_size_z {
-        iy = 0;
-        repeat canvas_size_y {
-            ix = 0;
-            repeat canvas_size_x {
-                # TODO calculate new 2d pt
-                #add canvas[INDEX_FROM_3D_CANVAS(ix, iy, iz, canvas_size_x, canvas_size_y)] to temp;
-                ix++;
-            }
-            iy++;
-        }
-        iz++;
-    }
     require_composite = true;
 }
 
@@ -131,7 +121,7 @@ proc mirror_x keep_lower {
 }
 
 
-# take a 1 voxel thick canvas and revlove
+# take a 1 voxel thick canvas and revolve on the xy plane
 proc revolve dist_offset {
     # copy the line of voxels
     delete temp;
@@ -175,6 +165,37 @@ proc revolve dist_offset {
     
     delete temp;
     require_composite = true;
+}
+
+
+# crop using origin and width
+proc crop x, y, z, size_x, size_y, size_z {
+    delete temp;
+    iz = $z;
+    repeat $size_z {
+        iy = $y;
+        repeat $size_y {
+            ix = $z;
+            repeat $size_x {
+                add canvas[INDEX_FROM_3D_CANVAS(ix, iy, iz, canvas_size_x, canvas_size_y)] to temp;
+                ix++;
+            }
+            iy++;
+        }
+        iz++;
+    }
+    canvas_size_x = $size_x;
+    canvas_size_y = $size_y;
+    canvas_size_z = $size_z;
+    
+    _write_temp_lists_to_canvas;
+    require_composite = true;
+}
+
+
+# crop, keeping the center of the canvas
+proc crop_centered size_x, size_y, size_z {
+    crop floor((canvas_size_x-$size_x)/2), floor((canvas_size_y-$size_y)/2), floor((canvas_size_z-$size_z)/2), $size_x, $size_y, $size_z;
 }
 
 
