@@ -357,7 +357,8 @@ proc write_TextImage {
     TextImage_file = ("txtimg,v:0," & ((("x:" & TI_image_size_x) & (",y:" & TI_image_size_y)) & ","));
     
     # you can define custom properties like this:
-    # TextImage_file &= (("_z:" & "example") & ",");
+    TextImage_file &= (("_project:" & "PSB") & ",");
+    TextImage_file &= (("_z:" & canvas_size_z) & ",");
     
     # layers (sets of 6 items)
     TextImage_file &= ("p:" & (4*((length layers)/6)));

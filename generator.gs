@@ -346,6 +346,7 @@ func is_voxel_exposed(x, y, z) {
 ################################
 
 
+on "clear canvas" { clear_canvas; }
 proc clear_canvas  {
     delete canvas;
     repeat (canvas_size_x * canvas_size_y * canvas_size_z) {

@@ -20,28 +20,6 @@ onkey "/" {
     broadcast "open commands";
 }
 
-# PSB specific
-
-onkey "i" {
-    stop_other_scripts;
-    ask "paste 2D heightmap";
-    if (answer() != "") {
-        TextImage_file = answer();
-        broadcast_and_wait "import as heightmap";
-        require_composite = true;
-    }
-}
-
-onkey "j" {
-    stop_other_scripts;
-    ask "paste 2D colmap";
-    if (answer() != "") {
-        TextImage_file = answer();
-        broadcast_and_wait "import as color map";
-        require_composite = true;
-    }
-}
-
 ##################################
 
 proc _read_command_until_semicolon {
@@ -110,8 +88,18 @@ proc evaluate_command {
     if command_name == "help" {
         print "look inside the project, `cmd` sprite", 4;
 
+    } elif (command_name == "import") {
+        print "canvas | height | color", 4;
+        if (command[1] == "canvas") {
+            broadcast "import canvas";
+        } elif (command[1] == "height") {
+            broadcast "import height map";
+        } elif (command[1] == "color") {
+            broadcast "import color map";
+        } else {}
+    
     } elif (command_name == "export") {
-
+        print "canvas | render", 4;
         if (command[1] == "canvas") {
             broadcast "export canvas";
         } elif (command[1] == "render") {
@@ -119,7 +107,7 @@ proc evaluate_command {
         } else {}
         
     } elif (command_name == "size") {
-        
+
         if (command[1] == "x") {
             canvas_size_x = command[2];
         } elif (command[1] == "y") {

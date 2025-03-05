@@ -3,16 +3,22 @@
 costumes "costumes/TI interface/icon.svg" as "icon";
 hide;
 
+# lists used to store the canvas temporarily
+list voxel temp;
+
 on "initalise" {
     hide;
 }
 
 on "hard reset" {
-    # shared variables deleted in stage
+    delete temp;
+    # other shared variables are deleted in stage
 }
 
 
-# the following are broadcasts and procedures paired
+################################
+#            Export            #
+################################
 
 on "export canvas" {
     copy_canvas_to_TI_px_buffer;
@@ -21,7 +27,6 @@ on "export canvas" {
     add TextImage_file to copy_this;
     show copy_this;
 }
-
 proc copy_canvas_to_TI_px_buffer {
     # NO DISPLAY TRANSFORM -- SCENE LINEAR
     TI_image_size_x = canvas_size_x;
@@ -48,9 +53,8 @@ on "export render" {
     add TextImage_file to copy_this;
     show copy_this;
 }
-
-# The render buffer is 2D and opaque
 proc copy_render_buffer_to_TI_buffer {
+    # The render buffer is 2D and opaque
     
     TI_image_size_x = canvas_size_x;
     TI_image_size_y = canvas_size_y;
@@ -61,6 +65,7 @@ proc copy_render_buffer_to_TI_buffer {
     i = 1;
     repeat (length render_cache_final_col) {
         # separate into RGB components
+        # NO DISPLAY TRANSFORM -- SCENE LINEAR
         add (floor((render_cache_final_col[i]/65536))%256) to TI_1_r;
         add (floor((render_cache_final_col[i]/256))%256) to TI_2_g;
         add (render_cache_final_col[i]%256) to TI_3_b;
@@ -70,19 +75,34 @@ proc copy_render_buffer_to_TI_buffer {
 }
 
 
-on "import to canvas" {
-    broadcast_and_wait "read TextImage";
-    copy_TI_px_buffer_to_canvas;
-    require_composite = true;
-}
+################################
+#            Import            #
+################################
 
+
+on "import canvas" {
+    stop_other_scripts;
+    ask "paste canvas";
+    if (answer() != "") {
+        TextImage_file = answer();
+        broadcast_and_wait "read TextImage";
+        copy_TI_px_buffer_to_canvas;
+        require_composite = true;
+    }
+}
 proc copy_TI_px_buffer_to_canvas {
     canvas_size_x = TI_image_size_x;
     canvas_size_y = TI_image_size_y;
     canvas_size_z = TI_header[1+("!_z" in TI_header)];
     if (canvas_size_z == "") {
-        # error "canvas size is unknown";
-        stop_this_script;
+        if (TI_image_size_y % TI_image_size_x == 0) {
+            warn "assuming canvas is a square";
+            canvas_size_y = TI_image_size_x;
+            canvas_size_z = floor(TI_image_size_y / TI_image_size_x);
+        } else {
+            error "canvas size is unknown";
+            stop_this_script;
+        }
     }
     delete canvas;
     i = 1;
@@ -93,26 +113,26 @@ proc copy_TI_px_buffer_to_canvas {
 }
 
 
-on "import as heightmap" {
-    broadcast_and_wait "read TextImage";
-    copy_TI_px_buffer_to_canvas_as_heightmap;
-    require_composite = true;
-}
-
-# replace opacity data
-proc copy_TI_px_buffer_to_canvas_as_heightmap {
-    canvas_size_x = TI_image_size_x;
-    canvas_size_y = TI_image_size_y;
-    # custom
-    delete canvas;
-    repeat (canvas_size_x * canvas_size_y * canvas_size_z) {
-        add VOXEL_NONE to canvas;
+on "import height map" {
+    stop_other_scripts;
+    ask "paste canvas";
+    if (answer() != "") {
+        TextImage_file = answer(); 
+        broadcast_and_wait "read TextImage";
+        copy_TI_px_buffer_to_canvas_as_height_map;
+        require_composite = true;
     }
+}
+proc copy_TI_px_buffer_to_canvas_as_height_map {
+    if (canvas_size_x != TI_image_size_x or canvas_size_y != TI_image_size_y) {
+        crop floor((canvas_size_x-TI_image_size_x)/2), floor((canvas_size_y-TI_image_size_y)/2), 0, TI_image_size_x, TI_image_size_y, canvas_size_z;
+    }
+    
     layer_size = (canvas_size_x * canvas_size_y);
     i = 1;
     repeat layer_size {
         local heightmap_write_z = 0;
-        repeat round(canvas_size_z * (TI_2_g[i]/255)) { # using green channel
+        repeat round(canvas_size_z * ((TI_2_g[i]*0.25 + TI_2_g[i]*0.5 + TI_2_g[i]*0.25) / 255)) { # using 1:2:1 rgb
             canvas[i + heightmap_write_z].opacity = 1;
             heightmap_write_z += layer_size;
         }
@@ -121,19 +141,26 @@ proc copy_TI_px_buffer_to_canvas_as_heightmap {
 }
 
 
-on "import as color map" {
-    broadcast_and_wait "read TextImage";
-    read_TI_px_buffer_to_canvas_as_2D_color_map;
-    require_composite = true;
+on "import color map" {
+    stop_other_scripts;
+    ask "paste canvas";
+    if (answer() != "") {
+        TextImage_file = answer(); 
+        broadcast_and_wait "read TextImage";
+        read_TI_px_buffer_to_canvas_as_2D_color_map;
+        require_composite = true;
+    }
 }
-
-# why isn't there a canvas size setter?
 proc read_TI_px_buffer_to_canvas_as_2D_color_map {
-    i = 1;
+    if (canvas_size_x != TI_image_size_x or canvas_size_y != TI_image_size_y) {
+        crop floor((canvas_size_x-TI_image_size_x)/2), floor((canvas_size_y-TI_image_size_y)/2), 0, TI_image_size_x, TI_image_size_y, canvas_size_z;
+    }
+
     layer_size = (canvas_size_x * canvas_size_y);
-    repeat layer_size { # TODO: enumerate over volume, use mod to repeat the 2D data on the 3rd dimension
+    i = 1;
+    repeat layer_size {
         local heightmap_write_z = 0;
-        repeat round(canvas_size_z * (TI_2_g[i]/255)) {
+        repeat canvas_size_z {
             canvas[i + heightmap_write_z].r = antiln((ln((TI_1_r[i]/255))/2.4));
             canvas[i + heightmap_write_z].g = antiln((ln((TI_2_g[i]/255))/2.4));
             canvas[i + heightmap_write_z].b = antiln((ln((TI_3_b[i]/255))/2.4));
@@ -141,4 +168,47 @@ proc read_TI_px_buffer_to_canvas_as_2D_color_map {
         }
         i++;
     }
+}
+
+
+################################
+#            Utils             #
+################################
+
+# copied from transorm canvas.gs:
+
+# crop using origin and width
+proc crop x, y, z, size_x, size_y, size_z {
+    delete temp;
+    iz = $z;
+    repeat $size_z {
+        iy = $y;
+        repeat $size_y {
+            ix = $z;
+            repeat $size_x {
+                local index = INDEX_FROM_3D_CANVAS(ix, iy, iz, canvas_size_x, canvas_size_y);
+                add canvas[index] to temp;
+                ix++;
+            }
+            iy++;
+        }
+        iz++;
+    }
+    canvas_size_x = $size_x;
+    canvas_size_y = $size_y;
+    canvas_size_z = $size_z;
+    
+    _write_temp_lists_to_canvas;
+    require_composite = true;
+}
+
+# final cleanup after the operation was run
+proc _write_temp_lists_to_canvas  {
+    delete canvas;
+    i = 1;
+    repeat (length temp) {
+        add temp[i] to canvas;
+        i++;
+    }
+    delete temp;
 }
