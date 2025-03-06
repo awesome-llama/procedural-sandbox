@@ -139,6 +139,7 @@ proc generate_unknown {
     draw_cylinder RANDOM_X, RANDOM_Y, 0, 10, 3;
     glbfx_jitter 0.2;
     glbfx_spall 0.2;
+    glbfx_melt 0.1;
     glbfx_color_noise "0.9", "1.1";
 
     require_composite = true;
@@ -574,91 +575,83 @@ proc draw_line_DDA x, y, z, dx, dy, dz, r {
 # (glbfx)
 
 
-# swap two voxels
-proc swap_canvas_voxels v1, v2 {
-    local voxel temp_voxel = canvas[v1];
-    canvas[v1] = canvas[v2];
-    canvas[v2] = temp_voxel;
-}
-
+# TODO generalise both procedures to use depositor
 
 # erode ("spall") exposed surfaces
 proc glbfx_spall probability {
-
-    local i = 1;
-    local px_z = 0;
-    repeat canvas_size_z {
-        local px_y = 0;
-        repeat canvas_size_y {
-            local px_x = 0;
-            repeat canvas_size_x {
-                if (random("0.0","1.0") < $probability and canvas[i].opacity > 0) {
-                    if is_voxel_exposed(px_x, px_y, px_z) { # this is really expensive, probably don't use this
-                        canvas[i] = VOXEL_NONE; # set to 0
-                    }
-                }
-                i++;
-                px_x++;
-            }
-            px_y++;
+    repeat ((canvas_size_x * canvas_size_y * canvas_size_z) * $probability) {
+        local i = random(0, (canvas_size_x * canvas_size_y * canvas_size_z)-1);
+        if (canvas[i].opacity > 0) {
+            #if is_voxel_exposed(px_x, px_y, px_z) { # this is really expensive, probably don't use this
+            #    canvas[i] = VOXEL_NONE; # set to 0
+            #}
         }
-        px_z++;
     }
 }
-
-
-# would some adjacency structure be more efficient? yes if above a threshold
-# for some it's ok as a single pass over static data
-# iterate over voxels, store add its state to adjacent in a 3d array
-# this just requires knowing the adjcant voxel's index
-
-
 
 # deposit voxels on any solid surface, the opposite of spall
 proc glbfx_spatter probability {
-    
-    local i = 1;
-    local px_z = 0;
-    repeat canvas_size_z {
-        local px_y = 0;
-        repeat canvas_size_y {
-            local px_x = 0;
-            repeat canvas_size_x {
-                if (random("0.0","1.0") < $probability and canvas[i].opacity == 0) { # is air
-                    # TODO check if adjacent is solid
-                }
-                i++;
-                px_x++;
-            }
-            px_y++;
+    repeat ((canvas_size_x * canvas_size_y * canvas_size_z) * $probability) {
+        local i = random(0, (canvas_size_x * canvas_size_y * canvas_size_z)-1);
+        if (canvas[i].opacity > 0) {
+            #if is_voxel_exposed(px_x, px_y, px_z) { # this is really expensive, probably don't use this
+            #    canvas[i] = depositor_voxel; # may need set_voxel 
+            #}
         }
-        px_z++;
     }
 }
 
 
 
-
-
-
-
-# TODO jitter in all directions, find a way to randomly pair voxels, skip z limits
 # randomly shift voxels, swapping with neighbours
 proc glbfx_jitter probability {
-    
-    local canvas_voxel_count = (canvas_size_x * canvas_size_y * canvas_size_z);
-    repeat (canvas_voxel_count * $probability) {
-        local jitter_i = random(1, canvas_voxel_count);
+    repeat ((canvas_size_x * canvas_size_y * canvas_size_z) * $probability) {
+        local jitter_x = random(0, canvas_size_x-1);
+        local jitter_y = random(0, canvas_size_y-1);
+        local jitter_z = random(0, canvas_size_z-2); # do not cross upper boundary
 
-        local voxel temp_voxel = canvas[jitter_i];
-        canvas[jitter_i] = canvas[jitter_i+1];
-        canvas[jitter_i+1] = temp_voxel;
+        local jitter_i1 = INDEX_FROM_3D_CANVAS(jitter_x, jitter_y, jitter_z, canvas_size_x, canvas_size_y);
+        if RANDOM_0_1 < 0.333 {
+            local jitter_i2 = INDEX_FROM_3D_CANVAS(jitter_x+1, jitter_y, jitter_z, canvas_size_x, canvas_size_y); # x
+        } elif random(0,1) == 0 {
+            local jitter_i2 = INDEX_FROM_3D_CANVAS(jitter_x, jitter_y+1, jitter_z, canvas_size_x, canvas_size_y); # y
+        } else {
+            local jitter_i2 = jitter_i1 + (canvas_size_x * canvas_size_y); # z
+        }
+
+        local voxel temp_voxel = canvas[jitter_i1];
+        canvas[jitter_i1] = canvas[jitter_i2];
+        canvas[jitter_i2] = temp_voxel;
     }
 }
 
 
 # average pairs of voxels
-#proc glbfx_melt
+proc glbfx_melt probability {
+    repeat ((canvas_size_x * canvas_size_y * canvas_size_z) * $probability) {
+        local jitter_x = random(0, canvas_size_x-1);
+        local jitter_y = random(0, canvas_size_y-1);
+        local jitter_z = random(0, canvas_size_z-2); # do not cross upper boundary
+
+        local jitter_i1 = INDEX_FROM_3D_CANVAS(jitter_x, jitter_y, jitter_z, canvas_size_x, canvas_size_y);
+        if RANDOM_0_1 < 0.333 {
+            local jitter_i2 = INDEX_FROM_3D_CANVAS(jitter_x+1, jitter_y, jitter_z, canvas_size_x, canvas_size_y); # x
+        } elif random(0,1) == 0 {
+            local jitter_i2 = INDEX_FROM_3D_CANVAS(jitter_x, jitter_y+1, jitter_z, canvas_size_x, canvas_size_y); # y
+        } else {
+            local jitter_i2 = jitter_i1 + (canvas_size_x * canvas_size_y); # z
+        }
+
+        if (canvas[jitter_i1].opacity > 0 and canvas[jitter_i2].opacity > 0) { # don't melt air
+            canvas[jitter_i1].opacity = AVERAGE(canvas[jitter_i1].opacity, canvas[jitter_i2].opacity);
+            canvas[jitter_i1].r = AVERAGE(canvas[jitter_i1].r, canvas[jitter_i2].r);
+            canvas[jitter_i1].g = AVERAGE(canvas[jitter_i1].g, canvas[jitter_i2].g);
+            canvas[jitter_i1].b = AVERAGE(canvas[jitter_i1].b, canvas[jitter_i2].b);
+            canvas[jitter_i1].emission = AVERAGE(canvas[jitter_i1].emission, canvas[jitter_i2].emission);
+            canvas[jitter_i2] = canvas[jitter_i1];
+        }
+    }
+}
 
 
 # darken voxels randomly

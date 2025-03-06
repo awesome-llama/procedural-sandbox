@@ -111,6 +111,10 @@ struct template_metadata {
 # Clamp between 0 and 1
 %define CLAMP_0_1(VAL) (1 - (((VAL)<1) * (1-POSITIVE_CLAMP(VAL))) )
 
+# random float
+%define RANDOM_0_1 random("0.0", "1.0")
+
+%define AVERAGE(A,B) (((A)+(B))/2)
 
 ### Specific to this project:
 
