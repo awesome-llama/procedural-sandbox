@@ -16,6 +16,7 @@ on "*" {
     delete_all_templates;
     add_canvas_as_template;
     load_template_to_canvas 0;
+    stamp_template 0, 0, 0, 0;
 }
 
 
@@ -274,7 +275,23 @@ proc stamp_template index, x, y, z {
         local template_size_z = depositor_template_metadata[$index].sz;
 
         # copy template
-
+        local px_z = floor($z);
+        repeat template_size_x {
+            local px_y = floor($y);
+            repeat template_size_y {
+                local px_x = floor($x);
+                repeat template_size_z {
+                    # remember that wrapping is needed:
+                    local set_canvas_index = INDEX_FROM_3D_CANVAS_INTS(px_x, px_y, px_z, canvas_size_x, canvas_size_y); 
+                    if (depositor_replace == true or canvas[set_canvas_index].opacity == 0) { 
+                        canvas[set_canvas_index] = depositor_template_voxels[template_i];
+                    }
+                    px_x++;
+                }
+                px_y++;
+            }
+            px_z++;
+        }
     }
 }
 
