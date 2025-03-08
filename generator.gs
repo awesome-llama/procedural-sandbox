@@ -138,7 +138,9 @@ proc generate_unknown {
     }
     draw_cylinder RANDOM_X, RANDOM_Y, 0, 10, 3;
     glbfx_jitter 0.2;
-    glbfx_spall 0.2;
+    set_depositor_to_air;
+    glbfx_surface_replace 0.2;
+    glbfx_spatter 0.2;
     glbfx_melt 0.1;
     glbfx_color_noise "0.9", "1.1";
 
@@ -236,17 +238,17 @@ proc add_canvas_as_template {
     add template_metadata { ptr:(1+length depositor_template_voxels), sx:canvas_size_x, sy:canvas_size_y, sz:canvas_size_z } to depositor_template_metadata;
     
     # copy canvas
-    local i = 1;
+    template_i = 1;
     repeat (canvas_size_x * canvas_size_y * canvas_size_z) {
-        add canvas[i] to depositor_template_voxels;
-        i++;
+        add canvas[template_i] to depositor_template_voxels;
+        template_i++;
     }
 }
 
 proc load_template_to_canvas index {
-    local i = depositor_template_metadata[$index].ptr;
+    template_i = depositor_template_metadata[$index].ptr;
 
-    if (i != "") {
+    if (template_i != "") {
         # read metadata
         canvas_size_x = depositor_template_metadata[$index].sx;
         canvas_size_y = depositor_template_metadata[$index].sy;
@@ -255,9 +257,24 @@ proc load_template_to_canvas index {
         # copy template
         delete canvas;
         repeat (canvas_size_x * canvas_size_y * canvas_size_z) {
-            add depositor_template_voxels[i] to canvas;
-            i++;
+            add depositor_template_voxels[template_i] to canvas;
+            template_i++;
         }
+    }
+}
+
+# place the entire template in the canvas, intended for a small template. Uses the depositor.
+proc stamp_template index, x, y, z {
+    template_i = depositor_template_metadata[$index].ptr;
+
+    if (template_i != "") {
+        # read metadata
+        local template_size_x = depositor_template_metadata[$index].sx;
+        local template_size_y = depositor_template_metadata[$index].sy;
+        local template_size_z = depositor_template_metadata[$index].sz;
+
+        # copy template
+
     }
 }
 
@@ -272,9 +289,15 @@ proc load_template_to_canvas index {
 proc reset_depositor {
     depositor_mode = DepositorMode.DRAW;
     depositor_replace = true;
-    voxel depositor_voxel = VOXEL_SOLID_GREY(1);
+    depositor_voxel = VOXEL_SOLID_GREY(1);
     depositor_template_index = 0;
-    XYZ depositor_template_origin = XYZ {x:0, y:0, z:0};
+    depositor_template_origin = XYZ {x:0, y:0, z:0};
+}
+
+proc set_depositor_to_air {
+    depositor_mode = DepositorMode.DRAW;
+    depositor_replace = true; # assumes that the user wants to erase voxels
+    depositor_voxel = VOXEL_NONE;
 }
 
 proc set_depositor_from_sRGB r, g, b {
@@ -320,25 +343,6 @@ proc set_voxel x, y, z {
             }
         }
     }
-}
-
-
-func is_voxel_air(x, y, z) {
-    if ($z >= 0 and $z < canvas_size_z) { # only set the voxel if z is in range
-        return (canvas[INDEX_FROM_3D_CANVAS($x, $y, $z, canvas_size_x, canvas_size_y)].opacity == 0);
-    }
-    return true;
-}
-
-
-func is_voxel_exposed(x, y, z) {
-    if (canvas[INDEX_FROM_3D_CANVAS($x+1, $y, $z, canvas_size_x, canvas_size_y)].opacity == 0) { return true; }
-    if (canvas[INDEX_FROM_3D_CANVAS($x-1, $y, $z, canvas_size_x, canvas_size_y)].opacity == 0) { return true; }
-    if (canvas[INDEX_FROM_3D_CANVAS($x, $y+1, $z, canvas_size_x, canvas_size_y)].opacity == 0) { return true; }
-    if (canvas[INDEX_FROM_3D_CANVAS($x, $y-1, $z, canvas_size_x, canvas_size_y)].opacity == 0) { return true; }
-    if (canvas[INDEX_FROM_3D_CANVAS($x, $y, $z+1, canvas_size_x, canvas_size_y)].opacity == 0) { return true; }
-    if (canvas[INDEX_FROM_3D_CANVAS($x, $y, $z-1, canvas_size_x, canvas_size_y)].opacity == 0) { return true; }
-    return false;
 }
 
 
@@ -575,32 +579,57 @@ proc draw_line_DDA x, y, z, dx, dy, dz, r {
 # (glbfx)
 
 
-# TODO generalise both procedures to use depositor
-
-# erode ("spall") exposed surfaces
-proc glbfx_spall probability {
+# replace exposed surfaces randomly
+proc glbfx_surface_replace probability {
     repeat ((canvas_size_x * canvas_size_y * canvas_size_z) * $probability) {
-        local i = random(0, (canvas_size_x * canvas_size_y * canvas_size_z)-1);
-        if (canvas[i].opacity > 0) {
-            #if is_voxel_exposed(px_x, px_y, px_z) { # this is really expensive, probably don't use this
-            #    canvas[i] = VOXEL_NONE; # set to 0
-            #}
+        local px_x = random(0, canvas_size_x-1);
+        local px_y = random(0, canvas_size_y-1);
+        local px_z = random(0, canvas_size_z-1);
+
+        if (canvas[INDEX_FROM_3D_NOWRAP_INTS(px_x, px_y, px_z, canvas_size_x, canvas_size_y)].opacity > 0) {
+            
+            if (canvas[INDEX_FROM_3D_CANVAS_INTS(px_x+1, px_y, px_z, canvas_size_x, canvas_size_y)].opacity == 0) {
+                set_voxel px_x, px_y, px_z;
+            } elif (canvas[INDEX_FROM_3D_CANVAS_INTS(px_x-1, px_y, px_z, canvas_size_x, canvas_size_y)].opacity == 0) {
+                set_voxel px_x, px_y, px_z;
+            } elif (canvas[INDEX_FROM_3D_CANVAS_INTS(px_x, px_y+1, px_z, canvas_size_x, canvas_size_y)].opacity == 0) {
+                set_voxel px_x, px_y, px_z;
+            } elif (canvas[INDEX_FROM_3D_CANVAS_INTS(px_x, px_y-1, px_z, canvas_size_x, canvas_size_y)].opacity == 0) {
+                set_voxel px_x, px_y, px_z;
+            } elif (canvas[INDEX_FROM_3D_CANVAS_INTS(px_x, px_y, px_z+1, canvas_size_x, canvas_size_y)].opacity == 0) {
+                set_voxel px_x, px_y, px_z;
+            } elif (canvas[INDEX_FROM_3D_CANVAS_INTS(px_x, px_y, px_z-1, canvas_size_x, canvas_size_y)].opacity == 0) {
+                set_voxel px_x, px_y, px_z;
+            }
         }
     }
 }
 
-# deposit voxels on any solid surface, the opposite of spall
+
+# deposit voxels adjacent to any non-air surface randomly
 proc glbfx_spatter probability {
     repeat ((canvas_size_x * canvas_size_y * canvas_size_z) * $probability) {
-        local i = random(0, (canvas_size_x * canvas_size_y * canvas_size_z)-1);
-        if (canvas[i].opacity > 0) {
-            #if is_voxel_exposed(px_x, px_y, px_z) { # this is really expensive, probably don't use this
-            #    canvas[i] = depositor_voxel; # may need set_voxel 
-            #}
+        local px_x = random(0, canvas_size_x-1);
+        local px_y = random(0, canvas_size_y-1);
+        local px_z = random(0, canvas_size_z-1);
+
+        if (canvas[INDEX_FROM_3D_NOWRAP_INTS(px_x, px_y, px_z, canvas_size_x, canvas_size_y)].opacity == 0) {
+            if (canvas[INDEX_FROM_3D_CANVAS_INTS(px_x+1, px_y, px_z, canvas_size_x, canvas_size_y)].opacity > 0) {
+                set_voxel px_x, px_y, px_z;
+            } elif (canvas[INDEX_FROM_3D_CANVAS_INTS(px_x-1, px_y, px_z, canvas_size_x, canvas_size_y)].opacity > 0) {
+                set_voxel px_x, px_y, px_z;
+            } elif (canvas[INDEX_FROM_3D_CANVAS_INTS(px_x, px_y+1, px_z, canvas_size_x, canvas_size_y)].opacity > 0) {
+                set_voxel px_x, px_y, px_z;
+            } elif (canvas[INDEX_FROM_3D_CANVAS_INTS(px_x, px_y-1, px_z, canvas_size_x, canvas_size_y)].opacity > 0) {
+                set_voxel px_x, px_y, px_z;
+            } elif (canvas[INDEX_FROM_3D_CANVAS_INTS(px_x, px_y, px_z+1, canvas_size_x, canvas_size_y)].opacity > 0) {
+                set_voxel px_x, px_y, px_z;
+            } elif (canvas[INDEX_FROM_3D_CANVAS_INTS(px_x, px_y, px_z-1, canvas_size_x, canvas_size_y)].opacity > 0) {
+                set_voxel px_x, px_y, px_z;
+            }
         }
     }
 }
-
 
 
 # randomly shift voxels, swapping with neighbours
@@ -610,11 +639,11 @@ proc glbfx_jitter probability {
         local jitter_y = random(0, canvas_size_y-1);
         local jitter_z = random(0, canvas_size_z-2); # do not cross upper boundary
 
-        local jitter_i1 = INDEX_FROM_3D_CANVAS(jitter_x, jitter_y, jitter_z, canvas_size_x, canvas_size_y);
+        local jitter_i1 = INDEX_FROM_3D_CANVAS_INTS(jitter_x, jitter_y, jitter_z, canvas_size_x, canvas_size_y);
         if RANDOM_0_1 < 0.333 {
-            local jitter_i2 = INDEX_FROM_3D_CANVAS(jitter_x+1, jitter_y, jitter_z, canvas_size_x, canvas_size_y); # x
+            local jitter_i2 = INDEX_FROM_3D_CANVAS_INTS(jitter_x+1, jitter_y, jitter_z, canvas_size_x, canvas_size_y); # x
         } elif random(0,1) == 0 {
-            local jitter_i2 = INDEX_FROM_3D_CANVAS(jitter_x, jitter_y+1, jitter_z, canvas_size_x, canvas_size_y); # y
+            local jitter_i2 = INDEX_FROM_3D_CANVAS_INTS(jitter_x, jitter_y+1, jitter_z, canvas_size_x, canvas_size_y); # y
         } else {
             local jitter_i2 = jitter_i1 + (canvas_size_x * canvas_size_y); # z
         }
@@ -626,18 +655,18 @@ proc glbfx_jitter probability {
 }
 
 
-# average pairs of voxels
+# randomly average pairs of non-air voxels
 proc glbfx_melt probability {
     repeat ((canvas_size_x * canvas_size_y * canvas_size_z) * $probability) {
         local jitter_x = random(0, canvas_size_x-1);
         local jitter_y = random(0, canvas_size_y-1);
         local jitter_z = random(0, canvas_size_z-2); # do not cross upper boundary
 
-        local jitter_i1 = INDEX_FROM_3D_CANVAS(jitter_x, jitter_y, jitter_z, canvas_size_x, canvas_size_y);
+        local jitter_i1 = INDEX_FROM_3D_CANVAS_INTS(jitter_x, jitter_y, jitter_z, canvas_size_x, canvas_size_y);
         if RANDOM_0_1 < 0.333 {
-            local jitter_i2 = INDEX_FROM_3D_CANVAS(jitter_x+1, jitter_y, jitter_z, canvas_size_x, canvas_size_y); # x
+            local jitter_i2 = INDEX_FROM_3D_CANVAS_INTS(jitter_x+1, jitter_y, jitter_z, canvas_size_x, canvas_size_y); # x
         } elif random(0,1) == 0 {
-            local jitter_i2 = INDEX_FROM_3D_CANVAS(jitter_x, jitter_y+1, jitter_z, canvas_size_x, canvas_size_y); # y
+            local jitter_i2 = INDEX_FROM_3D_CANVAS_INTS(jitter_x, jitter_y+1, jitter_z, canvas_size_x, canvas_size_y); # y
         } else {
             local jitter_i2 = jitter_i1 + (canvas_size_x * canvas_size_y); # z
         }

@@ -124,6 +124,13 @@ struct template_metadata {
 # Same as INDEX_FROM_3D but for the canvas, which only wraps along X and Y.
 %define INDEX_FROM_3D_CANVAS(X,Y,Z,SIZE_X,SIZE_Y) (1 + ((((SIZE_X)*(SIZE_Y)) * floor(Z)) + (((SIZE_X)*(floor(Y) % (SIZE_Y))) + (floor(X) % (SIZE_X)))))
 
+# same as INDEX_FROM_3D_CANVAS but assumes ints
+%define INDEX_FROM_3D_CANVAS_INTS(X,Y,Z,SIZE_X,SIZE_Y) (1 + ((((SIZE_X)*(SIZE_Y)) * (Z)) + (((SIZE_X)*((Y) % (SIZE_Y))) + ((X) % (SIZE_X)))))
+
+# Special case index, assumes ints that do not wrap
+%define INDEX_FROM_3D_NOWRAP_INTS(X,Y,Z,SIZE_X,SIZE_Y) (1 + ((((SIZE_X)*(SIZE_Y)) * (Z)) + (((SIZE_X)*(Y)) + (X))))
+
+
 # HSV to RGB transformation
 # https://stackoverflow.com/questions/3018313/algorithm-to-convert-rgb-to-hsv-and-hsv-to-rgb-in-range-0-255-for-both
 func HSV_to_RGB(h, s, v) RGB {

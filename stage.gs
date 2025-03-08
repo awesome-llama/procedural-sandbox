@@ -3,7 +3,7 @@
 costumes "costumes/stage/darkchecker.png" as "darkchecker";
 
 
-# The "canvas" is the 3D voxel environment that can be drawn to with color and opacity. Stored linear using Rec 709 primaries.
+# The "canvas" is the 3D voxel environment that can be drawn to with color and opacity. Stored linear using Rec 709 primaries. Other comments may reference "air" which is any voxel with 0 opacity.
 list voxel canvas;
 
 # The render cache is a 2D projection of the canvas for displaying on screen.
@@ -46,7 +46,7 @@ on "initalise" {
 
     # the "depositor" (chose an obscure but relevant name) is a description of what voxel will be placed by the procedural tools. It may be a single voxel or it may be a 3D template.
     depositor_mode = DepositorMode.DRAW;
-    depositor_replace = true; # bool [false=keep existing intact | true=replace (incl. with new air)]
+    depositor_replace = true; # bool [false=keep existing (non-air voxel) intact | true=replace (incl. with new air)]
     voxel depositor_voxel = VOXEL_SOLID_GREY(1);
     depositor_template_index = 0; # which template to use, 1-indexed
     XYZ depositor_template_origin = XYZ {x:0, y:0, z:0}; # origin of the template in canvas space

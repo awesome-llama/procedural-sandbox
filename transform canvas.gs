@@ -167,6 +167,12 @@ proc revolve dist_offset {
 }
 
 
+proc radial_array dist_offset {
+    
+}
+
+
+
 # crop using origin and width
 proc crop x, y, z, size_x, size_y, size_z {
     delete temp;
