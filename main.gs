@@ -16,9 +16,10 @@ on "start main loop" {
     zoom_extents;
     
     require_composite = true;
-    require_screen_refresh = true;
+    require_screen_refresh = true; # TODO rename to viewport
     forever {
         hide; # does this affect yielding?
+
         if (require_composite == true) {
             broadcast "composite";
             require_composite = false;
@@ -26,9 +27,10 @@ on "start main loop" {
         if (require_screen_refresh == true) {
             erase_all;
             broadcast "render canvas";
-            broadcast "render world text";
             require_screen_refresh = false;
         }
+        broadcast "render ui"; # always redraw, no erase
+        
     }
 }
 

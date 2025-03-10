@@ -28,7 +28,11 @@ list copy_this; # output list for copying text
 list project_messages; # console messages
 
 list template_metadata depositor_template_metadata; # pointers into the template list
-list voxel depositor_template_voxels; 
+list voxel depositor_template_voxels;
+
+# UI generator options
+list gen_opt = file ```gen_opt.txt```;
+
 
 on "initalise" {
     dev = round((username() == "awesome-llama")); # developer mode
@@ -50,6 +54,8 @@ on "initalise" {
     voxel depositor_voxel = VOXEL_SOLID_GREY(1);
     depositor_template_index = 0; # which template to use, 1-indexed
     XYZ depositor_template_origin = XYZ {x:0, y:0, z:0}; # origin of the template in canvas space
+
+    UI_hovered_element = "";
 }
 
 

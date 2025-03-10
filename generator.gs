@@ -353,8 +353,10 @@ proc set_voxel x, y, z {
             if (depositor_mode == DepositorMode.DRAW) {
                 canvas[set_canvas_index] = depositor_voxel; # set voxel with brush
             } else {
+                local template_sx = depositor_template_metadata[depositor_template_index].sx; # this is read multiple times so should be faster when stored in a var
+                local template_sy = depositor_template_metadata[depositor_template_index].sy;
                 # get the template index which is ptr + 3D index
-                local tex_idx = depositor_template_metadata[depositor_template_index].ptr + INDEX_FROM_3D($x-depositor_template_origin.x, $y-depositor_template_origin.y, $z-depositor_template_origin.z, depositor_template_metadata[depositor_template_index].sx, depositor_template_metadata[depositor_template_index].sy, depositor_template_metadata[depositor_template_index].sz);
+                local tex_idx = depositor_template_metadata[depositor_template_index].ptr + INDEX_FROM_3D($x-depositor_template_origin.x, $y-depositor_template_origin.y, $z-depositor_template_origin.z, template_sx, template_sy, depositor_template_metadata[depositor_template_index].sz);
                 
                 canvas[set_canvas_index] = depositor_template_voxels[tex_idx];
             }
