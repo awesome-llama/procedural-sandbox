@@ -29,8 +29,15 @@ on "start main loop" {
             broadcast "render canvas";
             require_screen_refresh = false;
         }
-        broadcast "render ui"; # always redraw, no erase
         
+        # reset hover detection
+        UI_last_hovered_group = UI_hovered_group;
+        UI_last_hovered_element = UI_hovered_element;
+        UI_hovered_group = "";
+        UI_hovered_element = "";
+
+        broadcast "render ui"; # always redraw, no erase. This goes to the UI sprite only.
+        # more broadcasts for UI may be added although it's not clear if this is needed
     }
 }
 
@@ -56,14 +63,16 @@ onkey "p" {
 
 # click and drag to pan
 on "stage clicked" {
-    prev_mouse_x = mouse_x();
-    prev_mouse_y = mouse_y();
-    until (not mouse_down()) {
-        cam_x += ((mouse_x()-prev_mouse_x)/cam_scale);
-        cam_y += ((mouse_y()-prev_mouse_y)/cam_scale);
+    if (UI_hovered_element == "") {
         prev_mouse_x = mouse_x();
         prev_mouse_y = mouse_y();
-        require_screen_refresh = true;
+        until (not mouse_down()) {
+            cam_x += ((mouse_x()-prev_mouse_x)/cam_scale);
+            cam_y += ((mouse_y()-prev_mouse_y)/cam_scale);
+            prev_mouse_x = mouse_x();
+            prev_mouse_y = mouse_y();
+            require_screen_refresh = true;
+        }
     }
 }
 

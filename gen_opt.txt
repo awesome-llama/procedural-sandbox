@@ -47,6 +47,7 @@ EXPANDER
 Expander
 exp1
 1
+64
 25
 VALUE
 Example val
@@ -66,12 +67,12 @@ v2
 10000
 LABEL
 Example label2
-SEPARATOR
-1
-3
 END
 BUTTON
 Example button3
 btn3
 0
+SEPARATOR
+1
+3
 END

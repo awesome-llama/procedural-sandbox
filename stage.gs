@@ -55,7 +55,10 @@ on "initalise" {
     depositor_template_index = 0; # which template to use, 1-indexed
     XYZ depositor_template_origin = XYZ {x:0, y:0, z:0}; # origin of the template in canvas space
 
+    UI_hovered_group = "";
     UI_hovered_element = "";
+    UI_last_hovered_group = "";
+    UI_last_hovered_element = "";
 }
 
 

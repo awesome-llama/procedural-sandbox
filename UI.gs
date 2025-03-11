@@ -163,6 +163,16 @@ proc draw_UI_rect x, y, width, height, radius, fill_col, outline_col {
 }
 
 
+
+
+on "render ui" {
+    # constantly renders, this is because the ui needs to be interactive.
+
+    render_viewport_text;
+    render_gen_opt_panel -240, 160, 160, 340;
+    switch_costume "icon";
+}
+
 proc render_viewport_text {
     # TODO
     set_pen_color "#ffffff";
@@ -171,14 +181,8 @@ proc render_viewport_text {
     plainText -230, 140, 1, compositor_mode;
 }
 
-
-on "render ui" {
-    # constantly renders, this is because the ui needs to be interactive. In the future rendering could be made lazy.
-
-    render_gen_opt_panel -240, 180, 160;
-    switch_costume "icon";
-}
-
+# background panel colour
+%define THEME_COL_BG "#404040"
 
 # the darker fill colour inside elements
 %define THEME_COL_FILL "#333333"
@@ -200,15 +204,13 @@ on "render ui" {
 %define TXT_Y_OFFSET 12
 %define INPUT_WIDTH 50
 
-proc render_gen_opt_panel x, y, width {
+
+proc render_gen_opt_panel x, y, width, height {
     UI_x = $x+5;
     UI_y = $y-5;
-    UI_last_hovered_element = UI_hovered_element;
-    UI_hovered_element = ""; # reset hover detection
-    draw_UI_rect $x, $y, $width, 360, 1, "#404040", ""; # TODO
+    draw_UI_rect $x, $y, $width, $height, 1, THEME_COL_BG, ""; # TODO
     render_element 1, UI_x, UI_y, $width-20;
 }
-
 
 proc render_element index, x, y, width {
     # index is the index in the list
@@ -231,11 +233,11 @@ proc render_element index, x, y, width {
 
     } elif (elem_type == "BUTTON") {
         # [type, label, id, button_clicked]
-        UI_check_touching_mouse gen_opt[$index+2], $x, $y+1, $width, LINEHIGHT;
+        UI_check_touching_mouse $x, $y+1, $width, LINEHIGHT, "modular elements", gen_opt[$index+2];
         if (UI_last_hovered_element == gen_opt[$index+2]) {
-            draw_UI_rect $x, $y+1, $width, LINEHIGHT, "", "#656565", THEME_COL_OUTLINE_HIGHLIGHT;
+            draw_UI_rect $x, $y-1, $width, LINEHIGHT, "", "#656565", THEME_COL_OUTLINE_HIGHLIGHT;
         } else {
-            draw_UI_rect $x, $y+1, $width, LINEHIGHT, "", "#555555", THEME_COL_OUTLINE;
+            draw_UI_rect $x, $y-1, $width, LINEHIGHT, "", "#555555", THEME_COL_OUTLINE;
         }
         
         set_pen_color THEME_COL_TEXT;
@@ -248,7 +250,7 @@ proc render_element index, x, y, width {
         set_pen_color THEME_COL_TEXT;
         plainText $x, ($y-TXT_Y_OFFSET), 1, gen_opt[$index+1];
         
-        UI_check_touching_mouse gen_opt[$index+2], (($x+$width)-LINEHIGHT), $y, LINEHIGHT, LINEHIGHT;
+        UI_check_touching_mouse (($x+$width)-LINEHIGHT), $y, LINEHIGHT, LINEHIGHT, "modular elements", gen_opt[$index+2];
 
         if (UI_last_hovered_element == gen_opt[$index+2]) {
             draw_UI_rect (($x+$width)-12), ($y-2), 12, 12, 2, THEME_COL_FILL_HIGHLIGHT, THEME_COL_OUTLINE_HIGHLIGHT;
@@ -270,12 +272,12 @@ proc render_element index, x, y, width {
         set_pen_color THEME_COL_TEXT;
         plainText $x, ($y-TXT_Y_OFFSET), 1, gen_opt[$index+1];
         
-        UI_check_touching_mouse gen_opt[$index+2], (($x+$width)-32), $y, 32, LINEHIGHT;
+        UI_check_touching_mouse (($x+$width)-32), $y, 32, LINEHIGHT, "modular elements", gen_opt[$index+2];
 
         if (UI_last_hovered_element == gen_opt[$index+2]) {
-            draw_UI_rect (($x+$width)-32), ($y-1), 32, LINEHIGHT-2, 2, gen_opt[$index+3], THEME_COL_OUTLINE_HIGHLIGHT;
+            draw_UI_rect (($x+$width)-32), ($y-1), 32, LINEHIGHT-2, 4, gen_opt[$index+3], THEME_COL_OUTLINE_HIGHLIGHT;
         } else {
-            draw_UI_rect (($x+$width)-32), ($y-1), 32, LINEHIGHT-2, 2, gen_opt[$index+3], THEME_COL_OUTLINE;
+            draw_UI_rect (($x+$width)-32), ($y-1), 32, LINEHIGHT-2, 4, gen_opt[$index+3], THEME_COL_OUTLINE;
         }
         UI_y -= LINEHIGHT;
         render_element $index+4, $x, UI_y, $width;
@@ -283,7 +285,7 @@ proc render_element index, x, y, width {
     } elif (elem_type == "VALUE") {
         # [type, label, id, val, soft_min, soft_max, hard_min, hard_max]
 
-        UI_check_touching_mouse gen_opt[$index+2], (($x+$width)-INPUT_WIDTH), $y, INPUT_WIDTH, LINEHIGHT;
+        UI_check_touching_mouse (($x+$width)-INPUT_WIDTH), $y, INPUT_WIDTH, LINEHIGHT, "modular elements", gen_opt[$index+2];
 
         if (UI_last_hovered_element == gen_opt[$index+2]) {
             draw_UI_rect (($x+$width)-INPUT_WIDTH), ($y-1), INPUT_WIDTH, LINEHIGHT-2, 2, THEME_COL_FILL_HIGHLIGHT, THEME_COL_OUTLINE_HIGHLIGHT;
@@ -311,32 +313,70 @@ proc render_element index, x, y, width {
         render_element $index+3, $x, UI_y, $width;
 
     } elif (elem_type == "EXPANDER") {
-        # [type, label, id, opened, size]
-        
-        UI_check_touching_mouse gen_opt[$index+2], $x, $y+1, $width, LINEHIGHT;
-        if (UI_last_hovered_element == gen_opt[$index+2]) {
-            draw_UI_rect $x, $y-1, $width, LINEHIGHT-2, "", "#444444", THEME_COL_OUTLINE_HIGHLIGHT;
-        } else {
-            draw_UI_rect $x, $y-1, $width, LINEHIGHT-2, "", "#444444", THEME_COL_OUTLINE;
-        }
+        # [type, label, id, opened, height, size_of_self (number of items)]
+        # todo add label_colour?
 
-        set_pen_color "aaaaaa";
-        plainText $x+8, ($y-TXT_Y_OFFSET), 1, gen_opt[$index+1];
+        draw_UI_rect $x, $y-1, $width, gen_opt[$index+4], 3, THEME_COL_BG, THEME_COL_OUTLINE;
+
+        UI_check_touching_mouse $x, $y-1, $width, LINEHIGHT-2, "modular elements", gen_opt[$index+2];
+        if (UI_last_hovered_element == gen_opt[$index+2]) {
+            draw_UI_rect $x, $y-1, $width, LINEHIGHT-2, 3, "#444444", THEME_COL_OUTLINE_HIGHLIGHT;
+        } else {
+            draw_UI_rect $x, $y-1, $width, LINEHIGHT-2, 3, THEME_COL_FILL, THEME_COL_OUTLINE;
+        }
+        # maybe draw a separator?
+
+        set_pen_color THEME_COL_TEXT;
+        draw_triangle ($x+$width)-10, ($y-9), 0;
+        plainText $x+5, ($y-TXT_Y_OFFSET), 1, gen_opt[$index+1]; # label
         
         UI_y -= LINEHIGHT;
-        render_element $index+4, $x, UI_y, $width;
+        render_element $index+6, $x+5, UI_y, $width-10; # first child
+
+        UI_y -= 2; # line (from bottom of rect) then margin
+        render_element $index+gen_opt[$index+5], $x, UI_y, $width; # next
 
     }
 }
 
 
 on "stage clicked" {
-    
-}
+    if (UI_hovered_group == "modular elements") {
 
-
-proc UI_check_touching_mouse id, x, y, width, height {
-    if (not (((mouse_x() < $x) or (mouse_x() > ($x+$width))) or ((mouse_y() > $y) or (mouse_y() < ($y-$height))))) {
-        UI_hovered_element = $id;
     }
 }
+
+
+
+################################
+#             Draw             #
+################################
+
+
+proc draw_triangle x, y, dir {
+    # TODO, add direction
+    goto $x, ($y+1);
+    set_pen_size 3;
+    pen_down;
+    pen_up;
+    set_pen_size 1;
+    goto ($x-3), ($y+2);
+    pen_down;
+    goto ($x+3), ($y+2);
+    goto ($x+0), ($y-2);
+    goto ($x-3), ($y+2);
+    pen_up;
+}
+
+
+################################
+#            Utils             #
+################################
+
+proc UI_check_touching_mouse x, y, width, height, id1, id2 {
+    if (not (((mouse_x() < $x) or (mouse_x() > ($x+$width))) or ((mouse_y() > $y) or (mouse_y() < ($y-$height))))) {
+        UI_hovered_group = $id1;
+        UI_hovered_element = $id2;
+    }
+}
+
