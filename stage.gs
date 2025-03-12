@@ -30,8 +30,8 @@ list project_messages; # console messages
 list template_metadata depositor_template_metadata; # pointers into the template list
 list voxel depositor_template_voxels;
 
-# UI generator options
-list gen_opt = file ```gen_opt.txt```;
+# UI
+list UI_data = file ```UI_data.txt```;
 
 
 on "initalise" {
