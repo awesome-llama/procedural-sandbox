@@ -109,10 +109,10 @@ proc wrappedText x, y, size, text, wrap_width {
 proc draw_UI_rect x, y, width, height, radius, fill_col, outline_col {
     # not tested on all cases, only set up for this use case!
     # drawn from top-left
-    if ($radius == "") {
-        local radius = 4;
-    } else {
+    if ($radius > 0) {
         local radius = $radius;
+    } else {
+        local radius = 1;
     }
     if (($width > (radius*2)) and ($height > (radius*2))) {
         if ($width > $height) {
@@ -163,24 +163,6 @@ proc draw_UI_rect x, y, width, height, radius, fill_col, outline_col {
 }
 
 
-
-
-on "render ui" {
-    # constantly renders, this is because the ui needs to be interactive.
-
-    render_viewport_text;
-    render_gen_opt_panel -240, 160, 160, 340;
-    switch_costume "icon";
-}
-
-proc render_viewport_text {
-    # TODO
-    set_pen_color "#ffffff";
-    plainText -230, 160, 1, ("canvas size: " & ((((canvas_size_x & ", ") & canvas_size_y) & ", ") & canvas_size_z));
-    plainText -230, 150, 1, ("timer: " & floor(( 100 *((86400 * days_since_2000()) % 1))));
-    plainText -230, 140, 1, compositor_mode;
-}
-
 # background panel colour
 %define THEME_COL_BG "#404040"
 
@@ -200,25 +182,40 @@ proc render_viewport_text {
 %define THEME_COL_TEXT "#ffffff"
 
 
+on "render ui" {
+    # constantly renders, this is because the ui needs to be interactive.
+    draw_UI_rect -240, 180, 480, 20, 1, THEME_COL_BG, "";
+
+    #render_viewport_text;
+    render_gen_opt_panel -240, 160, 160, 340;
+    switch_costume "icon";
+}
+
+proc render_viewport_text {
+    # TODO
+    set_pen_color "#ffffff";
+    plainText -230, 160, 1, ("canvas size: " & ((((canvas_size_x & ", ") & canvas_size_y) & ", ") & canvas_size_z));
+    plainText -230, 150, 1, ("timer: " & floor(( 100 *((86400 * days_since_2000()) % 1))));
+    plainText -230, 140, 1, compositor_mode;
+}
+
+
+
 %define LINEHIGHT 16
 %define TXT_Y_OFFSET 12
 %define INPUT_WIDTH 50
 
+%define IS_HOVERED UI_last_hovered_group == "modular elements" and UI_last_hovered_element == $index
 
 proc render_gen_opt_panel x, y, width, height {
-    UI_x = $x+5;
-    UI_y = $y-5;
-    draw_UI_rect $x, $y, $width, $height, 1, THEME_COL_BG, ""; # TODO
-    render_element 1, UI_x, UI_y, $width-20;
+    draw_UI_rect $x, $y, $width, $height, 1, THEME_COL_BG, ""; # TODO better rect renderer
+    render_element 1, $x+5, $y-5, $width-10;
 }
-#todo remove y param
-proc render_element index, x, y, width {
-    # index is the index in the list
-    
-    if key_pressed("z") {
-        draw_UI_rect $x, $y, $width, LINEHIGHT, 1, "#00a050", "#00ffff"; # debug
-    }
 
+proc render_element index, x, y, width {
+    # index is to select what part of the list to read from
+
+    UI_y = $y; # used as a return var for container next, required
     local elem_type = UI_data[$index];
     if (elem_type[1] == "#") {
         # spacing or comment, skip
@@ -231,13 +228,27 @@ proc render_element index, x, y, width {
         UI_y -= LINEHIGHT;
         render_element $index+2, $x, UI_y, $width;
 
+    } elif (elem_type == "SEPARATOR") {
+        # [type, line_width_fac, height]
+        if ($width > 0) {
+            set_pen_color THEME_COL_FILL;
+            set_pen_size 1;
+            goto $x, $y-ceil(UI_data[$index+2]/2);
+            pen_down;
+            change_x $width*UI_data[$index+1];
+            pen_up;
+        }
+        UI_y -= UI_data[$index+2];
+        render_element $index+3, $x, UI_y, $width;
+
     } elif (elem_type == "BUTTON") {
         # [type, label, id, button_clicked]
-        UI_check_touching_mouse $x, $y+1, $width, LINEHIGHT, "modular elements", UI_data[$index+2];
-        if (UI_last_hovered_element == UI_data[$index+2]) {
-            draw_UI_rect $x, $y-1, $width, LINEHIGHT, "", "#656565", THEME_COL_OUTLINE_HIGHLIGHT;
+        UI_check_touching_mouse $x, $y+1, $width, LINEHIGHT, "modular elements", $index;
+
+        if (IS_HOVERED) {
+            draw_UI_rect $x, $y-1, $width, LINEHIGHT, 4, "#656565", THEME_COL_OUTLINE_HIGHLIGHT;
         } else {
-            draw_UI_rect $x, $y-1, $width, LINEHIGHT, "", "#555555", THEME_COL_OUTLINE;
+            draw_UI_rect $x, $y-1, $width, LINEHIGHT, 4, "#555555", THEME_COL_OUTLINE;
         }
         
         set_pen_color THEME_COL_TEXT;
@@ -250,9 +261,9 @@ proc render_element index, x, y, width {
         set_pen_color THEME_COL_TEXT;
         plainText $x, $y-TXT_Y_OFFSET, 1, UI_data[$index+1];
         
-        UI_check_touching_mouse (($x+$width)-LINEHIGHT), $y, LINEHIGHT, LINEHIGHT, "modular elements", UI_data[$index+2];
+        UI_check_touching_mouse (($x+$width)-LINEHIGHT), $y, LINEHIGHT, LINEHIGHT, "modular elements", $index;
 
-        if (UI_last_hovered_element == UI_data[$index+2]) {
+        if (IS_HOVERED) {
             draw_UI_rect (($x+$width)-12), ($y-2), 12, 12, 2, THEME_COL_FILL_HIGHLIGHT, THEME_COL_OUTLINE_HIGHLIGHT;
         } else {
             draw_UI_rect (($x+$width)-12), ($y-2), 12, 12, 2, THEME_COL_FILL, THEME_COL_OUTLINE;
@@ -267,27 +278,11 @@ proc render_element index, x, y, width {
         UI_y -= LINEHIGHT;
         render_element $index+4, $x, UI_y, $width;
 
-    } elif (elem_type == "COLOR") {
-        # [type, label, id, color]
-        set_pen_color THEME_COL_TEXT;
-        plainText $x, $y-TXT_Y_OFFSET, 1, UI_data[$index+1];
-        
-        UI_check_touching_mouse (($x+$width)-32), $y, 32, LINEHIGHT, "modular elements", UI_data[$index+2];
-
-        if (UI_last_hovered_element == UI_data[$index+2]) {
-            draw_UI_rect (($x+$width)-32), ($y-1), 32, LINEHIGHT-2, 4, UI_data[$index+3], THEME_COL_OUTLINE_HIGHLIGHT;
-        } else {
-            draw_UI_rect (($x+$width)-32), ($y-1), 32, LINEHIGHT-2, 4, UI_data[$index+3], THEME_COL_OUTLINE;
-        }
-        UI_y -= LINEHIGHT;
-        render_element $index+4, $x, UI_y, $width;
-
     } elif (elem_type == "VALUE") {
         # [type, label, id, val, soft_min, soft_max, hard_min, hard_max]
 
-        UI_check_touching_mouse (($x+$width)-INPUT_WIDTH), $y, INPUT_WIDTH, LINEHIGHT, "modular elements", UI_data[$index+2];
-
-        if (UI_last_hovered_element == UI_data[$index+2]) {
+        UI_check_touching_mouse (($x+$width)-INPUT_WIDTH), $y, INPUT_WIDTH, LINEHIGHT, "modular elements", $index;
+        if (IS_HOVERED) {
             draw_UI_rect (($x+$width)-INPUT_WIDTH), ($y-1), INPUT_WIDTH, LINEHIGHT-2, 2, THEME_COL_FILL_HIGHLIGHT, THEME_COL_OUTLINE_HIGHLIGHT;
         } else {
             draw_UI_rect (($x+$width)-INPUT_WIDTH), ($y-1), INPUT_WIDTH, LINEHIGHT-2, 2, THEME_COL_FILL, THEME_COL_OUTLINE;
@@ -299,50 +294,80 @@ proc render_element index, x, y, width {
         
         UI_y -= LINEHIGHT;
         render_element $index+9, $x, UI_y, $width;
-    
-    } elif (elem_type == "SEPARATOR") {
-        # [type, line_width_fac, height]
-        if ($width > 0) {
-            set_pen_color THEME_COL_FILL;
-            set_pen_size 1;
-            goto $x, $y-ceil(UI_data[$index+2]/2);
-            pen_down;
-            change_x $width*UI_data[$index+1];
-            pen_up;
+
+        if (IS_HOVERED) {
+            set_pen_color THEME_COL_OUTLINE_HIGHLIGHT;
+            draw_triangle $x+$width+1, $y-8, 0;
+            draw_triangle $x+$width-INPUT_WIDTH-2, $y-8, 180;
         }
-        UI_y -= UI_data[$index+2];
-        render_element $index+3, $x, UI_y, $width;
+    
+    } elif (elem_type == "COLOR") {
+        # [type, label, id, color]
+        set_pen_color THEME_COL_TEXT;
+        plainText $x, $y-TXT_Y_OFFSET, 1, UI_data[$index+1];
+        
+        UI_check_touching_mouse (($x+$width)-32), $y, 32, LINEHIGHT, "modular elements", $index;
+
+        if (IS_HOVERED) {
+            draw_UI_rect (($x+$width)-32), ($y-1), 32, LINEHIGHT-2, 4, UI_data[$index+3], THEME_COL_OUTLINE_HIGHLIGHT;
+        } else {
+            draw_UI_rect (($x+$width)-32), ($y-1), 32, LINEHIGHT-2, 4, UI_data[$index+3], THEME_COL_OUTLINE;
+        }
+        UI_y -= LINEHIGHT;
+        render_element $index+4, $x, UI_y, $width;
 
     } elif (elem_type == "EXPANDER") {
         # [type, label, id, opened, height, size_of_self (number of items)]
-        # TODO add label_colour?
 
-        draw_UI_rect $x, $y-1, $width, LINEHIGHT+3+UI_data[$index+4], 3, THEME_COL_BG, THEME_COL_OUTLINE;
+        if (UI_data[$index+3] == 1) { # open
+            draw_UI_rect $x, $y-1, $width, LINEHIGHT+3+UI_data[$index+4], 3, THEME_COL_BG, THEME_COL_OUTLINE;
+        }
 
-        UI_check_touching_mouse $x, $y-1, $width, LINEHIGHT, "modular elements", UI_data[$index+2];
-        if (UI_last_hovered_element == UI_data[$index+2]) {
+        UI_check_touching_mouse $x, $y-1, $width, LINEHIGHT, "modular elements", $index;
+        if (IS_HOVERED) {
             draw_UI_rect $x, $y-1, $width, LINEHIGHT, 3, "#444444", THEME_COL_OUTLINE_HIGHLIGHT;
         } else {
             draw_UI_rect $x, $y-1, $width, LINEHIGHT, 3, THEME_COL_FILL, THEME_COL_OUTLINE;
         }
 
         set_pen_color THEME_COL_TEXT;
-        plainText $x+5, $y-TXT_Y_OFFSET, 1, UI_data[$index+1]; # label
-        draw_triangle ($x+$width)-10, ($y-10), 0;
-        
-        UI_y -= (LINEHIGHT+2);
-        render_element $index+6, $x+5, UI_y, $width-10; # first child
+        plainText $x+16, $y-TXT_Y_OFFSET, 1, UI_data[$index+1]; # label
 
-        UI_y -= 3; # line (from bottom of rect) then margin
+        if (UI_data[$index+3] == 1) { # open
+            draw_triangle $x+7, ($y-9), -90;
+            
+            UI_y -= (LINEHIGHT+2);
+            render_element $index+6, $x+5, UI_y, $width-10; # first child
+            
+            UI_y -= 3; # line (from bottom of rect) then margin
+        } else {
+            draw_triangle $x+7, ($y-9), 0;
+            UI_y -= (LINEHIGHT+2);
+        }
+
         render_element $index+UI_data[$index+5], $x, UI_y, $width; # next
-
     }
 }
 
 
 on "stage clicked" {
     if (UI_hovered_group == "modular elements") {
+        if (UI_data[UI_hovered_element] == "BUTTON") {
+            log UI_hovered_element;
 
+        } elif (UI_data[UI_hovered_element] == "CHECKBOX") {
+            UI_data[UI_hovered_element+3] = 1 - UI_data[UI_hovered_element+3];
+
+        } elif (UI_data[UI_hovered_element] == "VALUE") {
+            UI_data[UI_hovered_element+3] = 0;
+
+        } elif (UI_data[UI_hovered_element] == "COLOR") {
+            UI_data[UI_hovered_element+3] = "#ff0000";
+
+        } elif (UI_data[UI_hovered_element] == "EXPANDER") {
+            UI_data[UI_hovered_element+3] = 1 - UI_data[UI_hovered_element+3];
+
+        }
     }
 }
 
@@ -352,19 +377,22 @@ on "stage clicked" {
 #             Draw             #
 ################################
 
+%define GOTO(DIST, DIR) goto $x+((DIST)*cos($dir+(DIR))), $y+((DIST)*sin($dir+(DIR)));
 
 proc draw_triangle x, y, dir {
-    # TODO, add direction
-    goto $x, ($y+1);
+    # direction is anticlockwise from right
+
+    GOTO(-1, 0)
     set_pen_size 3;
     pen_down;
     pen_up;
+
     set_pen_size 1;
-    goto ($x-3), ($y+2);
+    GOTO(3.7, 123)
     pen_down;
-    goto ($x+3), ($y+2);
-    goto ($x+0), ($y-2);
-    goto ($x-3), ($y+2);
+    GOTO(3.7, -123)
+    GOTO(2, 0)
+    GOTO(3.7, 123)
     pen_up;
 }
 
