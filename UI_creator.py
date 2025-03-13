@@ -42,9 +42,9 @@ class Checkbox(Element):
         self.items = ['CHECKBOX', label, id, int(checked)]
 
 class Value(Element):
-    def __init__(self, label, id, value=0, hard_min="-Infinity", hard_max="Infinity", soft_min=0, soft_max=1, snap=0.01):
+    def __init__(self, label, id, value=0, soft_min=0, soft_max=1, hard_min="-Infinity", hard_max="Infinity", snap_frac=0.01):
         super().__init__()
-        self.items = ['VALUE', label, id, value, hard_min, hard_max, soft_min, soft_max, snap]
+        self.items = ['VALUE', label, id, value, soft_min, soft_max, hard_min, hard_max, snap_frac]
 
 class Color(Element):
     def __init__(self, label='Color', id='', color="#808080"):
@@ -96,9 +96,9 @@ class Container(Element):
 gen_opt = Container([
     Label('Example'),
     Expander('Canvas', 'exp1', True, [
-        Value('Canvas size x', 'size_x', 64, 0, 4096, 1, 512, 1),
-        Value('Canvas size y', 'size_y', 64, 0, 4096, 1, 512, 1),
-        Value('Canvas size z', 'size_z', 8, 0, 4096, 1, 64, 1),
+        Value('Canvas size x', 'size_x', 64, 1, 512, 0, 4096, 1),
+        Value('Canvas size y', 'size_y', 64, 1, 512, 0, 4096, 1),
+        Value('Canvas size z', 'size_z', 64, 1, 512, 0, 4096, 1),
     ]),
     Expander('Expander', 'exp2', True, [
         Button('Button1', 'btn1'),
@@ -106,7 +106,7 @@ gen_opt = Container([
         Color('Col', 'col1', '#ff3000'),
         Button('Button2', 'btn2'),
     ]),
-    Value('Canvas size z', 'size_z2', 8, 0, 4096, 1, 64, 1),
+    Value('Val', 'v2', 0.5, 0, 1, 0, 1, 10000),
     Separator(),
     Checkbox('Checkbox2', 'cb2'),
 ])

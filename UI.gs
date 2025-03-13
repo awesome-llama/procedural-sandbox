@@ -9,9 +9,6 @@ costumes
 "costumes/blank.svg" as "@ascii/";
 hide;
 
-list PTE_font = file ```5x7 printable ASCII.txt```;
-
-%define current_costume_char_index costume_number() + 5
 
 onflag {
     hide;
@@ -24,142 +21,6 @@ onflag {
     plainText -200, 70, 1, "0123456789";
 
     wrappedText -200, 0, 1, "The font called \"5x7 printable ASCII\" supports all the printable ASCII characters with glyph dimensions of 5x7px. It's optimised to be visually as small as possible while still being legible. The code is also very simple, designed to be easily backpackable.", 100;
-}
-
-proc plainText x, y, size, text {
-    set_pen_size $size;
-    x_offset = $x;
-    y_offset = $y;
-    txt_i = 1;
-    switch_costume "large";
-    repeat length $text {
-        switch_costume $text[txt_i];
-        font_char_index = PTE_font[current_costume_char_index];
-        switch_costume "large";
-        font_i = 3 + font_char_index;
-        repeat PTE_font[5 + font_char_index] {
-            font_i += 4;
-            goto 
-                x_offset + $size * PTE_font[font_i + 1],
-                y_offset + $size * PTE_font[font_i + 2];
-            pen_down;
-            repeat PTE_font[font_i] {
-                font_i += 2;
-                goto 
-                    x_offset + $size * PTE_font[font_i + 1],
-                    y_offset + $size * PTE_font[font_i + 2];
-            }
-            pen_up;
-        }
-        x_offset += $size * (2 + PTE_font[2 + font_char_index]);
-        txt_i += 1;
-    }
-    switch_costume "icon";
-}
-
-
-proc wrappedText x, y, size, text, wrap_width {
-    set_pen_size $size;
-    x_offset = $x;
-    y_offset = $y;
-    txt_i = 1;
-    switch_costume "large";
-    repeat length $text {
-        if $text[txt_i] == " " {
-            # search for the next space to ensure the word fits in the line
-            txt_j = txt_i + 1;
-            future_x = (x_offset - $x) + $size * 5; # width of space added
-            until $text[txt_j] == " " or txt_j > length($text) or future_x >= $wrap_width {
-                txt_j += 1;
-                switch_costume $text[txt_j];
-                future_x += $size * (2 + PTE_font[2 + PTE_font[current_costume_char_index]]);
-            }
-            if future_x >= $wrap_width {
-                x_offset = $x;
-                y_offset -= $size * 10;
-                txt_i += 1; # skip the space as it was used to go to the next line
-            }
-        }
-
-        switch_costume $text[txt_i];
-        font_char_index = PTE_font[current_costume_char_index];
-        switch_costume "large";
-        font_i = 3 + font_char_index;
-        repeat PTE_font[5 + font_char_index] {
-            font_i += 4;
-            goto 
-                x_offset + $size * PTE_font[font_i + 1],
-                y_offset + $size * PTE_font[font_i + 2];
-            pen_down;
-            repeat PTE_font[font_i] {
-                font_i += 2;
-                goto 
-                    x_offset + $size * PTE_font[font_i + 1],
-                    y_offset + $size * PTE_font[font_i + 2];
-            }
-            pen_up;
-        }
-        x_offset += $size * (2 + PTE_font[2 + font_char_index]);
-        txt_i += 1;
-    }
-    switch_costume "icon";
-}
-
-
-proc draw_UI_rect x, y, width, height, radius, fill_col, outline_col {
-    # not tested on all cases, only set up for this use case!
-    # drawn from top-left
-    if ($radius > 0) {
-        local radius = $radius;
-    } else {
-        local radius = 1;
-    }
-    if (($width > (radius*2)) and ($height > (radius*2))) {
-        if ($width > $height) {
-            local rect_lim = (($height/2)-1);
-        } else {
-            local rect_lim = (($width/2)-1);
-        }
-
-        # OUTLINE #
-        if ($outline_col == "") {
-            set_pen_color "#212121";
-        } else {
-            set_pen_color $outline_col;
-        }
-
-        set_pen_size (radius * 2);
-        goto ($x+radius), ($y-radius);
-        pen_down;
-        set_x (($x+$width) - radius);
-        set_y (($y-$height) + radius);
-        set_x ($x+radius);
-        set_y ($y-radius);
-        pen_up;
-        
-        # FILL #
-        if ($fill_col == "") {
-            set_pen_color "#484848";
-        } else {
-            set_pen_color $fill_col;
-        }
-        until (radius > rect_lim) {
-            set_pen_size radius * 2;
-            goto (($x+radius)+1), (($y-radius)-1);
-            pen_down;
-            set_x ((($x+$width) - radius)-1);
-            set_y ((($y-$height) + radius)+1);
-            set_x (($x+radius)+1);
-            set_y (($y-radius)-1);
-            pen_up;
-            radius *= 6; # not sure why 6
-        }
-        set_pen_size (rect_lim * 2);
-        goto (($x+rect_lim)+1), (($y-rect_lim)-1);
-        pen_down;
-        goto ((($x+$width)-rect_lim)-1), ((($y-$height)+rect_lim)+1);
-        pen_up;
-    }
 }
 
 
@@ -279,7 +140,7 @@ proc render_element index, x, y, width {
         render_element $index+4, $x, UI_y, $width;
 
     } elif (elem_type == "VALUE") {
-        # [type, label, id, val, soft_min, soft_max, hard_min, hard_max]
+        # [type, label, id, val, soft_min, soft_max, hard_min, hard_max, step]
 
         UI_check_touching_mouse (($x+$width)-INPUT_WIDTH), $y, INPUT_WIDTH, LINEHIGHT, "modular elements", $index;
         if (IS_HOVERED) {
@@ -349,28 +210,169 @@ proc render_element index, x, y, width {
     }
 }
 
+proc UI_check_touching_mouse x, y, width, height, id1, id2 {
+    if (not (((mouse_x() < $x) or (mouse_x() > ($x+$width))) or ((mouse_y() > $y) or (mouse_y() < ($y-$height))))) {
+        UI_hovered_group = $id1;
+        UI_hovered_element = $id2;
+    }
+}
+
+
+
 
 on "stage clicked" {
+    stop_other_scripts; # stop previous ask block
     if (UI_hovered_group == "modular elements") {
-        if (UI_data[UI_hovered_element] == "BUTTON") {
-            log UI_hovered_element;
+        clicked_element = UI_last_hovered_element;
+        if (UI_data[clicked_element] == "BUTTON") {
+            log clicked_element;
 
-        } elif (UI_data[UI_hovered_element] == "CHECKBOX") {
-            UI_data[UI_hovered_element+3] = 1 - UI_data[UI_hovered_element+3];
+        } elif (UI_data[clicked_element] == "CHECKBOX") {
+            UI_data[clicked_element+3] = 1 - UI_data[clicked_element+3];
 
-        } elif (UI_data[UI_hovered_element] == "VALUE") {
-            UI_data[UI_hovered_element+3] = 0;
+        } elif (UI_data[clicked_element] == "VALUE") {
+            start_value = UI_data[clicked_element+3];
+            start_mouse_x = mouse_x();
+            mouse_moved = false;
+            until not mouse_down() {
+                if key_pressed("shift") {
+                    set_value_element clicked_element, start_value + abs(UI_data[clicked_element+5]-UI_data[clicked_element+4])*(mouse_x()-start_mouse_x)/800, 1;
+                } else {
+                    set_value_element clicked_element, start_value + abs(UI_data[clicked_element+5]-UI_data[clicked_element+4])*(mouse_x()-start_mouse_x)/200, 1;
+                }
+                if (mouse_x() != start_mouse_x) {
+                    mouse_moved = true;
+                }
+            }
+            if not mouse_moved {
+                ask "set \"" & UI_data[clicked_element+1] & "\" to number";
+                if (answer() != "") {
+                    set_value_element clicked_element, answer()+0, 0;
+                }
+            }
 
-        } elif (UI_data[UI_hovered_element] == "COLOR") {
-            UI_data[UI_hovered_element+3] = "#ff0000";
+        } elif (UI_data[clicked_element] == "COLOR") {
+            UI_data[clicked_element+3] = "#ff0000";
 
-        } elif (UI_data[UI_hovered_element] == "EXPANDER") {
-            UI_data[UI_hovered_element+3] = 1 - UI_data[UI_hovered_element+3];
-
+        } elif (UI_data[clicked_element] == "EXPANDER") {
+            UI_data[clicked_element+3] = 1 - UI_data[clicked_element+3];
         }
     }
 }
 
+proc set_value_element index, val, use_soft_limits {
+    # snap
+    if UI_data[$index+8] == 0 {
+        UI_data[$index+3] = $val; # no snapping
+    } else {
+        UI_data[$index+3] = round(($val)*UI_data[$index+8])/UI_data[$index+8]; # multiply then divide is more robust
+    }
+
+    # clamp
+    if ($use_soft_limits == 1) {
+        if (UI_data[$index+3] < UI_data[$index+4]) {
+            UI_data[$index+3] = UI_data[$index+4];
+        } elif (UI_data[$index+3] > UI_data[$index+5]) {
+            UI_data[$index+3] = UI_data[$index+5];
+        }
+    }
+    # clamp hard limits (must run)
+    if (UI_data[$index+3] < UI_data[$index+6]) {
+        UI_data[$index+3] = UI_data[$index+6];
+    } elif (UI_data[$index+3] > UI_data[$index+7]) {
+        UI_data[$index+3] = UI_data[$index+7];
+    }
+}
+
+
+
+################################
+#       Text renderers         #
+################################
+
+list PTE_font = file ```5x7 printable ASCII.txt```;
+
+%define CURR_COST_CHAR_INDEX costume_number() + 5
+
+
+proc plainText x, y, size, text {
+    set_pen_size $size;
+    x_offset = $x;
+    y_offset = $y;
+    txt_i = 1;
+    switch_costume "large";
+    repeat length $text {
+        switch_costume $text[txt_i];
+        font_char_index = PTE_font[CURR_COST_CHAR_INDEX];
+        switch_costume "large";
+        font_i = 3 + font_char_index;
+        repeat PTE_font[5 + font_char_index] {
+            font_i += 4;
+            goto 
+                x_offset + $size * PTE_font[font_i + 1],
+                y_offset + $size * PTE_font[font_i + 2];
+            pen_down;
+            repeat PTE_font[font_i] {
+                font_i += 2;
+                goto 
+                    x_offset + $size * PTE_font[font_i + 1],
+                    y_offset + $size * PTE_font[font_i + 2];
+            }
+            pen_up;
+        }
+        x_offset += $size * (2 + PTE_font[2 + font_char_index]);
+        txt_i += 1;
+    }
+    switch_costume "icon";
+}
+
+
+proc wrappedText x, y, size, text, wrap_width {
+    set_pen_size $size;
+    x_offset = $x;
+    y_offset = $y;
+    txt_i = 1;
+    switch_costume "large";
+    repeat length $text {
+        if $text[txt_i] == " " {
+            # search for the next space to ensure the word fits in the line
+            txt_j = txt_i + 1;
+            future_x = (x_offset - $x) + $size * 5; # width of space added
+            until $text[txt_j] == " " or txt_j > length($text) or future_x >= $wrap_width {
+                txt_j += 1;
+                switch_costume $text[txt_j];
+                future_x += $size * (2 + PTE_font[2 + PTE_font[CURR_COST_CHAR_INDEX]]);
+            }
+            if future_x >= $wrap_width {
+                x_offset = $x;
+                y_offset -= $size * 10;
+                txt_i += 1; # skip the space as it was used to go to the next line
+            }
+        }
+
+        switch_costume $text[txt_i];
+        font_char_index = PTE_font[CURR_COST_CHAR_INDEX];
+        switch_costume "large";
+        font_i = 3 + font_char_index;
+        repeat PTE_font[5 + font_char_index] {
+            font_i += 4;
+            goto 
+                x_offset + $size * PTE_font[font_i + 1],
+                y_offset + $size * PTE_font[font_i + 2];
+            pen_down;
+            repeat PTE_font[font_i] {
+                font_i += 2;
+                goto 
+                    x_offset + $size * PTE_font[font_i + 1],
+                    y_offset + $size * PTE_font[font_i + 2];
+            }
+            pen_up;
+        }
+        x_offset += $size * (2 + PTE_font[2 + font_char_index]);
+        txt_i += 1;
+    }
+    switch_costume "icon";
+}
 
 
 ################################
@@ -397,14 +399,59 @@ proc draw_triangle x, y, dir {
 }
 
 
-################################
-#            Utils             #
-################################
+proc draw_UI_rect x, y, width, height, radius, fill_col, outline_col {
+    # not tested on all cases, only set up for this use case!
+    # drawn from top-left
+    if ($radius > 0) {
+        local radius = $radius;
+    } else {
+        local radius = 1;
+    }
+    if (($width > (radius*2)) and ($height > (radius*2))) {
+        if ($width > $height) {
+            local rect_lim = (($height/2)-1);
+        } else {
+            local rect_lim = (($width/2)-1);
+        }
 
-proc UI_check_touching_mouse x, y, width, height, id1, id2 {
-    if (not (((mouse_x() < $x) or (mouse_x() > ($x+$width))) or ((mouse_y() > $y) or (mouse_y() < ($y-$height))))) {
-        UI_hovered_group = $id1;
-        UI_hovered_element = $id2;
+        # OUTLINE #
+        if ($outline_col == "") {
+            set_pen_color "#212121";
+        } else {
+            set_pen_color $outline_col;
+        }
+
+        set_pen_size (radius * 2);
+        goto ($x+radius), ($y-radius);
+        pen_down;
+        set_x (($x+$width) - radius);
+        set_y (($y-$height) + radius);
+        set_x ($x+radius);
+        set_y ($y-radius);
+        pen_up;
+        
+        # FILL #
+        if ($fill_col == "") {
+            set_pen_color "#484848";
+        } else {
+            set_pen_color $fill_col;
+        }
+        until (radius > rect_lim) {
+            set_pen_size radius * 2;
+            goto (($x+radius)+1), (($y-radius)-1);
+            pen_down;
+            set_x ((($x+$width) - radius)-1);
+            set_y ((($y-$height) + radius)+1);
+            set_x (($x+radius)+1);
+            set_y (($y-radius)-1);
+            pen_up;
+            radius *= 6; # not sure why 6
+        }
+        set_pen_size (rect_lim * 2);
+        goto (($x+rect_lim)+1), (($y-rect_lim)-1);
+        pen_down;
+        goto ((($x+$width)-rect_lim)-1), ((($y-$height)+rect_lim)+1);
+        pen_up;
     }
 }
 
