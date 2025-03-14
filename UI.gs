@@ -10,10 +10,11 @@ costumes
 hide;
 
 
+%if false
 onflag {
     hide;
     erase_all;
-    set_pen_color "black";
+    set_pen_color "#ff0000";
     plainText -200, 135, 2, "Hello, world!";
     plainText -200, 110, 1, "This is a preview of the PTE.";
     plainText -200, 90, 1, "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -22,7 +23,7 @@ onflag {
 
     wrappedText -200, 0, 1, "The font called \"5x7 printable ASCII\" supports all the printable ASCII characters with glyph dimensions of 5x7px. It's optimised to be visually as small as possible while still being legible. The code is also very simple, designed to be easily backpackable.", 100;
 }
-
+%endif
 
 # background panel colour
 %define THEME_COL_BG "#404040"
@@ -45,7 +46,7 @@ onflag {
 
 on "render ui" {
     # constantly renders, this is because the ui needs to be interactive.
-    draw_UI_rect -240, 180, 480, 20, 1, THEME_COL_BG, "";
+    draw_UI_rect -240, 180, 480, 20, 1, THEME_COL_BG, THEME_COL_BG;
 
     #render_viewport_text;
     render_gen_opt_panel -240, 160, 160, 340;
@@ -69,8 +70,11 @@ proc render_viewport_text {
 %define IS_HOVERED UI_last_hovered_group == "modular elements" and UI_last_hovered_element == $index
 
 proc render_gen_opt_panel x, y, width, height {
-    draw_UI_rect $x, $y, $width, $height, 1, THEME_COL_BG, ""; # TODO better rect renderer
-    render_element 1, $x+5, $y-5, $width-10;
+    local curr_index = (UI_current_panel in UI_data_lookup);
+    if curr_index > 0 {
+        draw_UI_rect $x, $y, $width, $height, 1, "#757575", THEME_COL_BG; # TODO better rect renderer
+        render_element UI_data_lookup[curr_index + 1], $x+5, $y-5, $width-10;
+    }
 }
 
 proc render_element index, x, y, width {
@@ -107,9 +111,9 @@ proc render_element index, x, y, width {
         UI_check_touching_mouse $x, $y+1, $width, LINEHIGHT, "modular elements", $index;
 
         if (IS_HOVERED) {
-            draw_UI_rect $x, $y-1, $width, LINEHIGHT, 4, "#656565", THEME_COL_OUTLINE_HIGHLIGHT;
+            draw_UI_rect $x, $y-1, $width, LINEHIGHT, 4, THEME_COL_OUTLINE_HIGHLIGHT, "#656565";
         } else {
-            draw_UI_rect $x, $y-1, $width, LINEHIGHT, 4, "#555555", THEME_COL_OUTLINE;
+            draw_UI_rect $x, $y-1, $width, LINEHIGHT, 4, THEME_COL_OUTLINE, "#555555";
         }
         
         set_pen_color THEME_COL_TEXT;
@@ -125,9 +129,9 @@ proc render_element index, x, y, width {
         UI_check_touching_mouse (($x+$width)-LINEHIGHT), $y, LINEHIGHT, LINEHIGHT, "modular elements", $index;
 
         if (IS_HOVERED) {
-            draw_UI_rect (($x+$width)-12), ($y-2), 12, 12, 2, THEME_COL_FILL_HIGHLIGHT, THEME_COL_OUTLINE_HIGHLIGHT;
+            draw_UI_rect (($x+$width)-12), ($y-2), 12, 12, 2, THEME_COL_OUTLINE_HIGHLIGHT, THEME_COL_FILL_HIGHLIGHT;
         } else {
-            draw_UI_rect (($x+$width)-12), ($y-2), 12, 12, 2, THEME_COL_FILL, THEME_COL_OUTLINE;
+            draw_UI_rect (($x+$width)-12), ($y-2), 12, 12, 2, THEME_COL_OUTLINE, THEME_COL_FILL;
         }
         if (UI_data[$index+3] == 1) { # checked is true
             set_pen_color THEME_COL_TEXT;
@@ -144,9 +148,9 @@ proc render_element index, x, y, width {
 
         UI_check_touching_mouse (($x+$width)-INPUT_WIDTH), $y, INPUT_WIDTH, LINEHIGHT, "modular elements", $index;
         if (IS_HOVERED) {
-            draw_UI_rect (($x+$width)-INPUT_WIDTH), ($y-1), INPUT_WIDTH, LINEHIGHT-2, 2, THEME_COL_FILL_HIGHLIGHT, THEME_COL_OUTLINE_HIGHLIGHT;
+            draw_UI_rect (($x+$width)-INPUT_WIDTH), ($y-1), INPUT_WIDTH, LINEHIGHT-2, 2, THEME_COL_OUTLINE_HIGHLIGHT, THEME_COL_FILL_HIGHLIGHT;
         } else {
-            draw_UI_rect (($x+$width)-INPUT_WIDTH), ($y-1), INPUT_WIDTH, LINEHIGHT-2, 2, THEME_COL_FILL, THEME_COL_OUTLINE;
+            draw_UI_rect (($x+$width)-INPUT_WIDTH), ($y-1), INPUT_WIDTH, LINEHIGHT-2, 2, THEME_COL_OUTLINE, THEME_COL_FILL;
         }
         
         set_pen_color THEME_COL_TEXT;
@@ -170,9 +174,9 @@ proc render_element index, x, y, width {
         UI_check_touching_mouse (($x+$width)-32), $y, 32, LINEHIGHT, "modular elements", $index;
 
         if (IS_HOVERED) {
-            draw_UI_rect (($x+$width)-32), ($y-1), 32, LINEHIGHT-2, 4, UI_data[$index+3], THEME_COL_OUTLINE_HIGHLIGHT;
+            draw_UI_rect (($x+$width)-32), ($y-1), 32, LINEHIGHT-2, 4, THEME_COL_OUTLINE_HIGHLIGHT, UI_data[$index+3];
         } else {
-            draw_UI_rect (($x+$width)-32), ($y-1), 32, LINEHIGHT-2, 4, UI_data[$index+3], THEME_COL_OUTLINE;
+            draw_UI_rect (($x+$width)-32), ($y-1), 32, LINEHIGHT-2, 4, THEME_COL_OUTLINE, UI_data[$index+3];
         }
         UI_y -= LINEHIGHT;
         render_element $index+4, $x, UI_y, $width;
@@ -181,14 +185,31 @@ proc render_element index, x, y, width {
         # [type, label, id, opened, height, size_of_self (number of items)]
 
         if (UI_data[$index+3] == 1) { # open
-            draw_UI_rect $x, $y-1, $width, LINEHIGHT+3+UI_data[$index+4], 3, THEME_COL_BG, THEME_COL_OUTLINE;
+            UI_y -= (LINEHIGHT+2);
+            render_element $index+5, $x+5, UI_y, $width-10; # first child
+            
+            UI_y -= 3; # line (from bottom of rect) then margin
+
+            set_pen_color THEME_COL_OUTLINE;
+            set_pen_size 1;
+            goto $x, $y-5;
+            pen_down;
+            set_y UI_y+3;
+            goto $x+1, UI_y+2;
+            set_x $x+$width-2;
+            goto $x+$width-1, UI_y+3;
+            set_y $y-5;
+            pen_up;
+
+        } else {
+            UI_y -= (LINEHIGHT+2);
         }
 
         UI_check_touching_mouse $x, $y-1, $width, LINEHIGHT, "modular elements", $index;
         if (IS_HOVERED) {
-            draw_UI_rect $x, $y-1, $width, LINEHIGHT, 3, "#444444", THEME_COL_OUTLINE_HIGHLIGHT;
+            draw_UI_rect $x, $y-1, $width, LINEHIGHT, 3, THEME_COL_OUTLINE_HIGHLIGHT, "#444444";
         } else {
-            draw_UI_rect $x, $y-1, $width, LINEHIGHT, 3, THEME_COL_FILL, THEME_COL_OUTLINE;
+            draw_UI_rect $x, $y-1, $width, LINEHIGHT, 3, THEME_COL_OUTLINE, THEME_COL_FILL;
         }
 
         set_pen_color THEME_COL_TEXT;
@@ -196,17 +217,11 @@ proc render_element index, x, y, width {
 
         if (UI_data[$index+3] == 1) { # open
             draw_triangle $x+7, ($y-9), -90;
-            
-            UI_y -= (LINEHIGHT+2);
-            render_element $index+6, $x+5, UI_y, $width-10; # first child
-            
-            UI_y -= 3; # line (from bottom of rect) then margin
         } else {
             draw_triangle $x+7, ($y-9), 0;
-            UI_y -= (LINEHIGHT+2);
         }
 
-        render_element $index+UI_data[$index+5], $x, UI_y, $width; # next
+        render_element $index+UI_data[$index+4], $x, UI_y, $width; # next
     }
 }
 
@@ -236,7 +251,7 @@ on "stage clicked" {
             mouse_moved = false;
             until not mouse_down() {
                 if key_pressed("shift") {
-                    set_value_element clicked_element, start_value + abs(UI_data[clicked_element+5]-UI_data[clicked_element+4])*(mouse_x()-start_mouse_x)/800, 1;
+                    set_value_element clicked_element, start_value + abs(UI_data[clicked_element+5]-UI_data[clicked_element+4])*(mouse_x()-start_mouse_x)/1000, 1;
                 } else {
                     set_value_element clicked_element, start_value + abs(UI_data[clicked_element+5]-UI_data[clicked_element+4])*(mouse_x()-start_mouse_x)/200, 1;
                 }
@@ -399,7 +414,7 @@ proc draw_triangle x, y, dir {
 }
 
 
-proc draw_UI_rect x, y, width, height, radius, fill_col, outline_col {
+proc draw_UI_rect x, y, width, height, radius, outline_col, fill_col {
     # not tested on all cases, only set up for this use case!
     # drawn from top-left
     if ($radius > 0) {
@@ -432,7 +447,7 @@ proc draw_UI_rect x, y, width, height, radius, fill_col, outline_col {
         
         # FILL #
         if ($fill_col == "") {
-            set_pen_color "#484848";
+            stop_this_script;
         } else {
             set_pen_color $fill_col;
         }
