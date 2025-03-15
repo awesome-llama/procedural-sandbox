@@ -29,7 +29,7 @@ class Separator(Element):
         return self.items[2]
 
 class Button(Element):
-    def __init__(self, label, id):
+    def __init__(self, label, id=''):
         super().__init__()
         self.items = ['BUTTON', label, id, 0] # 0 is default false (unclicked)
 
@@ -37,12 +37,12 @@ class Button(Element):
         return LINE_HEIGHT + 2
 
 class Checkbox(Element):
-    def __init__(self, label, id, checked=False):
+    def __init__(self, label, id='', checked=False):
         super().__init__()
         self.items = ['CHECKBOX', label, id, int(checked)]
 
 class Value(Element):
-    def __init__(self, label, id, value=0, soft_min=0, soft_max=1, hard_min="-Infinity", hard_max="Infinity", snap_frac=100):
+    def __init__(self, label, id='', value=0, soft_min=0, soft_max=1, hard_min="-Infinity", hard_max="Infinity", snap_frac=100):
         super().__init__()
         self.items = ['VALUE', label, id, value, soft_min, soft_max, hard_min, hard_max, snap_frac]
 
@@ -66,12 +66,12 @@ class End(Element):
         return 0
 
 class Expander(Element):
-    def __init__(self, label, id, open=True, children:list = None):
+    def __init__(self, label, id='', is_open=True, children:list = None):
         super().__init__()
         if children is None: children = []
         self.children = children + [End()] # end the child list
         
-        self.items = ['EXPANDER', label, id, int(open), None] # length of child data uncomputed
+        self.items = ['EXPANDER', label, id, int(is_open), None] # length of child data uncomputed
 
     def get_height(self):
         return LINE_HEIGHT + 3 + sum([c.get_height() for c in self.children])
@@ -114,103 +114,128 @@ class Container(Element):
         return _items + _children
 """
 
-testing = Container([
-    Label('Example'),
-    Expander('Canvas', 'exp1', True, [
-        Value('Canvas size x', 'size_x', 64, 1, 512, 0, 4096, 1),
-        Value('Canvas size y', 'size_y', 64, 1, 512, 0, 4096, 1),
-        Value('Canvas size z', 'size_z', 64, 1, 512, 0, 4096, 1),
+
+panels = {}
+
+panels['generate_maze'] = Container([
+    Label('Maze'),
+    Expander('Canvas', '', True, [
+        Value('Size x', 'gen.maze.size_x', 64, 1, 512, 0, 4096, 1),
+        Value('Size y', 'gen.maze.size_y', 64, 1, 512, 0, 4096, 1),
+        Value('Size z', 'gen.maze.size_z', 16, 1, 512, 0, 4096, 1),
     ]),
-    Expander('Expander', 'exp2', True, [
-        Button('Button1', 'btn1'),
-        Checkbox('Checkbox', 'cb1'),
-        Color('Col', 'col1', '#ff3000'),
-        Button('Button2', 'btn2'),
+    Expander('Color', '', True, [
+        Color('Ground color', 'gen.maze.ground_col', '#aaaaaa'),
+        Color('Wall color', 'gen.maze.wall_col', '#aaaaaa'),
     ]),
-    Value('Val', 'v2', 0.5, 0, 1, 0, 1, 10000),
-    Separator(),
-    Checkbox('Checkbox2', 'cb2'),
+    Button('Generate', 'gen.maze.generate'),
 ])
 
-project_settings = Container([
-    Label('Project settings'),
-    Expander('Display', 'expander_display', True, [
-        Checkbox('Dark background', 'bg_dark', True),
-        Value('AO samples', 'ao_samples', 64, 1, 256, 1, 4096, 1),
-        Checkbox('Checkbox2', 'cb2'),
-        Color('Col', 'col1', '#ff3000'),
+panels['generate_city'] = Container([
+    Label('City'),
+    Expander('Canvas', '', True, [
+        Value('Size x', 'gen.city.size_x', 64, 1, 512, 0, 4096, 1),
+        Value('Size y', 'gen.city.size_y', 64, 1, 512, 0, 4096, 1),
+        Value('Size z', 'gen.city.size_z', 16, 1, 512, 0, 4096, 1),
     ]),
-    Expander('Misc', 'expander_2', True, [
-        Value('Mouse sensitivity', 'slider_sensitivty', 200, 10, 1000, 0, 10000, 0.1),
-        Button('Button1', 'btn1'),
+    Expander('Color', '', True, [
+        Color('Ground color', 'gen.city.ground_col', '#aaaaaa'),
     ]),
-    Checkbox('Developer mode', 'dev'),
-    Button('Reset project', 'reset'),
+    Button('Generate', 'gen.city.generate'),
 ])
 
-erosion = Container([
+panels['generate_pipelines'] = Container([
+    Label('Pipelines'),
+    Expander('Canvas', '', True, [
+        Value('Size x', 'gen.pipelines.size_x', 64, 1, 512, 0, 4096, 1),
+        Value('Size y', 'gen.pipelines.size_y', 64, 1, 512, 0, 4096, 1),
+        Value('Size z', 'gen.pipelines.size_z', 16, 1, 512, 0, 4096, 1),
+    ]),
+    Expander('Color', '', True, [
+        Color('Ground color', 'gen.pipelines.ground_col', '#aaaaaa'),
+    ]),
+    Button('Generate', 'gen.pipelines.generate'),
+])
+
+panels['generate_erosion'] = Container([
     Label('Hydraulic erosion'),
-    Expander('Initial terrain', 'exp_initial_terr', True, [
-        Value('Size x', 'size_x', 64, 1, 512, 0, 4096, 1),
-        Value('Size y', 'size_y', 64, 1, 512, 0, 4096, 1),
-        Value('Size z (height)', 'size_z', 16, 1, 512, 0, 4096, 1),
-        Checkbox('Perlin', 'perlin'),
-        Button('Generate', 'generate_terrain'),
+    Expander('Initial terrain', '', True, [
+        Value('Size x', 'gen.erosion.size_x', 64, 1, 512, 0, 4096, 1),
+        Value('Size y', 'gen.erosion.size_y', 64, 1, 512, 0, 4096, 1),
+        Value('Size z', 'gen.erosion.size_z', 16, 1, 512, 0, 4096, 1),
+        Separator(),
+        Value('Grass amount', 'gen.erosion.grass_fac', 0.5, 0, 1, snap_frac=1000),
+        #Checkbox('Perlin', 'perlin'),
+        Separator(),
+        Button('Generate', 'gen.erosion.generate_terrain'),
     ]),
-    Expander('Erode', 'exp_erode', True, [
-        Value('Steps', 'steps', 1, 0, 1000, 0, snap_frac=10),
-        Value('Stream strength', 'strength', 0.1, 0, 1, 0, snap_frac=100),
-        Value('Stream capacity', 'capacity', 5, 0, 10, 0, snap_frac=10),
+    Expander('Erode', '', True, [
+        Value('Steps', 'gen.erosion.steps', 1, 0, 1000, 0, snap_frac=10),
+        Value('Stream strength', 'gen.erosion.strength', 0.1, 0, 1, 0, snap_frac=100),
+        Value('Stream capacity', 'gen.erosion.capacity', 5, 0, 10, 0, snap_frac=10),
         Button('Run', 'run'),
     ]),
-    Expander('Finalise', 'exp_finalise', True, [
-        Value('Water level', 'water level fac', 0.2, 0, 1, snap_frac=1000),
-        Color('Water col', 'water col', '#505090'),
-        Value('Grass amount', 'grass', 0.5, 0, 1, snap_frac=1000),
-        Color('Grass col', 'water col', '#70aa60'),
+    Expander('Finalise', '', True, [
+        Value('Water level', 'gen.erosion.water_level_fac', 0.2, 0, 1, snap_frac=1000),
+        Color('Water color', 'gen.erosion.water_col', '#505090'),
+        Value('Grass amount', 'gen.erosion.grass_fac', 0.5, 0, 1, snap_frac=1000),
+        Color('Grass color', 'gen.erosion.grass_col', '#70aa60'),
         Button('Run', 'run'),
     ]),
 ])
 
-import_height_map = Container([
+panels['import_height_map'] = Container([
     Label('Import height map'),
-    Expander('Channel weights', '?', True, [
-        Value('Red', 'weight_r', 0.25, 0, 1, snap_frac=1000),
-        Value('Green', 'weight_g', 0.5,  0, 1, snap_frac=1000),
-        Value('Blue', 'weight_b', 0.25, 0, 1, snap_frac=1000),
+    Expander('Channel weights', '', True, [
+        Value('Red', 'io.import_height_map.weight_r', 0.25, 0, 1, snap_frac=1000),
+        Value('Green', 'io.import_height_map.weight_g', 0.5,  0, 1, snap_frac=1000),
+        Value('Blue', 'io.import_height_map.weight_b', 0.25, 0, 1, snap_frac=1000),
         Label('All usually should add to 1'),
     ]),
-    Expander('Remap height', '?', True, [
-        Value('Map 0 to', '?', 0, -2, 2, snap_frac=100),
-        Value('Map 1 to', '?', 1, -2, 2, snap_frac=100),
+    Expander('Remap height', '', True, [
+        Value('Map 0 to height', 'io.import_height_map.map_0', 0, -2, 2, snap_frac=100),
+        Value('Map 1 to height', 'io.import_height_map.map_1', 1, -2, 2, snap_frac=100),
     ]),
-    Expander('Color', '?', True, [
-        Checkbox('Overwrite canvas color', '?', False),
-        Color('New voxel color', '?', '#aaaaaa'),
+    Expander('Color', '', True, [
+        Checkbox('Overwrite canvas color', 'io.import_height_map.overwrite_color', False),
+        Color('New voxel color', 'io.import_height_map.new_color', '#aaaaaa'),
     ]),
-    Button('Input height map', '?'),
+    Button('Input height map', 'io.import_height_map.btn_input_height_map'),
 ])
 
-import_color_map = Container([
+panels['import_color_map'] = Container([
     Label('Import color map'),
+    Separator(),
     
-    Checkbox('Crop if size mismatch', '?', True),
-    Expander('Color', '?', True, [
-        Checkbox('Interpret as linear', '?', False),
-        Checkbox('Overwrite color', '?', False),
-        Color('Color', '?', '#aaaaaa'),
-    ]),
-    Button('Input color map', '?'),
+    Checkbox('Crop if size mismatch', 'io.import_color_map.crop', True),
+    Checkbox('Interpret as linear', 'io.import_color_map.interpret_linear', False),
+
+    Button('Input color map', 'io.import_color_map.btn_input_color_map'),
 ])
 
+panels['export_height_map'] = Container([
+    Label('Export'),
+    Separator(),
+    Label('Normalised heights'),
+    Value('Map 0 to value', 'io.export_height_map.map_0', 0, -2, 2, snap_frac=100),
+    Value('Map 1 to value', 'io.export_height_map.map_1', 1, -2, 2, snap_frac=100),
+    
+    Button('Export as TextImage', 'io.export_height_map.btn_export'),
+])
 
-panels = {
-    'import_color_map': import_color_map,
-    'import_height_map': import_height_map,
-    'erosion': erosion,
-    'project_settings': project_settings,
-    'testing': testing,
-}
+panels['project_settings'] = Container([
+    Label('Project settings'),
+    Expander('Display', '', True, [
+        Checkbox('Dark background', 'project_settings.bg_dark', True),
+    ]),
+    Expander('Misc', '', True, [
+        Value('Mouse sensitivity', 'project_settings.slider_sensitivity', 200, 10, 1000, 0, 10000, 0.1),
+        Button('Button1', 'btn1'),
+    ]),
+])
+
+# Value('AO samples', 'project_settings.ao_samples', 64, 1, 256, 1, 4096, 1),
+
 
 # SAVE
 
@@ -223,7 +248,7 @@ for name, p in panels.items():
     element_lookup.append(1+len(element_list))
     element_list.extend(flat)
 
-with open('UI_data_lookup.txt', 'w') as f:
+with open('UI_data_panels.txt', 'w') as f:
     f.writelines([f"{l}\n" for l in element_lookup])
 
 with open('UI_data.txt', 'w') as f:
