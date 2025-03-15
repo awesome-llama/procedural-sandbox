@@ -161,5 +161,27 @@ func HSV_to_RGB(h, s, v) RGB {
 #             Misc             #
 ################################
 
-proc comment comment {} # custom block comment
+# assumes the value is stored at the 3rd item
 
+# returns value for use in variable
+func get_setting_from_id(element_id) {
+    local element_index = $element_id in UI_data_element_id;
+    if (element_index == 0) { error "element id doesn't exist: " & element_index; }
+    return UI_data[UI_data_element_index[element_index]+3]; # return
+}
+
+# adds to shared list
+proc setting_from_id element_id {
+    local element_index = $element_id in UI_data_element_id;
+    if (element_index == 0) { error "element id doesn't exist: " & element_index; }
+    add UI_data[UI_data_element_index[element_index]+3] to UI_return;
+}
+
+proc setting_col_from_id element_id {
+    local element_index = $element_id in UI_data_element_id;
+    if (element_index == 0) { error "element id doesn't exist: " & element_index; }
+    local col = UI_data[UI_data_element_index[element_index]+3];
+    add ROOT((col//65536)%256/256, 2.2) to UI_return;
+    add ROOT((col//256)%256/256, 2.2) to UI_return;
+    add ROOT(col%256/256, 2.2) to UI_return;
+}

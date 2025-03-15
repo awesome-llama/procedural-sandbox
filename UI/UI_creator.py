@@ -64,9 +64,10 @@ class Value(Element):
         return list(self.items)
 
 class Color(Element):
-    def __init__(self, label='Color', id='', color="#808080"):
+    def __init__(self, label='Color', id='', color="808080"):
+        #if len(color) != 6: raise ValueError('color must be 6 hexadecimal digits')
         super().__init__()
-        self.items = ['COLOR', label, id, color]
+        self.items = ['COLOR', label, id, int(color, 16)]
 
     def to_flat_list(self, ids_list):
         add_id(ids_list, self.items[2], -2)
@@ -125,8 +126,8 @@ panels['generate_maze'] = Container([
         Value('Size z', 'gen.maze.size_z', 16, 1, 512, 0, 4096, 1),
     ]),
     Expander('Color', '', True, [
-        Color('Ground color', 'gen.maze.ground_col', '#aaaaaa'),
-        Color('Wall color', 'gen.maze.wall_col', '#aaaaaa'),
+        Color('Ground color', 'gen.maze.ground_col', 'aaaaaa'),
+        Color('Wall color', 'gen.maze.wall_col', 'aaaaaa'),
     ]),
     Button('Generate', 'gen.maze.generate'),
 ])
@@ -139,7 +140,7 @@ panels['generate_city'] = Container([
         Value('Size z', 'gen.city.size_z', 16, 1, 512, 0, 4096, 1),
     ]),
     Expander('Color', '', True, [
-        Color('Ground color', 'gen.city.ground_col', '#aaaaaa'),
+        Color('Ground color', 'gen.city.ground_col', 'aaaaaa'),
     ]),
     Button('Generate', 'gen.city.generate'),
 ])
@@ -152,7 +153,7 @@ panels['generate_pipelines'] = Container([
         Value('Size z', 'gen.pipelines.size_z', 16, 1, 512, 0, 4096, 1),
     ]),
     Expander('Color', '', True, [
-        Color('Ground color', 'gen.pipelines.ground_col', '#aaaaaa'),
+        Color('Ground color', 'gen.pipelines.ground_col', 'aaaaaa'),
     ]),
     Button('Generate', 'gen.pipelines.generate'),
 ])
@@ -176,15 +177,21 @@ panels['generate_erosion'] = Container([
     ]),
     Expander('Finalise', '', True, [
         Value('Water level', 'gen.erosion.water_level_fac', 0.2, 0, 1, snap_frac=1000),
-        Color('Water color', 'gen.erosion.water_col', '#505090'),
+        Color('Water color', 'gen.erosion.water_col', '505090'),
         Value('Grass amount', 'gen.erosion.grass_fac', 0.5, 0, 1, snap_frac=1000),
-        Color('Grass color', 'gen.erosion.grass_col', '#70aa60'),
+        Color('Grass color', 'gen.erosion.grass_col', '70aa60'),
+        Value('Tree amount', 'gen.erosion.tree_fac', 0.2, 0, 1, snap_frac=1000),
         Button('Run', 'gen.erosion.run_finalise'),
     ]),
 ])
 
 panels['import_height_map'] = Container([
     Label('Import height map'),
+    Expander('Canvas', '', True, [
+        Checkbox('Erase canvas', 'io.import_height_map.erase_canvas', True),
+        Value('Size z', 'io.import_height_map.size_z', 16, 1, 512, 0, 4096, 1),
+        Color('New voxel color', 'io.import_height_map.new_color', 'aaaaaa'),
+    ]),
     Expander('Channel weights', '', True, [
         Value('Red', 'io.import_height_map.weight_r', 0.25, 0, 1, snap_frac=1000),
         Value('Green', 'io.import_height_map.weight_g', 0.5,  0, 1, snap_frac=1000),
@@ -194,10 +201,6 @@ panels['import_height_map'] = Container([
     Expander('Remap height', '', True, [
         Value('Map 0 to height', 'io.import_height_map.map_0', 0, -2, 2, snap_frac=100),
         Value('Map 1 to height', 'io.import_height_map.map_1', 1, -2, 2, snap_frac=100),
-    ]),
-    Expander('Color', '', True, [
-        Checkbox('Overwrite canvas color', 'io.import_height_map.overwrite_color', False),
-        Color('New voxel color', 'io.import_height_map.new_color', '#aaaaaa'),
     ]),
     Button('Input height map', 'io.import_height_map.btn_input_height_map'),
 ])

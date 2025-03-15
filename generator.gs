@@ -235,6 +235,8 @@ proc delete_all_templates {
 }
 
 proc add_canvas_as_template {
+    # TODO check if scratch and list limit reached
+
     # metadata
     add template_metadata { ptr:(1+length depositor_template_voxels), sx:canvas_size_x, sy:canvas_size_y, sz:canvas_size_z } to depositor_template_metadata;
     

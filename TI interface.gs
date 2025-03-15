@@ -119,25 +119,62 @@ on "import height map" {
     if (answer() != "") {
         TextImage_file = answer(); 
         broadcast_and_wait "read TextImage";
-        copy_TI_px_buffer_to_canvas_as_height_map;
+        
+        delete UI_return;
+        setting_from_id("io.import_height_map.erase_canvas");
+        setting_from_id("io.import_height_map.size_z");
+        setting_col_from_id("io.import_height_map.new_color");
+
+        setting_from_id("io.import_height_map.weight_r");
+        setting_from_id("io.import_height_map.weight_g");
+        setting_from_id("io.import_height_map.weight_b");
+
+        setting_from_id("io.import_height_map.map_0");
+        setting_from_id("io.import_height_map.map_1");
+
+        copy_TI_px_buffer_to_canvas_as_height_map UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6], UI_return[7], UI_return[8], UI_return[9], UI_return[10];
         require_composite = true;
     }
 }
-proc copy_TI_px_buffer_to_canvas_as_height_map {
-    if (canvas_size_x != TI_image_size_x or canvas_size_y != TI_image_size_y) {
-        crop floor((canvas_size_x-TI_image_size_x)/2), floor((canvas_size_y-TI_image_size_y)/2), 0, TI_image_size_x, TI_image_size_y, canvas_size_z;
-    }
-    
-    layer_size = (canvas_size_x * canvas_size_y);
-    i = 1;
-    repeat layer_size {
-        local heightmap_write_z = 0;
-        repeat round(canvas_size_z * ((TI_2_g[i]*0.25 + TI_2_g[i]*0.5 + TI_2_g[i]*0.25) / 255)) { # using 1:2:1 rgb
-            canvas[i + heightmap_write_z].opacity = 1;
-            heightmap_write_z += layer_size;
+proc copy_TI_px_buffer_to_canvas_as_height_map erase_canvas, size_z, new_col_r, new_col_g, new_col_b, weight_r, weight_g, weight_b, map_0, map_1 {
+    if ($erase_canvas == 1) {
+        canvas_size_x = TI_image_size_x;
+        canvas_size_y = TI_image_size_y;
+        canvas_size_z = $size_z;
+        clear_canvas;
+
+        layer_size = (canvas_size_x * canvas_size_y);
+        i = 1;
+        repeat layer_size {
+            local heightmap_write_z = 0;
+            local height = ((TI_2_g[i]*$weight_r + TI_2_g[i]*$weight_g + TI_2_g[i]*$weight_b) / 255); # normalised height
+            repeat round(canvas_size_z * ($map_0 + (height * ($map_1-$map_0)))) {
+                canvas[i + heightmap_write_z].r = $new_col_r;
+                canvas[i + heightmap_write_z].g = $new_col_g;
+                canvas[i + heightmap_write_z].b = $new_col_b;
+                canvas[i + heightmap_write_z].opacity = 1;
+                heightmap_write_z += layer_size;
+            }
+            i++;
         }
-        i++;
+    } else {
+        if (canvas_size_x != TI_image_size_x or canvas_size_y != TI_image_size_y) {
+            crop floor((canvas_size_x-TI_image_size_x)/2), floor((canvas_size_y-TI_image_size_y)/2), 0, TI_image_size_x, TI_image_size_y, canvas_size_z;
+        }
+
+        layer_size = (canvas_size_x * canvas_size_y);
+        i = 1;
+        repeat layer_size {
+            local heightmap_write_z = 0;
+            local height = ((TI_2_g[i]*$weight_r + TI_2_g[i]*$weight_g + TI_2_g[i]*$weight_b) / 255); # normalised height
+            repeat round(canvas_size_z * ($map_0 + (height * ($map_1-$map_0)))) {
+                canvas[i + heightmap_write_z].opacity = 1;
+                heightmap_write_z += layer_size;
+            }
+            i++;
+        }
     }
+
 }
 
 
@@ -212,4 +249,14 @@ proc _write_temp_lists_to_canvas  {
         i++;
     }
     delete temp;
+}
+
+# copied from generator.gs:
+proc clear_canvas  {
+    delete canvas;
+    repeat (canvas_size_x * canvas_size_y * canvas_size_z) {
+        add VOXEL_NONE to canvas;
+    }
+
+    require_composite = true;
 }

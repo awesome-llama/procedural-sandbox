@@ -36,6 +36,8 @@ list UI_data_panels = file ```UI/UI_data_panels.txt```;
 list UI_data_element_id = file ```UI/UI_data_element_id.txt```;
 list UI_data_element_index = file ```UI/UI_data_element_index.txt```;
 
+list UI_return; # for user-triggered operations that need additional data retrieved from the UI.
+
 
 on "initalise" {
     dev = round((username() == "awesome-llama")); # developer mode

@@ -267,7 +267,7 @@ on "stage clicked" {
             }
 
         } elif (UI_data[clicked_element] == "COLOR") {
-            UI_data[clicked_element+3] = "#ff0000";
+            UI_data[clicked_element+3] = "0xff0000" + 0; # not typically possible in scratch
 
         } elif (UI_data[clicked_element] == "EXPANDER") {
             UI_data[clicked_element+3] = 1 - UI_data[clicked_element+3];
