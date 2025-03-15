@@ -31,8 +31,10 @@ list template_metadata depositor_template_metadata; # pointers into the template
 list voxel depositor_template_voxels;
 
 # UI
-list UI_data_panels = file ```UI/UI_data_panels.txt```;
 list UI_data = file ```UI/UI_data.txt```;
+list UI_data_panels = file ```UI/UI_data_panels.txt```;
+list UI_data_element_id = file ```UI/UI_data_element_id.txt```;
+list UI_data_element_index = file ```UI/UI_data_element_index.txt```;
 
 
 on "initalise" {
