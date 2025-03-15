@@ -70,10 +70,10 @@ proc render_viewport_text {
 %define IS_HOVERED UI_last_hovered_group == "modular elements" and UI_last_hovered_element == $index
 
 proc render_gen_opt_panel x, y, width, height {
-    local curr_index = (UI_current_panel in UI_data_lookup);
+    local curr_index = (UI_current_panel in UI_data_panels);
     if curr_index > 0 {
         draw_UI_rect $x, $y, $width, $height, 1, "#757575", THEME_COL_BG; # TODO better rect renderer
-        render_element UI_data_lookup[curr_index + 1], $x+5, $y-5, $width-10;
+        render_element UI_data_panels[curr_index + 1], $x+5, $y-5, $width-10;
     }
 }
 

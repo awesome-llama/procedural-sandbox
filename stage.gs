@@ -31,8 +31,8 @@ list template_metadata depositor_template_metadata; # pointers into the template
 list voxel depositor_template_voxels;
 
 # UI
-list UI_data_lookup = file ```UI_data_lookup.txt```;
-list UI_data = file ```UI_data.txt```;
+list UI_data_panels = file ```UI/UI_data_panels.txt```;
+list UI_data = file ```UI/UI_data.txt```;
 
 
 on "initalise" {
@@ -61,7 +61,7 @@ on "initalise" {
     UI_last_hovered_group = "";
     UI_last_hovered_element = "";
 
-    UI_current_panel = "testing";
+    UI_current_panel = "";
 }
 
 

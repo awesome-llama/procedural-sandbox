@@ -3,6 +3,9 @@
 
 __pycache__
 
+# Data
+UI_data*.txt
+
 # For development
 test/
 test*.py
