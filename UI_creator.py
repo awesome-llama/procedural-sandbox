@@ -194,8 +194,9 @@ import_height_map = Container([
 import_color_map = Container([
     Label('Import color map'),
     
+    Checkbox('Crop if size mismatch', '?', True),
     Expander('Color', '?', True, [
-        Checkbox('Interpret as sRGB', '?', True),
+        Checkbox('Interpret as linear', '?', False),
         Checkbox('Overwrite color', '?', False),
         Color('Color', '?', '#aaaaaa'),
     ]),

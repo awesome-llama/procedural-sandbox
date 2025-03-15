@@ -28,7 +28,6 @@ on "export canvas" {
     show copy_this;
 }
 proc copy_canvas_to_TI_px_buffer {
-    # NO DISPLAY TRANSFORM -- SCENE LINEAR
     TI_image_size_x = canvas_size_x;
     TI_image_size_y = (canvas_size_y * canvas_size_z);
     delete TI_1_r;
@@ -37,9 +36,10 @@ proc copy_canvas_to_TI_px_buffer {
     delete TI_4_a;
     i = 1;
     repeat (canvas_size_x * canvas_size_y * canvas_size_z) {
-        add floor(canvas[i].r*255) to TI_1_r;
-        add floor(canvas[i].g*255) to TI_2_g;
-        add floor(canvas[i].b*255) to TI_3_b;
+        # transform to sRGB
+        add floor(POW(canvas[i].r, 2.2)*255) to TI_1_r;
+        add floor(POW(canvas[i].g, 2.2)*255) to TI_2_g;
+        add floor(POW(canvas[i].b, 2.2)*255) to TI_3_b;
         add floor(canvas[i].opacity*255) to TI_4_a;
         i++;
     }
@@ -64,8 +64,7 @@ proc copy_render_buffer_to_TI_buffer {
     delete TI_4_a;
     i = 1;
     repeat (length render_cache_final_col) {
-        # separate into RGB components
-        # NO DISPLAY TRANSFORM -- SCENE LINEAR
+        # render cache is sRGB combined. No transform needed, only separation into channels.
         add (floor((render_cache_final_col[i]/65536))%256) to TI_1_r;
         add (floor((render_cache_final_col[i]/256))%256) to TI_2_g;
         add (render_cache_final_col[i]%256) to TI_3_b;
@@ -107,7 +106,8 @@ proc copy_TI_px_buffer_to_canvas {
     delete canvas;
     i = 1;
     repeat (length TI_1_r) {
-        add voxel {opacity:floor(TI_4_a[i]*255), r:floor(TI_1_r[i]*255), g:floor(TI_2_g[i]*255), b:floor(TI_3_b[i]*255)} to canvas;
+        # transform sRGB into linear
+        add voxel {opacity:floor(TI_4_a[i]*255), r:floor(ROOT(TI_1_r[i], 2.2)*255), g:floor(ROOT(TI_2_g[i], 2.2)*255), b:floor(ROOT(TI_3_b[i], 2.2)*255)} to canvas;
         i++;
     }
 }
@@ -161,9 +161,10 @@ proc read_TI_px_buffer_to_canvas_as_2D_color_map {
     repeat layer_size {
         local heightmap_write_z = 0;
         repeat canvas_size_z {
-            canvas[i + heightmap_write_z].r = antiln((ln((TI_1_r[i]/255))/2.4));
-            canvas[i + heightmap_write_z].g = antiln((ln((TI_2_g[i]/255))/2.4));
-            canvas[i + heightmap_write_z].b = antiln((ln((TI_3_b[i]/255))/2.4));
+            # transform sRGB into linear
+            canvas[i + heightmap_write_z].r = ROOT(TI_1_r[i]/255, 2.2);
+            canvas[i + heightmap_write_z].g = ROOT(TI_2_g[i]/255, 2.2);
+            canvas[i + heightmap_write_z].b = ROOT(TI_3_b[i]/255, 2.2);
             heightmap_write_z += layer_size;
         }
         i++;
