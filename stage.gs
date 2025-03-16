@@ -65,7 +65,7 @@ on "initalise" {
     UI_last_hovered_group = "";
     UI_last_hovered_element = "";
 
-    UI_current_panel = "";
+    UI_current_panel = "import_height_map";
 }
 
 

@@ -27,14 +27,17 @@ on "start main loop" {
         if (require_screen_refresh == true) {
             erase_all;
             broadcast "render canvas";
+            broadcast "render canvas text";
             require_screen_refresh = false;
         }
         
         # reset hover detection
-        UI_last_hovered_group = UI_hovered_group;
-        UI_last_hovered_element = UI_hovered_element;
-        UI_hovered_group = "";
-        UI_hovered_element = "";
+        if not mouse_down() {
+            UI_last_hovered_group = UI_hovered_group;
+            UI_last_hovered_element = UI_hovered_element;
+            UI_hovered_group = "";
+            UI_hovered_element = "";
+        }
 
         broadcast "render ui"; # always redraw, no erase. This goes to the UI sprite only.
         # more broadcasts for UI may be added although it's not clear if this is needed

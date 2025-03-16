@@ -44,38 +44,43 @@ onflag {
 %define THEME_COL_TEXT "#ffffff"
 
 
-on "render ui" {
-    # constantly renders, this is because the ui needs to be interactive.
-    draw_UI_rect -240, 180, 480, 20, 1, THEME_COL_BG, THEME_COL_BG;
-
-    #render_viewport_text;
-    render_gen_opt_panel -240, 160, 160, 340;
-    switch_costume "icon";
-}
-
-proc render_viewport_text {
-    # TODO
-    set_pen_color "#ffffff";
-    plainText -230, 160, 1, ("canvas size: " & ((((canvas_size_x & ", ") & canvas_size_y) & ", ") & canvas_size_z));
-    plainText -230, 150, 1, ("timer: " & floor(( 100 *((86400 * days_since_2000()) % 1))));
-    plainText -230, 140, 1, compositor_mode;
-}
-
-
-
 %define LINEHIGHT 16
 %define TXT_Y_OFFSET 12
 %define INPUT_WIDTH 50
 
 %define IS_HOVERED UI_last_hovered_group == "modular elements" and UI_last_hovered_element == $index
 
+%define MODULAR_PANEL_WIDTH 160
+
+on "render ui" {
+    # constantly renders, this is because the ui needs to be interactive.
+    draw_rect -240+MODULAR_PANEL_WIDTH, 160, 480-MODULAR_PANEL_WIDTH, 20, 1, "#505050"; # top bar
+    
+    draw_rect -240, -180, MODULAR_PANEL_WIDTH, 360, 0, THEME_COL_BG; # left panel
+    render_gen_opt_panel -236, 160, MODULAR_PANEL_WIDTH-8, 360-20; # scroll bar might be needed
+    
+    set_pen_color "#ffffff";
+    plainText -150, 160, 1, compositor_mode;
+    
+    switch_costume "icon";
+}
+
 proc render_gen_opt_panel x, y, width, height {
     local curr_index = (UI_current_panel in UI_data_panels);
     if curr_index > 0 {
-        draw_UI_rect $x, $y, $width, $height, 1, "#757575", THEME_COL_BG; # TODO better rect renderer
-        render_element UI_data_panels[curr_index + 1], $x+5, $y-5, $width-10;
+        render_element UI_data_panels[curr_index + 1], $x, $y, $width;
     }
 }
+
+
+on "render canvas text" { render_viewport_text; }
+proc render_viewport_text {
+    set_pen_color "#ffffff";
+    plainText -75, 150, 1, ("canvas size: " & ((((canvas_size_x & ", ") & canvas_size_y) & ", ") & canvas_size_z));
+    plainText -75, 140, 1, ("timer: " & floor(( 100 *((86400 * days_since_2000()) % 1))));
+    
+}
+
 
 proc render_element index, x, y, width {
     # index is to select what part of the list to read from
@@ -226,6 +231,7 @@ proc render_element index, x, y, width {
 }
 
 proc UI_check_touching_mouse x, y, width, height, id1, id2 {
+    
     if (not (((mouse_x() < $x) or (mouse_x() > ($x+$width))) or ((mouse_y() > $y) or (mouse_y() < ($y-$height))))) {
         UI_hovered_group = $id1;
         UI_hovered_element = $id2;
@@ -417,56 +423,67 @@ proc draw_triangle x, y, dir {
 proc draw_UI_rect x, y, width, height, radius, outline_col, fill_col {
     # not tested on all cases, only set up for this use case!
     # drawn from top-left
-    if ($radius > 0) {
-        local radius = $radius;
+    if $outline_col != $fill_col {
+        # draw outline
+        draw_rect $x, ($y-$height), $width, $height, $radius, $outline_col;
+        
+        # inner fill
+        draw_rect $x+1, ($y-$height)+1, $width-2, $height-2, $radius, $fill_col;
     } else {
-        local radius = 1;
+        draw_rect $x, ($y-$height), $width, $height, $radius, $fill_col;
     }
-    if (($width > (radius*2)) and ($height > (radius*2))) {
-        if ($width > $height) {
-            local rect_lim = (($height/2)-1);
-        } else {
-            local rect_lim = (($width/2)-1);
-        }
+}
 
-        # OUTLINE #
-        if ($outline_col == "") {
-            set_pen_color "#212121";
-        } else {
-            set_pen_color $outline_col;
-        }
 
+# "natural" rect. for positive width and height only
+proc draw_rect x, y, width, height, radius, fill_col {
+    
+    # find the narrowest axis
+    if ($width > $height) {
+        local rect_limit = ($height/2);
+    } else {
+        local rect_limit = ($width/2);
+    }
+    
+    local radius = POSITIVE_CLAMP($radius);
+    
+    if (rect_limit < 0) { stop_this_script; }
+
+    set_pen_color $fill_col;
+    until (radius > rect_limit) {
         set_pen_size (radius * 2);
-        goto ($x+radius), ($y-radius);
+        goto ($x+radius), ($y+radius);
         pen_down;
         set_x (($x+$width) - radius);
-        set_y (($y-$height) + radius);
+        set_y (($y+$height) - radius);
         set_x ($x+radius);
-        set_y ($y-radius);
+        set_y ($y+radius);
         pen_up;
         
-        # FILL #
-        if ($fill_col == "") {
-            stop_this_script;
+        if (radius < 1) {
+            # prevent infinite loop when radius is 0, ensure that it gets properly filled
+            radius = 1; 
         } else {
-            set_pen_color $fill_col;
+            radius *= 6; # approximate number to ensure enough overlap
         }
-        until (radius > rect_lim) {
-            set_pen_size radius * 2;
-            goto (($x+radius)+1), (($y-radius)-1);
-            pen_down;
-            set_x ((($x+$width) - radius)-1);
-            set_y ((($y-$height) + radius)+1);
-            set_x (($x+radius)+1);
-            set_y (($y-radius)-1);
-            pen_up;
-            radius *= 6; # not sure why 6
-        }
-        set_pen_size (rect_lim * 2);
-        goto (($x+rect_lim)+1), (($y-rect_lim)-1);
+        
+    }
+
+    # final fill
+    if (radius < $radius or radius/rect_limit)%6 <= 3 {
+        set_pen_size (rect_limit * 2) - 0.01; # subtract for hq pen fix
+        goto ($x+rect_limit), ($y+rect_limit);
         pen_down;
-        goto ((($x+$width)-rect_lim)-1), ((($y-$height)+rect_lim)+1);
+        goto (($x+$width)-rect_limit), (($y+$height)-rect_limit);
         pen_up;
     }
 }
 
+
+
+#onkey "m" {
+#    erase_all;
+#    draw_rect -100, 100, 15, 40, 0, "#00ff00";
+#    draw_rect -100, 0, 50, 25, 1, "#ffff00";
+#    draw_rect 0, 0, round(mouse_x()), round(mouse_y()), 10, "#ffff00";
+#}
