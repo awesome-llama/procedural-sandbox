@@ -19,6 +19,14 @@ on "start main loop" {
     require_screen_refresh = true; # TODO rename to viewport
     forever {
         hide; # does this affect yielding?
+        
+        # reset hover detection
+        if not mouse_down() {
+            UI_last_hovered_group = UI_hovered_group;
+            UI_last_hovered_element = UI_hovered_element;
+            UI_hovered_group = "";
+            UI_hovered_element = "";
+        }
 
         if (require_composite == true) {
             broadcast "composite";
@@ -29,14 +37,6 @@ on "start main loop" {
             broadcast "render canvas";
             broadcast "render canvas text";
             require_screen_refresh = false;
-        }
-        
-        # reset hover detection
-        if not mouse_down() {
-            UI_last_hovered_group = UI_hovered_group;
-            UI_last_hovered_element = UI_hovered_element;
-            UI_hovered_group = "";
-            UI_hovered_element = "";
         }
 
         broadcast "render ui"; # always redraw, no erase. This goes to the UI sprite only.

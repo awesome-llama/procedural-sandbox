@@ -1,6 +1,6 @@
 %include common/common.gs
 
-costumes "costumes/renderer/full.svg" as "full", "costumes/blank.svg" as "blank";
+costumes "costumes/large.svg" as "full", "costumes/blank.svg" as "blank";
 hide;
 
 on "initalise" {
@@ -45,14 +45,8 @@ proc render_image x, y, scale, res {
     }
 }
 
-
-# go to a position in the world
-proc goto_world_space x, y {
-    goto floor(cam_scale*(cam_x+$x)), floor(cam_scale*(cam_y+$y));
-}
-
 proc render_edge_lines  {
-    set_pen_color "#828282";
+    set_pen_color "#727272";
     set_pen_size 1;
     goto_world_space 0, 0;
     set_y -180;
@@ -76,3 +70,12 @@ proc render_edge_lines  {
     pen_up;
 }
 
+
+################################
+#            Utils             #
+################################
+
+# go to a position in the world
+proc goto_world_space x, y {
+    goto floor(cam_scale*(cam_x+$x)), floor(cam_scale*(cam_y+$y));
+}

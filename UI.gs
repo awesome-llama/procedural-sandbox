@@ -3,10 +3,12 @@
 # For more info see: https://scratch.mit.edu/projects/934459716/
 
 costumes 
-"costumes/PTE/icon.svg" as "icon", 
+"costumes/UI/icon.svg" as "icon", 
 "costumes/large.svg" as "large",
 "costumes/blank.svg" as "",
-"costumes/blank.svg" as "@ascii/";
+"costumes/blank.svg" as "@ascii/",
+"costumes/UI/icons/*.svg",
+;
 hide;
 
 
@@ -48,14 +50,14 @@ onflag {
 %define TXT_Y_OFFSET 12
 %define INPUT_WIDTH 50
 
-%define IS_HOVERED UI_last_hovered_group == "modular elements" and UI_last_hovered_element == $index
-
 %define MODULAR_PANEL_WIDTH 160
 
 on "render ui" {
     # constantly renders, this is because the ui needs to be interactive.
     draw_rect -240+MODULAR_PANEL_WIDTH, 160, 480-MODULAR_PANEL_WIDTH, 20, 1, "#505050"; # top bar
-    
+    set_pen_color "#ffffff";
+    render_top_bar -240+MODULAR_PANEL_WIDTH, 180;
+
     draw_rect -240, -180, MODULAR_PANEL_WIDTH, 360, 0, THEME_COL_BG; # left panel
     render_gen_opt_panel -236, 160, MODULAR_PANEL_WIDTH-8, 360-20; # scroll bar might be needed
     
@@ -72,6 +74,41 @@ proc render_gen_opt_panel x, y, width, height {
     }
 }
 
+%define TOP_BAR_OFFSET(INDEX) $x+(INDEX)*20-10
+
+proc render_top_bar x, y {
+    # arrow
+    point_in_direction -90;
+    stamp_button "collapse side bar", "triangle", TOP_BAR_OFFSET(1), $y-10;
+    point_in_direction 90;
+
+    # viewport buttons
+    stamp_button "viewport 2D", "viewport 2D", TOP_BAR_OFFSET(2), $y-10;
+    stamp_button "viewport 3D", "viewport 3D", TOP_BAR_OFFSET(3), $y-10;
+    stamp_button "section", "section", TOP_BAR_OFFSET(4), $y-10;
+
+    # right-aligned settings cog
+    stamp_button "settings", "settings", 240-10, $y-10;
+}
+
+
+proc stamp_button id, costume, x, y {
+
+    if (abs(mouse_x()-$x) < 10 and abs(mouse_y()-$y) < 10) {
+        UI_hovered_group = "top bar";
+        UI_hovered_element = $id;
+    }
+
+    goto $x, $y;
+    switch_costume $costume;
+    stamp;
+
+    if (UI_last_hovered_group == "top bar") and (UI_last_hovered_element == $id) {
+        switch_costume "select";
+        stamp;
+    }
+}
+
 
 on "render canvas text" { render_viewport_text; }
 proc render_viewport_text {
@@ -81,6 +118,8 @@ proc render_viewport_text {
     
 }
 
+# side bar specific
+%define IS_HOVERED() (UI_last_hovered_group == "side bar") and (UI_last_hovered_element == $index)
 
 proc render_element index, x, y, width {
     # index is to select what part of the list to read from
@@ -113,9 +152,9 @@ proc render_element index, x, y, width {
 
     } elif (elem_type == "BUTTON") {
         # [type, label, id, button_clicked]
-        UI_check_touching_mouse $x, $y+1, $width, LINEHIGHT, "modular elements", $index;
+        UI_check_touching_mouse $x, $y+1, $width, LINEHIGHT, "side bar", $index;
 
-        if (IS_HOVERED) {
+        if (IS_HOVERED()) {
             draw_UI_rect $x, $y-1, $width, LINEHIGHT, 4, THEME_COL_OUTLINE_HIGHLIGHT, "#656565";
         } else {
             draw_UI_rect $x, $y-1, $width, LINEHIGHT, 4, THEME_COL_OUTLINE, "#555555";
@@ -131,9 +170,9 @@ proc render_element index, x, y, width {
         set_pen_color THEME_COL_TEXT;
         plainText $x, $y-TXT_Y_OFFSET, 1, UI_data[$index+1];
         
-        UI_check_touching_mouse (($x+$width)-LINEHIGHT), $y, LINEHIGHT, LINEHIGHT, "modular elements", $index;
+        UI_check_touching_mouse (($x+$width)-LINEHIGHT), $y, LINEHIGHT, LINEHIGHT, "side bar", $index;
 
-        if (IS_HOVERED) {
+        if (IS_HOVERED()) {
             draw_UI_rect (($x+$width)-12), ($y-2), 12, 12, 2, THEME_COL_OUTLINE_HIGHLIGHT, THEME_COL_FILL_HIGHLIGHT;
         } else {
             draw_UI_rect (($x+$width)-12), ($y-2), 12, 12, 2, THEME_COL_OUTLINE, THEME_COL_FILL;
@@ -151,8 +190,8 @@ proc render_element index, x, y, width {
     } elif (elem_type == "VALUE") {
         # [type, label, id, val, soft_min, soft_max, hard_min, hard_max, step]
 
-        UI_check_touching_mouse (($x+$width)-INPUT_WIDTH), $y, INPUT_WIDTH, LINEHIGHT, "modular elements", $index;
-        if (IS_HOVERED) {
+        UI_check_touching_mouse (($x+$width)-INPUT_WIDTH), $y, INPUT_WIDTH, LINEHIGHT, "side bar", $index;
+        if (IS_HOVERED()) {
             draw_UI_rect (($x+$width)-INPUT_WIDTH), ($y-1), INPUT_WIDTH, LINEHIGHT-2, 2, THEME_COL_OUTLINE_HIGHLIGHT, THEME_COL_FILL_HIGHLIGHT;
         } else {
             draw_UI_rect (($x+$width)-INPUT_WIDTH), ($y-1), INPUT_WIDTH, LINEHIGHT-2, 2, THEME_COL_OUTLINE, THEME_COL_FILL;
@@ -165,7 +204,7 @@ proc render_element index, x, y, width {
         UI_y -= LINEHIGHT;
         render_element $index+9, $x, UI_y, $width;
 
-        if (IS_HOVERED) {
+        if (IS_HOVERED()) {
             set_pen_color THEME_COL_OUTLINE_HIGHLIGHT;
             draw_triangle $x+$width+1, $y-8, 0;
             draw_triangle $x+$width-INPUT_WIDTH-2, $y-8, 180;
@@ -176,9 +215,9 @@ proc render_element index, x, y, width {
         set_pen_color THEME_COL_TEXT;
         plainText $x, $y-TXT_Y_OFFSET, 1, UI_data[$index+1];
         
-        UI_check_touching_mouse (($x+$width)-32), $y, 32, LINEHIGHT, "modular elements", $index;
+        UI_check_touching_mouse (($x+$width)-32), $y, 32, LINEHIGHT, "side bar", $index;
 
-        if (IS_HOVERED) {
+        if (IS_HOVERED()) {
             draw_UI_rect (($x+$width)-32), ($y-1), 32, LINEHIGHT-2, 4, THEME_COL_OUTLINE_HIGHLIGHT, UI_data[$index+3];
         } else {
             draw_UI_rect (($x+$width)-32), ($y-1), 32, LINEHIGHT-2, 4, THEME_COL_OUTLINE, UI_data[$index+3];
@@ -210,20 +249,20 @@ proc render_element index, x, y, width {
             UI_y -= (LINEHIGHT+2);
         }
 
-        UI_check_touching_mouse $x, $y-1, $width, LINEHIGHT, "modular elements", $index;
-        if (IS_HOVERED) {
+        UI_check_touching_mouse $x, $y-1, $width, LINEHIGHT, "side bar", $index;
+        if (IS_HOVERED()) {
             draw_UI_rect $x, $y-1, $width, LINEHIGHT, 3, THEME_COL_OUTLINE_HIGHLIGHT, "#444444";
         } else {
             draw_UI_rect $x, $y-1, $width, LINEHIGHT, 3, THEME_COL_OUTLINE, THEME_COL_FILL;
         }
 
         set_pen_color THEME_COL_TEXT;
-        plainText $x+16, $y-TXT_Y_OFFSET, 1, UI_data[$index+1]; # label
+        plainText $x+17, $y-TXT_Y_OFFSET, 1, UI_data[$index+1]; # label
 
         if (UI_data[$index+3] == 1) { # open
-            draw_triangle $x+7, ($y-9), -90;
+            draw_triangle $x+8, ($y-9), -90;
         } else {
-            draw_triangle $x+7, ($y-9), 0;
+            draw_triangle $x+8, ($y-9), 0;
         }
 
         render_element $index+UI_data[$index+4], $x, UI_y, $width; # next
@@ -243,7 +282,7 @@ proc UI_check_touching_mouse x, y, width, height, id1, id2 {
 
 on "stage clicked" {
     stop_other_scripts; # stop previous ask block
-    if (UI_hovered_group == "modular elements") {
+    if (UI_hovered_group == "side bar") {
         clicked_element = UI_last_hovered_element;
         if (UI_data[clicked_element] == "BUTTON") {
             log clicked_element;
@@ -400,23 +439,28 @@ proc wrappedText x, y, size, text, wrap_width {
 #             Draw             #
 ################################
 
-%define GOTO(DIST, DIR) goto $x+((DIST)*cos($dir+(DIR))), $y+((DIST)*sin($dir+(DIR)));
+%define GOTO_ANGLED(DIST, DIR) goto $x+((DIST)*cos($dir+(DIR))), $y+((DIST)*sin($dir+(DIR)));
 
 proc draw_triangle x, y, dir {
     # direction is anticlockwise from right
 
-    GOTO(-1, 0)
-    set_pen_size 3;
-    pen_down;
-    pen_up;
+    switch_costume "triangle";
+    goto $x, $y;
+    point_in_direction 90-$dir;
+    stamp;
+    point_in_direction 90;
+    # GOTO_ANGLED(-1, 0)
+    # set_pen_size 3;
+    # pen_down;
+    # pen_up;
 
-    set_pen_size 1;
-    GOTO(3.7, 123)
-    pen_down;
-    GOTO(3.7, -123)
-    GOTO(2, 0)
-    GOTO(3.7, 123)
-    pen_up;
+    # set_pen_size 1;
+    # GOTO_ANGLED(3.7, 123)
+    # pen_down;
+    # GOTO_ANGLED(3.7, -123)
+    # GOTO_ANGLED(2, 0)
+    # GOTO_ANGLED(3.7, 123)
+    # pen_up;
 }
 
 
@@ -461,12 +505,10 @@ proc draw_rect x, y, width, height, radius, fill_col {
         pen_up;
         
         if (radius < 1) {
-            # prevent infinite loop when radius is 0, ensure that it gets properly filled
-            radius = 1; 
+            radius = 1; # prevent infinite loop when radius is 0, ensure that it gets properly filled
         } else {
             radius *= 6; # approximate number to ensure enough overlap
         }
-        
     }
 
     # final fill
@@ -479,11 +521,3 @@ proc draw_rect x, y, width, height, radius, fill_col {
     }
 }
 
-
-
-#onkey "m" {
-#    erase_all;
-#    draw_rect -100, 100, 15, 40, 0, "#00ff00";
-#    draw_rect -100, 0, 50, 25, 1, "#ffff00";
-#    draw_rect 0, 0, round(mouse_x()), round(mouse_y()), 10, "#ffff00";
-#}

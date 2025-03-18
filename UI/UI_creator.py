@@ -120,14 +120,15 @@ panels = {}
 
 panels['generate_maze'] = Container([
     Label('Maze'),
-    Expander('Canvas', '', True, [
-        Value('Size x', 'gen.maze.size_x', 64, 1, 512, 0, 4096, 1),
-        Value('Size y', 'gen.maze.size_y', 64, 1, 512, 0, 4096, 1),
-        Value('Size z', 'gen.maze.size_z', 16, 1, 512, 0, 4096, 1),
+    Separator(),
+    Expander('Dimensions', '', True, [
+        Value('Grid cell count', 'gen.maze.grid_size', 24, 1, 512, 1, 1024, 1),
+        Value('Cell size', 'gen.maze.cell_size', 2, 1, 512, 1, 256, 1),
+        Value('Wall thickness', 'gen.maze.wall_thickness', 1, 1, 4, 1, 256, 1),
     ]),
     Expander('Color', '', True, [
-        Color('Ground color', 'gen.maze.ground_col', 'aaaaaa'),
-        Color('Wall color', 'gen.maze.wall_col', 'aaaaaa'),
+        Color('Ground color', 'gen.maze.ground_col', 'ffffff'),
+        Color('Wall color', 'gen.maze.wall_col', '000000'),
     ]),
     Button('Generate', 'gen.maze.generate'),
 ])
@@ -135,9 +136,9 @@ panels['generate_maze'] = Container([
 panels['generate_city'] = Container([
     Label('City'),
     Expander('Canvas', '', True, [
-        Value('Size x', 'gen.city.size_x', 64, 1, 512, 0, 4096, 1),
-        Value('Size y', 'gen.city.size_y', 64, 1, 512, 0, 4096, 1),
-        Value('Size z', 'gen.city.size_z', 16, 1, 512, 0, 4096, 1),
+        Value('Size X', 'gen.city.size_x', 64, 1, 512, 0, 4096, 1),
+        Value('Size Y', 'gen.city.size_y', 64, 1, 512, 0, 4096, 1),
+        Value('Size Z', 'gen.city.size_z', 16, 1, 512, 0, 4096, 1),
     ]),
     Expander('Color', '', True, [
         Color('Ground color', 'gen.city.ground_col', 'aaaaaa'),
@@ -148,9 +149,9 @@ panels['generate_city'] = Container([
 panels['generate_pipelines'] = Container([
     Label('Pipelines'),
     Expander('Canvas', '', True, [
-        Value('Size x', 'gen.pipelines.size_x', 64, 1, 512, 0, 4096, 1),
-        Value('Size y', 'gen.pipelines.size_y', 64, 1, 512, 0, 4096, 1),
-        Value('Size z', 'gen.pipelines.size_z', 16, 1, 512, 0, 4096, 1),
+        Value('Size X', 'gen.pipelines.size_x', 64, 1, 512, 0, 4096, 1),
+        Value('Size Y', 'gen.pipelines.size_y', 64, 1, 512, 0, 4096, 1),
+        Value('Size Z', 'gen.pipelines.size_z', 16, 1, 512, 0, 4096, 1),
     ]),
     Expander('Color', '', True, [
         Color('Ground color', 'gen.pipelines.ground_col', 'aaaaaa'),
@@ -161,9 +162,9 @@ panels['generate_pipelines'] = Container([
 panels['generate_erosion'] = Container([
     Label('Hydraulic erosion'),
     Expander('Initial terrain', '', True, [
-        Value('Size x', 'gen.erosion.size_x', 64, 1, 512, 0, 4096, 1),
-        Value('Size y', 'gen.erosion.size_y', 64, 1, 512, 0, 4096, 1),
-        Value('Size z', 'gen.erosion.size_z', 16, 1, 512, 0, 4096, 1),
+        Value('Size X', 'gen.erosion.size_x', 64, 1, 512, 0, 4096, 1),
+        Value('Size Y', 'gen.erosion.size_y', 64, 1, 512, 0, 4096, 1),
+        Value('Size Z', 'gen.erosion.size_z', 16, 1, 512, 0, 4096, 1),
         Separator(),
         #Checkbox('Perlin', 'perlin'),
         Separator(),
@@ -189,7 +190,7 @@ panels['import_height_map'] = Container([
     Label('Import height map'),
     Expander('Canvas', '', True, [
         Checkbox('Erase canvas', 'io.import_height_map.erase_canvas', True),
-        Value('Size z', 'io.import_height_map.size_z', 16, 1, 512, 0, 4096, 1),
+        Value('New size Z', 'io.import_height_map.size_z', 16, 1, 512, 0, 4096, 1),
         Color('New voxel color', 'io.import_height_map.new_color', 'aaaaaa'),
     ]),
     Expander('Channel weights', '', True, [
@@ -208,10 +209,8 @@ panels['import_height_map'] = Container([
 panels['import_color_map'] = Container([
     Label('Import color map'),
     Separator(),
-    
     Checkbox('Crop if size mismatch', 'io.import_color_map.crop', True),
     Checkbox('Interpret as linear', 'io.import_color_map.interpret_linear', False),
-
     Button('Input color map', 'io.import_color_map.btn_input_color_map'),
 ])
 
@@ -221,18 +220,14 @@ panels['export_height_map'] = Container([
     Label('Normalised heights'),
     Value('Map 0 to value', 'io.export_height_map.map_0', 0, -2, 2, snap_frac=100),
     Value('Map 1 to value', 'io.export_height_map.map_1', 1, -2, 2, snap_frac=100),
-    
     Button('Export as TextImage', 'io.export_height_map.btn_export'),
 ])
 
 panels['project_settings'] = Container([
     Label('Project settings'),
-    Expander('Display', '', True, [
-        Checkbox('Dark background', 'project_settings.bg_dark', True),
-    ]),
-    Expander('Misc', '', True, [
-        Value('Slider sensitivity', 'project_settings.slider_sensitivity', 200, 10, 1000, 0, 10000, 0.1),
-    ]),
+    Separator(),
+    Checkbox('Dark background', 'project_settings.bg_dark', True),
+    Value('Slider sensitivity', 'project_settings.slider_sensitivity', 200, 10, 1000, 0, 10000, 0.1),
 ])
 
 panels['credits'] = Container([
