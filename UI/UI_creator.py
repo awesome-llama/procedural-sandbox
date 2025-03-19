@@ -242,7 +242,7 @@ panels['credits'] = Container([
 
 # GENERATE LISTS
 
-element_list = [] # element data
+element_list = [""] # element data
 panel_lookup = [] # list of where the panels begin
 element_lookup = [] # k-v tuple list of where the elements are
 

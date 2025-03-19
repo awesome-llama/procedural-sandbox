@@ -70,8 +70,12 @@ on "stage clicked" {
         prev_mouse_x = mouse_x();
         prev_mouse_y = mouse_y();
         until (not mouse_down()) {
-            cam_x += ((mouse_x()-prev_mouse_x)/cam_scale);
-            cam_y += ((mouse_y()-prev_mouse_y)/cam_scale);
+            if (viewport_mode == ViewportMode.COMPOSITOR) {
+                cam_x += ((mouse_x()-prev_mouse_x)/cam_scale);
+                cam_y += ((mouse_y()-prev_mouse_y)/cam_scale);
+            } else {
+                # 3D
+            }
             prev_mouse_x = mouse_x();
             prev_mouse_y = mouse_y();
             require_screen_refresh = true;

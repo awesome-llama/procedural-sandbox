@@ -10,7 +10,7 @@ on "initalise" {
 on "render viewport" {
     if (viewport_mode == ViewportMode.COMPOSITOR) {
         render_edge_lines;
-        render_image (floor(cam_x*cam_scale)/cam_scale)+(UI_sidebar_width/2), (floor(cam_y*cam_scale)/cam_scale), cam_scale, render_resolution;
+        render_image (floor(cam_x*cam_scale)/cam_scale)+((UI_sidebar_width/cam_scale)/2), (floor(cam_y*cam_scale)/cam_scale), cam_scale, render_resolution;
     }
 }
 

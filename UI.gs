@@ -7,13 +7,16 @@ costumes
 "costumes/large.svg" as "large",
 "costumes/blank.svg" as "",
 "costumes/blank.svg" as "@ascii/",
+"costumes/blank.svg" as "blank",
 "costumes/UI/icons/*.svg",
+"costumes/UI/mouse detect.svg" as "mouse detect",
 ;
 hide;
 
 
 on "initalise" {
     hide;
+    unfenced_mouse_x = 0;
 }
 
 on "hard reset" {
@@ -47,6 +50,9 @@ on "render ui" {
     # constantly renders, this is because the ui needs to be interactive.
 
     clear_graphic_effects;
+    switch_costume "large";
+    point_in_direction 90;
+    set_size 100;
 
     # TOP BAR
     draw_rect -240+UI_sidebar_width, 160, 480-UI_sidebar_width, 20, 1, "#505050";
@@ -62,6 +68,8 @@ on "render ui" {
         set_pen_color "#ffffff";
         plainText -232, 160, 1, "A B C";
     }
+
+    get_unfenced_mouse;
     
     switch_costume "icon";
 }
@@ -90,11 +98,11 @@ proc render_top_bar x, y {
     # viewport buttons
     stamp_button "viewport 2D", "viewport 2D", TOP_BAR_OFFSET(3), $y-10, (viewport_mode == ViewportMode.COMPOSITOR);
     stamp_button "viewport 3D", "viewport 3D", TOP_BAR_OFFSET(4), $y-10, (viewport_mode == ViewportMode._3D);
-    stamp_button "section", "section", TOP_BAR_OFFSET(6), $y-10, false;
+    stamp_button "section", "section", TOP_BAR_OFFSET(6), $y-10, false; # TODO section dropdown
     stamp_button "compositor mode", "texture", TOP_BAR_OFFSET(7), $y-10, false;
 
     # right-aligned settings cog
-    stamp_button "settings", "settings", 240-10, $y-10, false;
+    stamp_button "settings", "settings", 240-10, $y-10, (UI_current_panel == "project_settings");
 }
 
 
@@ -306,15 +314,18 @@ on "stage clicked" {
 
         } elif (UI_data[clicked_element] == "VALUE") {
             start_value = UI_data[clicked_element+3];
-            start_mouse_x = mouse_x();
+
+            get_unfenced_mouse;
+            start_mouse_x = unfenced_mouse_x;
             mouse_moved = false;
             until not mouse_down() {
+                get_unfenced_mouse;
                 if key_pressed("shift") {
-                    set_value_element clicked_element, start_value + abs(UI_data[clicked_element+5]-UI_data[clicked_element+4])*(mouse_x()-start_mouse_x)/1000, 1;
+                    set_value_element clicked_element, start_value + abs(UI_data[clicked_element+5]-UI_data[clicked_element+4])*(unfenced_mouse_x-start_mouse_x)/1200, 1;
                 } else {
-                    set_value_element clicked_element, start_value + abs(UI_data[clicked_element+5]-UI_data[clicked_element+4])*(mouse_x()-start_mouse_x)/200, 1;
+                    set_value_element clicked_element, start_value + abs(UI_data[clicked_element+5]-UI_data[clicked_element+4])*(unfenced_mouse_x-start_mouse_x)/300, 1;
                 }
-                if (mouse_x() != start_mouse_x) {
+                if (unfenced_mouse_x != start_mouse_x) {
                     mouse_moved = true;
                 }
             }
@@ -350,7 +361,11 @@ on "stage clicked" {
         } elif (clicked_element == "compositor mode") {
             
         } elif (clicked_element == "settings") {
-            UI_current_panel = "settings";
+            UI_current_panel = "project_settings";
+            if (UI_sidebar_width < 8) {
+                UI_sidebar_width = 160;
+                require_screen_refresh = true;
+            }
         }
     }
 }
@@ -555,4 +570,64 @@ proc draw_rect x, y, width, height, radius, fill_col {
         pen_up;
     }
 }
+
+
+################################
+#            Utils             #
+################################
+
+
+proc get_unfenced_mouse {
+    if abs(mouse_x()) < 240 {
+        unfenced_mouse_x = mouse_x(); # trust the mouse x block in the stage
+
+    } else {
+        step_size = 235;
+        unfenced_mouse_x = 0;
+        switch_costume "blank";
+        set_size 400;
+        switch_costume "mouse detect";
+        goto 0, mouse_y();
+        point_in_direction 90+(mouse_x()<0)*180;
+        #point_towards_mouse_pointer;
+        repeat 40 {
+            if (touching_mouse_pointer()) {
+                # mouse found, go back and try again with smaller step
+                switch_costume "blank";
+                set_size "Infinity";
+                move -step_size;
+                step_size *= 0.5;
+
+                if step_size < 0.5 {
+                    unfenced_mouse_x = round(x_position());
+                    switch_costume "large";
+                    set_size 100;
+                    goto 0, 0;
+                    point_in_direction 90;
+                    stop_this_script;
+                }
+                switch_costume "large";
+                set_size 100;
+                
+            } else {
+                # no mouse, go forwards
+                switch_costume "blank";
+                set_size "Infinity";
+                move step_size;
+            }
+            set_size 400;
+            switch_costume "mouse detect";
+            
+        }
+        #warn "mouse position was not found";
+        unfenced_mouse_x = mouse_x();
+        switch_costume "large";
+        set_size 100;
+        goto 0, 0;
+        point_in_direction 90;
+    }
+}
+
+
+
 
