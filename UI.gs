@@ -12,20 +12,13 @@ costumes
 hide;
 
 
-%if false
-onflag {
+on "initalise" {
     hide;
-    erase_all;
-    set_pen_color "#ff0000";
-    plainText -200, 135, 2, "Hello, world!";
-    plainText -200, 110, 1, "This is a preview of the PTE.";
-    plainText -200, 90, 1, "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    plainText -200, 80, 1, "abcdefghijklmnopqrstuvwxyz";
-    plainText -200, 70, 1, "0123456789";
-
-    wrappedText -200, 0, 1, "The font called \"5x7 printable ASCII\" supports all the printable ASCII characters with glyph dimensions of 5x7px. It's optimised to be visually as small as possible while still being legible. The code is also very simple, designed to be easily backpackable.", 100;
 }
-%endif
+
+on "hard reset" {
+    UI_sidebar_width = 160;
+}
 
 # background panel colour
 %define THEME_COL_BG "#404040"
@@ -50,19 +43,25 @@ onflag {
 %define TXT_Y_OFFSET 12
 %define INPUT_WIDTH 50
 
-%define MODULAR_PANEL_WIDTH 160
-
 on "render ui" {
     # constantly renders, this is because the ui needs to be interactive.
-    draw_rect -240+MODULAR_PANEL_WIDTH, 160, 480-MODULAR_PANEL_WIDTH, 20, 1, "#505050"; # top bar
-    set_pen_color "#ffffff";
-    render_top_bar -240+MODULAR_PANEL_WIDTH, 180;
 
-    draw_rect -240, -180, MODULAR_PANEL_WIDTH, 360, 0, THEME_COL_BG; # left panel
-    render_gen_opt_panel -236, 160, MODULAR_PANEL_WIDTH-8, 360-20; # scroll bar might be needed
-    
+    clear_graphic_effects;
+
+    # TOP BAR
+    draw_rect -240+UI_sidebar_width, 160, 480-UI_sidebar_width, 20, 1, "#505050";
     set_pen_color "#ffffff";
-    plainText -150, 160, 1, compositor_mode;
+    render_top_bar -240+UI_sidebar_width, 180;
+
+    # SIDE BAR
+    draw_rect -240, -180, UI_sidebar_width, 360, 0, THEME_COL_BG;
+    if (UI_sidebar_width > 8) {
+        render_gen_opt_panel -236, 160, UI_sidebar_width-8, 360-20; # scroll bar might be needed
+
+        # tabs
+        set_pen_color "#ffffff";
+        plainText -232, 160, 1, "A B C";
+    }
     
     switch_costume "icon";
 }
@@ -77,22 +76,29 @@ proc render_gen_opt_panel x, y, width, height {
 %define TOP_BAR_OFFSET(INDEX) $x+(INDEX)*20-10
 
 proc render_top_bar x, y {
+    set_pen_color "#ffffff";
+
     # arrow
-    point_in_direction -90;
-    stamp_button "collapse side bar", "triangle", TOP_BAR_OFFSET(1), $y-10;
-    point_in_direction 90;
+    if (UI_sidebar_width < 8) {
+        stamp_button "open side bar", "triangle", TOP_BAR_OFFSET(1), $y-10, false;
+    } else {
+        point_in_direction -90;
+        stamp_button "close side bar", "triangle", TOP_BAR_OFFSET(1), $y-10, false;
+        point_in_direction 90;
+    }
 
     # viewport buttons
-    stamp_button "viewport 2D", "viewport 2D", TOP_BAR_OFFSET(2), $y-10;
-    stamp_button "viewport 3D", "viewport 3D", TOP_BAR_OFFSET(3), $y-10;
-    stamp_button "section", "section", TOP_BAR_OFFSET(4), $y-10;
+    stamp_button "viewport 2D", "viewport 2D", TOP_BAR_OFFSET(3), $y-10, (viewport_mode == ViewportMode.COMPOSITOR);
+    stamp_button "viewport 3D", "viewport 3D", TOP_BAR_OFFSET(4), $y-10, (viewport_mode == ViewportMode._3D);
+    stamp_button "section", "section", TOP_BAR_OFFSET(6), $y-10, false;
+    stamp_button "compositor mode", "texture", TOP_BAR_OFFSET(7), $y-10, false;
 
     # right-aligned settings cog
-    stamp_button "settings", "settings", 240-10, $y-10;
+    stamp_button "settings", "settings", 240-10, $y-10, false;
 }
 
 
-proc stamp_button id, costume, x, y {
+proc stamp_button id, costume, x, y, enabled {
 
     if (abs(mouse_x()-$x) < 10 and abs(mouse_y()-$y) < 10) {
         UI_hovered_group = "top bar";
@@ -100,9 +106,17 @@ proc stamp_button id, costume, x, y {
     }
 
     goto $x, $y;
+
+    if $enabled {
+        set_ghost_effect 70;
+        switch_costume "fill";
+        stamp;
+    }
+    clear_graphic_effects;
     switch_costume $costume;
     stamp;
 
+    clear_graphic_effects;
     if (UI_last_hovered_group == "top bar") and (UI_last_hovered_element == $id) {
         switch_costume "select";
         stamp;
@@ -110,11 +124,11 @@ proc stamp_button id, costume, x, y {
 }
 
 
-on "render canvas text" { render_viewport_text; }
+on "render viewport text" { render_viewport_text; }
 proc render_viewport_text {
     set_pen_color "#ffffff";
-    plainText -75, 150, 1, ("canvas size: " & ((((canvas_size_x & ", ") & canvas_size_y) & ", ") & canvas_size_z));
-    plainText -75, 140, 1, ("timer: " & floor(( 100 *((86400 * days_since_2000()) % 1))));
+    plainText UI_sidebar_width-235, 150, 1, ("canvas size: " & ((((canvas_size_x & ", ") & canvas_size_y) & ", ") & canvas_size_z));
+    plainText UI_sidebar_width-235, 140, 1, ("timer: " & floor(( 100 *((86400 * days_since_2000()) % 1))));
     
 }
 
@@ -282,8 +296,8 @@ proc UI_check_touching_mouse x, y, width, height, id1, id2 {
 
 on "stage clicked" {
     stop_other_scripts; # stop previous ask block
-    if (UI_hovered_group == "side bar") {
-        clicked_element = UI_last_hovered_element;
+    if (UI_last_hovered_group == "side bar") {
+        clicked_element = UI_last_hovered_element; # alias
         if (UI_data[clicked_element] == "BUTTON") {
             log clicked_element;
 
@@ -316,6 +330,27 @@ on "stage clicked" {
 
         } elif (UI_data[clicked_element] == "EXPANDER") {
             UI_data[clicked_element+3] = 1 - UI_data[clicked_element+3];
+        }
+    
+    } elif (UI_last_hovered_group == "top bar") {
+        # top bar
+        clicked_element = UI_last_hovered_element; # alias
+        if (clicked_element == "close side bar") {
+            UI_sidebar_width = 0;
+            require_screen_refresh = true;
+        } elif (clicked_element == "open side bar") {
+            UI_sidebar_width = 160;
+            require_screen_refresh = true;
+        } elif (clicked_element == "viewport 2D") {
+            viewport_mode = ViewportMode.COMPOSITOR;
+        } elif (clicked_element == "viewport 3D") {
+            viewport_mode = ViewportMode._3D;
+        } elif (clicked_element == "section") {
+            
+        } elif (clicked_element == "compositor mode") {
+            
+        } elif (clicked_element == "settings") {
+            UI_current_panel = "settings";
         }
     }
 }

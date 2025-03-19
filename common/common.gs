@@ -53,6 +53,10 @@ enum CompositorMode {
     PENETRATION = "PENETRATION" # opacity of topmost non-empty voxel
 }
 
+enum ViewportMode {
+    COMPOSITOR = "COMPOSITOR", # compositor based
+    _3D = "3D" # 3D renderer
+}
 
 enum DepositorMode {
     DRAW = 0, # draw a voxel stored

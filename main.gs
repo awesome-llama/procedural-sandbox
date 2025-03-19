@@ -34,8 +34,8 @@ on "start main loop" {
         }
         if (require_screen_refresh == true) {
             erase_all;
-            broadcast "render canvas";
-            broadcast "render canvas text";
+            broadcast "render viewport";
+            broadcast "render viewport text";
             require_screen_refresh = false;
         }
 
@@ -66,7 +66,7 @@ onkey "p" {
 
 # click and drag to pan
 on "stage clicked" {
-    if (UI_hovered_element == "") {
+    if (UI_hovered_element == "") { # no hover element means viewport
         prev_mouse_x = mouse_x();
         prev_mouse_y = mouse_y();
         until (not mouse_down()) {

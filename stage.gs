@@ -51,6 +51,7 @@ on "initalise" {
     require_composite = true;
     require_screen_refresh = true;
 
+    viewport_mode = ViewportMode.COMPOSITOR;
     compositor_mode = CompositorMode.COLOR;
 
     # the "depositor" (chose an obscure but relevant name) is a description of what voxel will be placed by the procedural tools. It may be a single voxel or it may be a 3D template.
@@ -66,6 +67,7 @@ on "initalise" {
     UI_last_hovered_element = "";
 
     UI_current_panel = "import_height_map";
+    UI_sidebar_width = 160; # set to 0 to hide
 }
 
 
@@ -99,7 +101,7 @@ onflag {
 
 onclick {
     hide copy_this; # hide the list to copy from
-    broadcast "stage clicked";
+    broadcast "stage clicked"; # each receiver checks if the hovered group is for it. This prevents the script from running in multiple places at the same time. Use the last hover variable because it stores the state where all of the UI is guaranteed to have been checked. 
 }
 
 

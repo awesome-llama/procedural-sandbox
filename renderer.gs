@@ -7,9 +7,11 @@ on "initalise" {
     hide;
 }
 
-on "render canvas" {
-    render_edge_lines;
-    render_image (floor(cam_x*cam_scale)/cam_scale), (floor(cam_y*cam_scale)/cam_scale), cam_scale, render_resolution;
+on "render viewport" {
+    if (viewport_mode == ViewportMode.COMPOSITOR) {
+        render_edge_lines;
+        render_image (floor(cam_x*cam_scale)/cam_scale)+(UI_sidebar_width/2), (floor(cam_y*cam_scale)/cam_scale), cam_scale, render_resolution;
+    }
 }
 
 proc render_image x, y, scale, res {
@@ -77,5 +79,5 @@ proc render_edge_lines  {
 
 # go to a position in the world
 proc goto_world_space x, y {
-    goto floor(cam_scale*(cam_x+$x)), floor(cam_scale*(cam_y+$y));
+    goto floor(cam_scale*(cam_x+$x))+(UI_sidebar_width/2), floor(cam_scale*(cam_y+$y));
 }
