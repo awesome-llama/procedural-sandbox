@@ -10,42 +10,71 @@ on "initalise" {
 on "render viewport" {
     if (viewport_mode == ViewportMode.COMPOSITOR) {
         render_edge_lines;
-        render_image (floor(cam_x*cam_scale)/cam_scale)+((UI_sidebar_width/cam_scale)/2), (floor(cam_y*cam_scale)/cam_scale), cam_scale, render_resolution;
+        render_canvas;
     }
 }
 
-proc render_image x, y, scale, res {
+proc render_canvas {
+    # optimised
     switch_costume "blank";
     set_size "Infinity";
     switch_costume "large";
-    if (($scale * $res) > 1) {
-        set_pen_size ((1.45-(0.33/(($scale*$res)-0.26)))*($scale*$res));
-        offset = (0.5*($scale*$res));
+
+    local min_x = 0;
+    local min_y = 0;
+    local repeat_x = canvas_size_x//render_resolution;
+    local repeat_y = canvas_size_y//render_resolution;
+
+    # clip to the available screen
+    local border = (((((UI_sidebar_width/2)-240)/cam_scale)+cam_x)//render_resolution)*render_resolution;
+    if (border > min_x) {
+        min_x = border;
+        repeat_x -= border/render_resolution;
+    }
+    local border = (((240/cam_scale)+cam_x)//render_resolution)*render_resolution;
+    if ((border - min_x)/render_resolution < repeat_x) {
+        repeat_x = (border - min_x)/render_resolution;
+    }
+
+    local border = (((-180/cam_scale)+cam_y)//render_resolution)*render_resolution;
+    if (border > min_y) {
+        min_y = border;
+        repeat_y -= border/render_resolution;
+    }
+    local border = (((160/cam_scale)+cam_y)//render_resolution)*render_resolution;
+    if ((border - min_y)/render_resolution < repeat_y) {
+        repeat_y = (border - min_y)/render_resolution;
+    }
+
+    local pixel_screen_size = cam_scale * render_resolution;
+    local ss_origin_x = floor(-cam_x * cam_scale);
+    local ss_origin_y = floor(-cam_y * cam_scale);
+
+    if (pixel_screen_size > 1) {
+        set_pen_size ((1.45-(0.33/(pixel_screen_size-0.26)))*pixel_screen_size);
+        ss_origin_x += (0.5*pixel_screen_size);
+        ss_origin_y += (0.5*pixel_screen_size);
     } else {
-        set_pen_size (1*($scale*$res));
-        offset = 0;
+        set_pen_size pixel_screen_size;
     }
-    iy = 0;
-    repeat (canvas_size_y/$res) {
-        ix = 0;
-        goto (($scale*($x+ix))+offset), (($scale*($y+iy))+offset);
-        if (y_position() > (-180-($scale*$res))) {
-            repeat (canvas_size_x/$res) {
-                i = (((iy+0)*canvas_size_x)+(ix + 1));
-                set_pen_color render_cache_final_col[i];
-                #set_pen_transparency 0;
-                pen_down;
-                pen_up;
-                change_x ($scale*$res);
-                ix += $res;
-            }
-            if (y_position() > 180) {
-                stop_this_script;
-            }
+
+    iy = min_y;
+    repeat (repeat_y) {
+        goto ss_origin_x + min_x*cam_scale + (UI_sidebar_width/2), ss_origin_y + iy*cam_scale;
+        i = (iy*canvas_size_x) + min_x + 1;
+        repeat (repeat_x) {
+            set_pen_color render_cache_final_col[i];
+            #set_pen_transparency 0;
+            pen_down;
+            pen_up;
+            change_x pixel_screen_size;
+            i += render_resolution;
         }
-        iy += $res;
+        iy += render_resolution;
     }
+
 }
+
 
 proc render_edge_lines  {
     set_pen_color "#727272";
@@ -79,5 +108,5 @@ proc render_edge_lines  {
 
 # go to a position in the world
 proc goto_world_space x, y {
-    goto floor(cam_scale*(cam_x+$x))+(UI_sidebar_width/2), floor(cam_scale*(cam_y+$y));
+    goto floor(cam_scale*($x-cam_x))+(UI_sidebar_width/2), floor(cam_scale*($y-cam_y));
 }

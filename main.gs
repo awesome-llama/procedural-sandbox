@@ -49,8 +49,8 @@ onkey "any" {
     if (key_pressed("d") or (key_pressed("a") or (key_pressed("w") or key_pressed("s")))) {
         render_resolution = 2;
         until (not (key_pressed("d") or (key_pressed("a") or (key_pressed("w") or key_pressed("s"))))) {
-            cam_x += ((4/cam_scale)*(key_pressed("a")-key_pressed("d")));
-            cam_y += ((4/cam_scale)*(key_pressed("s")-key_pressed("w")));
+            cam_x += ((4/cam_scale)*(key_pressed("d")-key_pressed("a")));
+            cam_y += ((4/cam_scale)*(key_pressed("w")-key_pressed("s")));
             require_screen_refresh = true;
         }
         render_resolution = 1;
@@ -71,8 +71,8 @@ on "stage clicked" {
         prev_mouse_y = mouse_y();
         until (not mouse_down()) {
             if (viewport_mode == ViewportMode.COMPOSITOR) {
-                cam_x += ((mouse_x()-prev_mouse_x)/cam_scale);
-                cam_y += ((mouse_y()-prev_mouse_y)/cam_scale);
+                cam_x += ((prev_mouse_x-mouse_x())/cam_scale);
+                cam_y += ((prev_mouse_y-mouse_y())/cam_scale);
             } else {
                 # 3D
             }
@@ -107,14 +107,14 @@ onkey "down arrow" {
 proc limit_scroll  {
     if (cam_x > canvas_size_x) {
         cam_x = canvas_size_x;
-    } elif (cam_x < (0-canvas_size_x)) {
-        cam_x = (0-canvas_size_x);
+    } elif (cam_x < 0) {
+        cam_x = 0;
     }
     
     if (cam_y > canvas_size_y) {
         cam_y = canvas_size_y;
-    } elif (cam_y < (0-canvas_size_y)) {
-        cam_y = (0-canvas_size_y);
+    } elif (cam_y < 0) {
+        cam_y = 0;
     }
 }
 
@@ -125,8 +125,8 @@ onkey "space" {
 
 on "zoom extents" {zoom_extents;}
 proc zoom_extents {
-    cam_x = (canvas_size_x/-2);
-    cam_y = (canvas_size_y/-2);
+    cam_x = (canvas_size_x/2);
+    cam_y = (canvas_size_y/2);
     
     if canvas_size_x == 0 or canvas_size_y == 0 {
         cam_scale = 1;
