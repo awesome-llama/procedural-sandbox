@@ -22,10 +22,17 @@ on "start main loop" {
         
         # reset hover detection
         if not mouse_down() {
+            # the last hover variables are so that the click detection hats have usable data.
+            # the hats do not run after the main loop.
             UI_last_hovered_group = UI_hovered_group;
             UI_last_hovered_element = UI_hovered_element;
-            UI_hovered_group = "";
+            if abs(mouse_x()) < 240 and abs(mouse_y()) < 180 {
+                UI_hovered_group = "viewport"; # default hover is viewport (if mouse is in bounds)
+            } else {
+                UI_hovered_group = "";
+            }
             UI_hovered_element = "";
+        
         }
 
         if (require_composite == true) {
@@ -66,7 +73,7 @@ onkey "p" {
 
 # click and drag to pan
 on "stage clicked" {
-    if (UI_hovered_element == "") { # no hover element means viewport
+    if (UI_last_hovered_group == "viewport") {
         prev_mouse_x = mouse_x();
         prev_mouse_y = mouse_y();
         until (not mouse_down()) {

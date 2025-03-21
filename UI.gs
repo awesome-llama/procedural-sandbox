@@ -23,6 +23,8 @@ on "hard reset" {
     UI_sidebar_width = 160;
 }
 
+%define TOP_BAR_HEIGHT 20
+
 # background panel colour
 %define THEME_COL_BG "#404040"
 
@@ -55,18 +57,25 @@ on "render ui" {
     set_size 100;
 
     # TOP BAR
-    draw_rect -240+UI_sidebar_width, 160, 480-UI_sidebar_width, 20, 1, "#505050";
+    draw_rect -240+UI_sidebar_width, 180-TOP_BAR_HEIGHT, 480-UI_sidebar_width, TOP_BAR_HEIGHT, 1, "#505050";
     set_pen_color "#ffffff";
     render_top_bar -240+UI_sidebar_width, 180;
 
     # SIDE BAR
     draw_rect -240, -180, UI_sidebar_width, 360, 0, THEME_COL_BG;
+    UI_check_touching_mouse -240, 180, UI_sidebar_width, 360, "side bar", "";
     if (UI_sidebar_width > 8) {
-        render_gen_opt_panel -236, 160, UI_sidebar_width-8, 360-20; # scroll bar might be needed
+        render_gen_opt_panel -236, 180-TOP_BAR_HEIGHT, UI_sidebar_width-8, 360-TOP_BAR_HEIGHT; # scroll bar might be needed
 
         # tabs
-        set_pen_color "#ffffff";
-        plainText -232, 160, 1, "A B C";
+        draw_rect -240, 180-TOP_BAR_HEIGHT, UI_sidebar_width, TOP_BAR_HEIGHT, 0, "#271D33";
+        # custom implementation for buttons is fine
+        tab_offset = -240;
+        tab_button tab_offset, 34, "I/O", "io";
+        tab_button tab_offset, 37, "Gen", "generate";
+        tab_button tab_offset, 31, "FX", "effects";
+        tab_button tab_offset, 42, "Draw", "draw";
+
     }
 
     get_unfenced_mouse;
@@ -81,10 +90,29 @@ proc render_gen_opt_panel x, y, width, height {
     }
 }
 
+
+# custom implementation, not general-purpose
+proc tab_button x, width, text, hover_id {
+    if abs(mouse_x()) < 240 and abs(mouse_y()) < 180 {
+        UI_check_touching_mouse $x, 180, $width, TOP_BAR_HEIGHT, "tabs", $hover_id;
+    }
+    if (UI_last_hovered_group == "tabs") and (UI_last_hovered_element == $hover_id) {
+        draw_rect $x, 180-TOP_BAR_HEIGHT, $width, TOP_BAR_HEIGHT, 0, "#BD91FF";
+        set_pen_color "#000000";
+    } else {
+        set_pen_color "#ffffff";
+    }
+    plainText $x+10, 166, 1, $text;
+    tab_offset += $width;
+}
+
+
 %define TOP_BAR_OFFSET(INDEX) $x+(INDEX)*20-10
 
 proc render_top_bar x, y {
     set_pen_color "#ffffff";
+
+    UI_check_touching_mouse $x, $y, 480-UI_sidebar_width, TOP_BAR_HEIGHT, "top bar", "";
 
     # arrow
     if (UI_sidebar_width < 8) {
@@ -102,7 +130,7 @@ proc render_top_bar x, y {
     stamp_button "compositor mode", "texture", TOP_BAR_OFFSET(7), $y-10, false;
 
     # right-aligned settings cog
-    stamp_button "settings", "settings", 240-10, $y-10, (UI_current_panel == "project_settings");
+    stamp_button "settings", "settings", 240-10, $y-10, false;
 }
 
 
@@ -291,6 +319,7 @@ proc render_element index, x, y, width {
     }
 }
 
+# height is downwards, rect is inclusve of bounds
 proc UI_check_touching_mouse x, y, width, height, id1, id2 {
     
     if (not (((mouse_x() < $x) or (mouse_x() > ($x+$width))) or ((mouse_y() > $y) or (mouse_y() < ($y-$height))))) {
@@ -345,6 +374,13 @@ on "stage clicked" {
             UI_data[clicked_element+3] = 1 - UI_data[clicked_element+3];
         }
     
+    } elif (UI_last_hovered_group == "tabs") {
+        clicked_element = UI_last_hovered_element; # alias
+        
+        if clicked_element != "" {
+            UI_current_panel = clicked_element;
+        }
+
     } elif (UI_last_hovered_group == "top bar") {
         # top bar
         clicked_element = UI_last_hovered_element; # alias
@@ -491,8 +527,6 @@ proc wrappedText x, y, size, text, wrap_width {
 #             Draw             #
 ################################
 
-%define GOTO_ANGLED(DIST, DIR) goto $x+((DIST)*cos($dir+(DIR))), $y+((DIST)*sin($dir+(DIR)));
-
 proc draw_triangle x, y, dir {
     # direction is anticlockwise from right
 
@@ -501,24 +535,12 @@ proc draw_triangle x, y, dir {
     point_in_direction 90-$dir;
     stamp;
     point_in_direction 90;
-    # GOTO_ANGLED(-1, 0)
-    # set_pen_size 3;
-    # pen_down;
-    # pen_up;
-
-    # set_pen_size 1;
-    # GOTO_ANGLED(3.7, 123)
-    # pen_down;
-    # GOTO_ANGLED(3.7, -123)
-    # GOTO_ANGLED(2, 0)
-    # GOTO_ANGLED(3.7, 123)
-    # pen_up;
 }
 
 
 proc draw_UI_rect x, y, width, height, radius, outline_col, fill_col {
-    # not tested on all cases, only set up for this use case!
-    # drawn from top-left
+    # drawn from top-left, unlike draw_rect
+
     if $outline_col != $fill_col {
         # draw outline
         draw_rect $x, ($y-$height), $width, $height, $radius, $outline_col;
@@ -531,7 +553,7 @@ proc draw_UI_rect x, y, width, height, radius, outline_col, fill_col {
 }
 
 
-# "natural" rect. for positive width and height only
+# "natural" rect. for positive width and height only. Radius may be 0.
 proc draw_rect x, y, width, height, radius, fill_col {
     
     # find the narrowest axis
