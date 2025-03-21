@@ -320,13 +320,15 @@ on "stage clicked" {
             mouse_moved = false;
             until not mouse_down() {
                 get_unfenced_mouse;
-                if key_pressed("shift") {
-                    set_value_element clicked_element, start_value + abs(UI_data[clicked_element+5]-UI_data[clicked_element+4])*(unfenced_mouse_x-start_mouse_x)/1200, 1;
-                } else {
-                    set_value_element clicked_element, start_value + abs(UI_data[clicked_element+5]-UI_data[clicked_element+4])*(unfenced_mouse_x-start_mouse_x)/300, 1;
-                }
                 if (unfenced_mouse_x != start_mouse_x) {
                     mouse_moved = true;
+                }
+                if mouse_moved { # only edit the slider if the mouse moved
+                    if key_pressed("shift") {
+                        set_value_element clicked_element, start_value + abs(UI_data[clicked_element+5]-UI_data[clicked_element+4])*(unfenced_mouse_x-start_mouse_x)/1200, 1;
+                    } else {
+                        set_value_element clicked_element, start_value + abs(UI_data[clicked_element+5]-UI_data[clicked_element+4])*(unfenced_mouse_x-start_mouse_x)/300, 1;
+                    }
                 }
             }
             if not mouse_moved {

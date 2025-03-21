@@ -122,9 +122,10 @@ panels['generate_maze'] = Container([
     Label('Maze'),
     Separator(),
     Expander('Dimensions', '', True, [
-        Value('Grid cell count', 'gen.maze.grid_size', 24, 1, 512, 1, 1024, 1),
-        Value('Cell size', 'gen.maze.cell_size', 2, 1, 512, 1, 256, 1),
-        Value('Wall thickness', 'gen.maze.wall_thickness', 1, 1, 4, 1, 256, 1),
+        Value('Cell count', 'gen.maze.cell_count', 24, 1, 64, 1, 1024, 1),
+        Value('Cell size', 'gen.maze.cell_size', 2, 1, 8, 1, 256, 1),
+        Value('Wall thickness', 'gen.maze.wall_thickness', 1, 1, 8, 1, 256, 1),
+        Value('Pertubation', 'gen.maze.pertubation', 0.5, 0, 1, snap_frac=100),
     ]),
     Expander('Color', '', True, [
         Color('Ground color', 'gen.maze.ground_col', 'ffffff'),

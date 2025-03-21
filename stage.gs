@@ -92,6 +92,7 @@ on "hard reset" {
     delete depositor_template_metadata;
     delete depositor_template_voxels;
 
+    delete UI_return;
 }
 
 onflag {

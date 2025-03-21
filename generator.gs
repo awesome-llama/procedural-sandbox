@@ -3,13 +3,14 @@
 costumes "costumes/blank.svg" as "blank";
 hide;
 
+list maze_graph;
 
 on "initalise" {
     hide;
 }
 
 on "hard reset" {
-    
+    delete maze_graph;
 }
 
 on "*" {
@@ -17,6 +18,99 @@ on "*" {
     add_canvas_as_template;
     load_template_to_canvas 0;
     stamp_template 0, 0, 0, 0;
+}
+
+
+on "generate maze" {
+    delete UI_return;
+    setting_from_id("gen.maze.cell_count");
+    setting_from_id("gen.maze.cell_size");
+    setting_from_id("gen.maze.wall_thickness");
+    setting_from_id("gen.maze.pertubation");
+
+    setting_from_id("gen.maze.ground_col");
+    setting_from_id("gen.maze.wall_col");
+    generate_maze UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6]; 
+}
+
+%define MGSOFFSET(DX,DY,SIDE) (maze_graph[(((edit_x+(DX))%$cell_count) + ((edit_y+(DY))%$cell_count)*$cell_count)*2+(SIDE)])
+%define MGSOFFSETX(DX,SIDE) (maze_graph[(((edit_x+(DX))%$cell_count) + (edit_y*$cell_count))*2+(SIDE)])
+%define MGSOFFSETY(DY,SIDE) (maze_graph[(edit_x + ((edit_y+(DY))%$cell_count)*$cell_count)*2+(SIDE)])
+%define MGS(SIDE) (maze_graph[(edit_x + (edit_y*$cell_count))*2+(SIDE)])
+
+proc generate_maze cell_count, cell_size, wall_thickness, pertubation, ground_col, wall_col {
+    local total_cell_size = ($cell_size+$wall_thickness);
+
+    # first generate the maze graph, 2 items per cell for the 2 walls (they make an L shape in the cell)
+    delete maze_graph;
+    repeat ($cell_count*$cell_count) {
+        if random(0, 1) {
+            add 0 to maze_graph;
+            add 1 to maze_graph;
+        } else {
+            add 1 to maze_graph;
+            add 0 to maze_graph;
+        }
+    }
+
+    # randomise by swapping walls
+    # take a random cell and swap any 2 of its 4 adj walls
+    repeat ($cell_count*$cell_count*$pertubation) {
+        local edit_x = random(1,$cell_count);
+        local edit_y = random(1,$cell_count);
+
+        if random(0,1) {
+            # vertical toggle
+            local index_to_edit = (edit_x + (edit_y*$cell_count))*2+2;
+            local req_state = maze_graph[index_to_edit];
+            # check if there is still another of the same state as the original
+            if req_state == MGSOFFSETY(1,1) or req_state == MGSOFFSETY(1,2) or MGSOFFSET(-1,1,1) {
+                if req_state == MGS(1) or req_state == MGSOFFSETX(-1,1) or req_state == MGSOFFSETY(-1,2) {
+                    maze_graph[index_to_edit] = 1 - maze_graph[index_to_edit];
+                }
+            }
+        } else {
+            # horizontal
+            local index_to_edit = (edit_x + (edit_y*$cell_count))*2+1;
+            local req_state = maze_graph[index_to_edit];
+            # check if there is still another of the same state as the original
+            if req_state == MGSOFFSETX(1,1) or req_state == MGSOFFSETX(1,2) or MGSOFFSET(1,-1,2) {
+                if req_state == MGS(2) or req_state == MGSOFFSETY(-1,2) or req_state == MGSOFFSETX(-1,1) {
+                    maze_graph[index_to_edit] = 1 - maze_graph[index_to_edit];
+                }
+            }
+        }
+    }
+
+    # generate the canvas
+    canvas_size_x = $cell_count*total_cell_size;
+    canvas_size_y = $cell_count*total_cell_size;
+    canvas_size_z = $cell_size;
+    clear_canvas;
+    reset_depositor;
+    set_depositor_from_number $ground_col;
+    draw_base_layer;
+
+    set_depositor_from_number $wall_col;
+    iy = 0;
+    repeat $cell_count {
+        ix = 0;
+        repeat $cell_count {
+            if maze_graph[2*(ix+iy*$cell_count)+1] {
+                # horz
+                draw_cuboid_corner_size ix*total_cell_size, iy*total_cell_size, 0, -1-total_cell_size, $wall_thickness, $cell_size;
+            }
+            if maze_graph[2*(ix+iy*$cell_count)+2] {
+                # vert
+                draw_cuboid_corner_size ix*total_cell_size, iy*total_cell_size, 0, $wall_thickness, -1-total_cell_size, $cell_size;
+            }
+            ix++;
+        }
+        iy++;
+    }
+
+    delete maze_graph;
+    require_composite = true;
 }
 
 
@@ -319,6 +413,12 @@ proc set_depositor_to_air {
     depositor_voxel = VOXEL_NONE;
 }
 
+proc set_depositor_from_number number {
+    # number assumed to be 0-16777215
+    depositor_mode = DepositorMode.DRAW;
+    depositor_voxel = VOXEL_SOLID(ROOT(($number//65536)%256/256, 2.2), ROOT(($number//256)%256/256, 2.2), ROOT($number%256/256, 2.2)); # convert to linear
+}
+
 proc set_depositor_from_sRGB r, g, b {
     depositor_mode = DepositorMode.DRAW;
     depositor_voxel = VOXEL_SOLID(ROOT($r, 2.2), ROOT($g, 2.2), ROOT($b, 2.2)); # convert to linear
@@ -394,6 +494,24 @@ proc draw_base_layer {
         px_y++;
     }
     require_composite = true;
+}
+
+
+# draw a column of voxels either upwards or downwards (negative height allowed)
+proc draw_column x, y, z, height {
+    local px_z = $z;
+    if $height > 0 {
+        repeat $height {
+            set_voxel $x, $y, px_z;
+            px_z++;
+        }
+    } else {
+        repeat abs($height) {
+            set_voxel $x, $y, px_z;
+            px_z += -1;
+        }
+    }
+    
 }
 
 
