@@ -88,6 +88,9 @@ proc evaluate_command {
     if command_name == "help" {
         print "look inside the project, `cmd` sprite", 4;
 
+    } elif (command_name == "panel" or command_name == "page" or command_name == "p") {
+        UI_current_panel = command[1];
+    
     } elif (command_name == "import") {
         print "canvas | height | color", 4;
         if (command[1] == "canvas") {

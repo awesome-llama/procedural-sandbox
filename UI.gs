@@ -62,7 +62,12 @@ on "render ui" {
     render_top_bar -240+UI_sidebar_width, 180;
 
     # SIDE BAR
-    draw_rect -240, -180, UI_sidebar_width, 360, 0, THEME_COL_BG;
+    if (UI_current_panel == "menu.io" or UI_current_panel == "menu.gen" or UI_current_panel == "menu.fx" or UI_current_panel == "menu.draw") {
+        draw_rect -240, -180, UI_sidebar_width, 360, 0, "#423C4F";
+    } else {
+        draw_rect -240, -180, UI_sidebar_width, 360, 0, THEME_COL_BG;
+    }
+    
     UI_check_touching_mouse -240, 180, UI_sidebar_width, 360, "side bar", "";
     if (UI_sidebar_width > 8) {
         render_gen_opt_panel -236, 180-TOP_BAR_HEIGHT, UI_sidebar_width-8, 360-TOP_BAR_HEIGHT; # scroll bar might be needed
@@ -71,11 +76,10 @@ on "render ui" {
         draw_rect -240, 180-TOP_BAR_HEIGHT, UI_sidebar_width, TOP_BAR_HEIGHT, 0, "#271D33";
         # custom implementation for buttons is fine
         tab_offset = -240;
-        tab_button tab_offset, 34, "I/O", "io";
-        tab_button tab_offset, 37, "Gen", "generate";
-        tab_button tab_offset, 31, "FX", "effects";
-        tab_button tab_offset, 42, "Draw", "draw";
-
+        tab_button tab_offset, 34, "I/O", "menu.io";
+        tab_button tab_offset, 37, "Gen", "menu.gen";
+        tab_button tab_offset, 31, "FX", "menu.fx";
+        tab_button tab_offset, 42, "Draw", "menu.draw";
     }
 
     get_unfenced_mouse;
@@ -100,6 +104,9 @@ proc tab_button x, width, text, hover_id {
         draw_rect $x, 180-TOP_BAR_HEIGHT, $width, TOP_BAR_HEIGHT, 0, "#BD91FF";
         set_pen_color "#000000";
     } else {
+        if (UI_current_panel == $hover_id) {
+            draw_rect $x, 180-TOP_BAR_HEIGHT, $width, TOP_BAR_HEIGHT, 0, "#423C4F";
+        }
         set_pen_color "#ffffff";
     }
     plainText $x+10, 166, 1, $text;
@@ -169,7 +176,7 @@ proc render_viewport_text {
 }
 
 # side bar specific
-%define IS_HOVERED() (UI_last_hovered_group == "side bar") and (UI_last_hovered_element == $index)
+%define IS_HOVERED() (UI_last_hovered_group == "modular panel") and (UI_last_hovered_element == $index)
 
 proc render_element index, x, y, width {
     # index is to select what part of the list to read from
@@ -202,7 +209,7 @@ proc render_element index, x, y, width {
 
     } elif (elem_type == "BUTTON") {
         # [type, label, id, button_clicked]
-        UI_check_touching_mouse $x, $y+1, $width, LINEHIGHT, "side bar", $index;
+        UI_check_touching_mouse $x, $y+1, $width, LINEHIGHT, "modular panel", $index;
 
         if (IS_HOVERED()) {
             draw_UI_rect $x, $y-1, $width, LINEHIGHT, 4, THEME_COL_OUTLINE_HIGHLIGHT, "#656565";
@@ -213,14 +220,14 @@ proc render_element index, x, y, width {
         set_pen_color THEME_COL_TEXT;
         plainText $x+8, $y-TXT_Y_OFFSET, 1, UI_data[$index+1];
         UI_y -= (LINEHIGHT+2);
-        render_element $index+4, $x, UI_y, $width;
+        render_element $index+6, $x, UI_y, $width;
 
     } elif (elem_type == "CHECKBOX") {
         # [type, label, id, checked]
         set_pen_color THEME_COL_TEXT;
         plainText $x, $y-TXT_Y_OFFSET, 1, UI_data[$index+1];
         
-        UI_check_touching_mouse (($x+$width)-LINEHIGHT), $y, LINEHIGHT, LINEHIGHT, "side bar", $index;
+        UI_check_touching_mouse (($x+$width)-LINEHIGHT), $y, LINEHIGHT, LINEHIGHT, "modular panel", $index;
 
         if (IS_HOVERED()) {
             draw_UI_rect (($x+$width)-12), ($y-2), 12, 12, 2, THEME_COL_OUTLINE_HIGHLIGHT, THEME_COL_FILL_HIGHLIGHT;
@@ -240,7 +247,7 @@ proc render_element index, x, y, width {
     } elif (elem_type == "VALUE") {
         # [type, label, id, val, soft_min, soft_max, hard_min, hard_max, step]
 
-        UI_check_touching_mouse (($x+$width)-INPUT_WIDTH), $y, INPUT_WIDTH, LINEHIGHT, "side bar", $index;
+        UI_check_touching_mouse (($x+$width)-INPUT_WIDTH), $y, INPUT_WIDTH, LINEHIGHT, "modular panel", $index;
         if (IS_HOVERED()) {
             draw_UI_rect (($x+$width)-INPUT_WIDTH), ($y-1), INPUT_WIDTH, LINEHIGHT-2, 2, THEME_COL_OUTLINE_HIGHLIGHT, THEME_COL_FILL_HIGHLIGHT;
         } else {
@@ -265,7 +272,7 @@ proc render_element index, x, y, width {
         set_pen_color THEME_COL_TEXT;
         plainText $x, $y-TXT_Y_OFFSET, 1, UI_data[$index+1];
         
-        UI_check_touching_mouse (($x+$width)-32), $y, 32, LINEHIGHT, "side bar", $index;
+        UI_check_touching_mouse (($x+$width)-32), $y, 32, LINEHIGHT, "modular panel", $index;
 
         if (IS_HOVERED()) {
             draw_UI_rect (($x+$width)-32), ($y-1), 32, LINEHIGHT-2, 4, THEME_COL_OUTLINE_HIGHLIGHT, UI_data[$index+3];
@@ -299,7 +306,7 @@ proc render_element index, x, y, width {
             UI_y -= (LINEHIGHT+2);
         }
 
-        UI_check_touching_mouse $x, $y-1, $width, LINEHIGHT, "side bar", $index;
+        UI_check_touching_mouse $x, $y-1, $width, LINEHIGHT, "modular panel", $index;
         if (IS_HOVERED()) {
             draw_UI_rect $x, $y-1, $width, LINEHIGHT, 3, THEME_COL_OUTLINE_HIGHLIGHT, "#444444";
         } else {
@@ -333,10 +340,16 @@ proc UI_check_touching_mouse x, y, width, height, id1, id2 {
 
 on "stage clicked" {
     stop_other_scripts; # stop previous ask block
-    if (UI_last_hovered_group == "side bar") {
+    if (UI_last_hovered_group == "modular panel") {
         clicked_element = UI_last_hovered_element; # alias
         if (UI_data[clicked_element] == "BUTTON") {
-            log clicked_element;
+            # check for button behvaviour type
+            if (UI_data[clicked_element+3] == "set_page") {
+                UI_current_panel = UI_data[clicked_element+4];
+            } elif (UI_data[clicked_element+3] == "run") {
+                log UI_data[clicked_element+2];
+            }
+            
 
         } elif (UI_data[clicked_element] == "CHECKBOX") {
             UI_data[clicked_element+3] = 1 - UI_data[clicked_element+3];
@@ -376,7 +389,7 @@ on "stage clicked" {
     
     } elif (UI_last_hovered_group == "tabs") {
         clicked_element = UI_last_hovered_element; # alias
-        
+
         if clicked_element != "" {
             UI_current_panel = clicked_element;
         }
@@ -399,7 +412,7 @@ on "stage clicked" {
         } elif (clicked_element == "compositor mode") {
             
         } elif (clicked_element == "settings") {
-            UI_current_panel = "project_settings";
+            UI_current_panel = "project.settings";
             if (UI_sidebar_width < 8) {
                 UI_sidebar_width = 160;
                 require_screen_refresh = true;
