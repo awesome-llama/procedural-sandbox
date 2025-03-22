@@ -2,8 +2,6 @@
 
 import itertools
 
-LINE_HEIGHT = 16
-
 def add_id(ids_list: set, new_id, index_offset_from_id):
     if new_id != '':
         if new_id in ids_list: raise Exception(f'id already exists: {new_id}')
@@ -13,12 +11,8 @@ class Element:
     def __init__(self):
         self.items = []
 
-    def get_height(self):
-        return LINE_HEIGHT
-
     def to_flat_list(self, ids_list):
         return list(self.items)
-
 
 class Label(Element):
     def __init__(self, text, color=''):
@@ -35,17 +29,11 @@ class Separator(Element):
         super().__init__()
         self.items = ['SEPARATOR', max(0, width_fac), height]
 
-    def get_height(self):
-        return self.items[2]
-
 class Button(Element):
     def __init__(self, label, id='', action='run', action_data=''):
         # id needs to be unique
         super().__init__()
         self.items = ['BUTTON', label, id, action, action_data, 0] # 0 is default false (unclicked)
-
-    def get_height(self):
-        return LINE_HEIGHT + 2
 
     def to_flat_list(self, ids_list):
         add_id(ids_list, self.items[2], -2)
@@ -92,9 +80,6 @@ class End(Element):
         super().__init__()
         self.items = ['END']
 
-    def get_height(self):
-        return 0
-
 class Expander(Element):
     def __init__(self, label, id='', is_open=True, children:list = None):
         super().__init__()
@@ -102,9 +87,6 @@ class Expander(Element):
         self.children = children + [End()] # end the child list
         
         self.items = ['EXPANDER', label, id, int(is_open), None] # length of child data uncomputed
-
-    def get_height(self):
-        return LINE_HEIGHT + 3 + sum([c.get_height() for c in self.children])
 
     def to_flat_list(self, ids_list):
         add_id(ids_list, self.items[2], -2)
@@ -119,15 +101,112 @@ class Container(Element):
         super().__init__()
         if children is None: children = []
         self.children = children + [End()] # end the child list
-
-    def get_height(self):
-        return sum([c.get_height() for c in self.children])
     
     def to_flat_list(self, ids_list):
         return list(itertools.chain.from_iterable([c.to_flat_list(ids_list) for c in self.children]))
 
+################################
 
 panels = {}
+
+################################
+#             Tabs             #
+################################
+
+def btn_menu_set_page(label, page):
+    return Button.set_page(label, 'menu.'+page, page)
+
+panels['menu.io'] = Container([
+    Label.title('Import/Export'),
+    Separator(),
+    btn_menu_set_page('New canvas', 'io.new_canvas'),
+    Separator(0, 5),
+    btn_menu_set_page('Save canvas', 'io.save_canvas'),
+    btn_menu_set_page('Load canvas', 'io.load_canvas'),
+    Separator(0, 5),
+    btn_menu_set_page('Import height map', 'io.import_height_map'),
+    btn_menu_set_page('Import color map', 'io.import_color_map'),
+    btn_menu_set_page('Export height map', 'io.export_height_map'),
+    #btn_menu_set_page('Export .stl point cloud', 'io.export_stl'),
+])
+
+panels['menu.gen'] = Container([
+    Label.title('Generate'),
+    Separator(),
+    btn_menu_set_page('Maze', 'gen.maze'),
+    btn_menu_set_page('City', 'gen.city'),
+    btn_menu_set_page('Pipelines', 'gen.pipelines'),
+    btn_menu_set_page('Erosion', 'gen.erosion'),
+])
+
+panels['menu.fx'] = Container([
+    Label.title('Effects'),
+    Separator(),
+    btn_menu_set_page('Translate', 'fx.translate'),
+    btn_menu_set_page('Scale', 'fx.scale'),
+    btn_menu_set_page('Crop', 'fx.crop'),
+])
+
+panels['menu.draw'] = Container([
+    Label.title('Draw'),
+    Separator(),
+])
+
+
+################################
+#              IO              #
+################################
+
+panels['io.save_canvas'] = Container([
+    Label.title('Save canvas'),
+    Separator(),
+    Label('All data remains intact'),
+    Checkbox('Include opacity', 'io.save_canvas.include_opacity', True),
+    Button('Save', 'io.save_canvas.save'),
+])
+
+panels['io.import_height_map'] = Container([
+    Label.title('Import height map'),
+    Separator(),
+    Expander('Canvas', '', True, [
+        Checkbox('Erase canvas', 'io.import_height_map.erase_canvas', True),
+        Value('New size Z', 'io.import_height_map.size_z', 16, 1, 512, 0, 4096, 1),
+        Color('New voxel color', 'io.import_height_map.new_color', 'aaaaaa'),
+    ]),
+    Expander('Channel weights', '', True, [
+        Value('Red', 'io.import_height_map.weight_r', 0.25, 0, 1, snap_frac=1000),
+        Value('Green', 'io.import_height_map.weight_g', 0.5,  0, 1, snap_frac=1000),
+        Value('Blue', 'io.import_height_map.weight_b', 0.25, 0, 1, snap_frac=1000),
+        Label('All usually should add to 1'),
+    ]),
+    Expander('Remap height', '', True, [
+        Value('Map 0 to height', 'io.import_height_map.map_0', 0, -2, 2, snap_frac=100),
+        Value('Map 1 to height', 'io.import_height_map.map_1', 1, -2, 2, snap_frac=100),
+    ]),
+    Button('Input height map', 'io.import_height_map.btn_input_height_map'),
+])
+
+panels['io.import_color_map'] = Container([
+    Label.title('Import color map'),
+    Separator(),
+    Checkbox('Crop if size mismatch', 'io.import_color_map.crop', True),
+    Checkbox('Interpret as linear', 'io.import_color_map.interpret_linear', False),
+    Button('Input color map', 'io.import_color_map.btn_input_color_map'),
+])
+
+panels['io.export_height_map'] = Container([
+    Label.title('Export'),
+    Separator(),
+    Label('Normalised heights'),
+    Value('Map 0 to value', 'io.export_height_map.map_0', 0, -2, 2, snap_frac=100),
+    Value('Map 1 to value', 'io.export_height_map.map_1', 1, -2, 2, snap_frac=100),
+    Button('Export as TextImage', 'io.export_height_map.btn_export'),
+])
+
+
+################################
+#             Gen              #
+################################
 
 panels['gen.maze'] = Container([
     Label.title('Maze'),
@@ -201,51 +280,17 @@ panels['gen.erosion'] = Container([
     ]),
 ])
 
-panels['io.save_canvas'] = Container([
-    Label.title('Save canvas'),
-    Separator(),
-    Label('All data remains intact'),
-    Checkbox('Include opacity', 'io.save_canvas.include_opacity', True),
-    Button('Save', 'io.save_canvas.save'),
-])
 
-panels['io.import_height_map'] = Container([
-    Label.title('Import height map'),
-    Separator(),
-    Expander('Canvas', '', True, [
-        Checkbox('Erase canvas', 'io.import_height_map.erase_canvas', True),
-        Value('New size Z', 'io.import_height_map.size_z', 16, 1, 512, 0, 4096, 1),
-        Color('New voxel color', 'io.import_height_map.new_color', 'aaaaaa'),
-    ]),
-    Expander('Channel weights', '', True, [
-        Value('Red', 'io.import_height_map.weight_r', 0.25, 0, 1, snap_frac=1000),
-        Value('Green', 'io.import_height_map.weight_g', 0.5,  0, 1, snap_frac=1000),
-        Value('Blue', 'io.import_height_map.weight_b', 0.25, 0, 1, snap_frac=1000),
-        Label('All usually should add to 1'),
-    ]),
-    Expander('Remap height', '', True, [
-        Value('Map 0 to height', 'io.import_height_map.map_0', 0, -2, 2, snap_frac=100),
-        Value('Map 1 to height', 'io.import_height_map.map_1', 1, -2, 2, snap_frac=100),
-    ]),
-    Button('Input height map', 'io.import_height_map.btn_input_height_map'),
-])
+################################
+#              FX              #
+################################
 
-panels['io.import_color_map'] = Container([
-    Label.title('Import color map'),
-    Separator(),
-    Checkbox('Crop if size mismatch', 'io.import_color_map.crop', True),
-    Checkbox('Interpret as linear', 'io.import_color_map.interpret_linear', False),
-    Button('Input color map', 'io.import_color_map.btn_input_color_map'),
-])
 
-panels['io.export_height_map'] = Container([
-    Label.title('Export'),
-    Separator(),
-    Label('Normalised heights'),
-    Value('Map 0 to value', 'io.export_height_map.map_0', 0, -2, 2, snap_frac=100),
-    Value('Map 1 to value', 'io.export_height_map.map_1', 1, -2, 2, snap_frac=100),
-    Button('Export as TextImage', 'io.export_height_map.btn_export'),
-])
+
+
+################################
+#             Misc             #
+################################
 
 panels['project.settings'] = Container([
     Label.title('Project settings'),
@@ -265,49 +310,9 @@ panels['project.info'] = Container([
 ])
 
 
-
-def btn_menu_set_page(label, page):
-    return Button.set_page(label, 'menu.'+page, page)
-
-panels['menu.io'] = Container([
-    Label.title('Import/Export'),
-    Separator(),
-    btn_menu_set_page('New canvas', 'io.new_canvas'),
-    Separator(0, 5),
-    btn_menu_set_page('Save canvas', 'io.save_canvas'),
-    btn_menu_set_page('Load canvas', 'io.load_canvas'),
-    Separator(0, 5),
-    btn_menu_set_page('Import height map', 'io.import_height_map'),
-    btn_menu_set_page('Import color map', 'io.import_color_map'),
-    btn_menu_set_page('Export height map', 'io.export_height_map'),
-    #btn_menu_set_page('Export .stl point cloud', 'io.export_stl'),
-])
-
-panels['menu.gen'] = Container([
-    Label.title('Generate'),
-    Separator(),
-    btn_menu_set_page('Maze', 'gen.maze'),
-    btn_menu_set_page('City', 'gen.city'),
-    btn_menu_set_page('Pipelines', 'gen.pipelines'),
-    btn_menu_set_page('Erosion', 'gen.erosion'),
-])
-
-panels['menu.fx'] = Container([
-    Label.title('Effects'),
-    Separator(),
-    btn_menu_set_page('Translate', 'fx.translate'),
-    btn_menu_set_page('Scale', 'fx.scale'),
-    btn_menu_set_page('Crop', 'fx.crop'),
-])
-
-panels['menu.draw'] = Container([
-    Label.title('Draw'),
-    Separator(),
-])
-
-
-
-# GENERATE LISTS
+################################
+#    Generate lists & save     #
+################################
 
 element_list = [""] # element data
 panel_lookup = [] # list of where the panels begin
@@ -329,15 +334,13 @@ for e, offset in element_ids.items():
     element_lookup.append((e, element_list.index(e)+offset+1))
 
 # SAVE
+def save_list(path, data:list):
+    with open(path, 'w', encoding='UTF-8') as f:
+        f.writelines([f"{elem}\n" for elem in data])
 
-with open('UI/UI_data.txt', 'w') as f:
-    f.writelines([f"{l}\n" for l in element_list])
+save_list('UI/UI_data.txt', element_list)
+save_list('UI/UI_data_panels.txt', panel_lookup)
 
-with open('UI/UI_data_panels.txt', 'w') as f:
-    f.writelines([f"{p}\n" for p in panel_lookup])
-
-with open('UI/UI_data_element_id.txt', 'w') as f:
-    f.writelines([f"{l[0]}\n" for l in element_lookup])
-
-with open('UI/UI_data_element_index.txt', 'w') as f:
-    f.writelines([f"{l[1]}\n" for l in element_lookup])
+# split tuples into separate lists:
+save_list('UI/UI_data_element_id.txt', [l[0] for l in element_lookup])
+save_list('UI/UI_data_element_index.txt', [l[1] for l in element_lookup])
