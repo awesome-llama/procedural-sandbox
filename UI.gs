@@ -350,10 +350,9 @@ on "stage clicked" {
             if (UI_data[clicked_element+3] == "set_page") {
                 UI_current_panel = UI_data[clicked_element+4];
             } elif (UI_data[clicked_element+3] == "run") {
-                log UI_data[clicked_element+2];
+                broadcast UI_data[clicked_element+2]; # the button id is broadcasted
             }
             
-
         } elif (UI_data[clicked_element] == "CHECKBOX") {
             UI_data[clicked_element+3] = 1 - UI_data[clicked_element+3];
 

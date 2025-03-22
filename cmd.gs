@@ -64,18 +64,18 @@ proc _read_command_until_semicolon {
 proc evaluate_command {
     # evaluate the command stored in the command list
     local command_name = command[1];
-    if command_name[1] == "#" {
+    if (command_name[1] == "#") {
         stop_this_script;
     }
-    delete command[1];
+    delete command[1]; # remove command name, leaving the list of arguments
     
-    if command_name == "dev" {
+    if (command_name == "dev") {
         dev = command[1];
         print "dev=" & dev, 4;
         stop_this_script;
     } 
 
-    if command_name == "reset" {
+    if (command_name == "reset") {
         broadcast "reset";
         stop_all;
     }
@@ -85,49 +85,26 @@ proc evaluate_command {
         stop_this_script;
     }
     
-    if command_name == "help" {
+    if (command_name == "help") {
         print "look inside the project, `cmd` sprite", 4;
+
+    } elif (command_name == "wait") {
+        wait command[1];
+
+    } elif (command_name == "broadcast" or command_name == "run") {
+        broadcast command[1]; # run any broadcast block
 
     } elif (command_name == "panel" or command_name == "page" or command_name == "p") {
         UI_current_panel = command[1];
     
-    } elif (command_name == "import") {
-        print "canvas | height | color", 4;
-        if (command[1] == "canvas") {
-            broadcast "import canvas";
-        } elif (command[1] == "height") {
-            broadcast "import height map";
-        } elif (command[1] == "color") {
-            broadcast "import color map";
-        } else {}
-    
-    } elif (command_name == "export") {
-        print "canvas | render", 4;
-        if (command[1] == "canvas") {
-            broadcast "export canvas";
-        } elif (command[1] == "render") {
-            broadcast "export render";
-        } else {}
-        
-    } elif (command_name == "size") {
-
-        if (command[1] == "x") {
-            canvas_size_x = command[2];
-        } elif (command[1] == "y") {
-            canvas_size_y = command[2];
-        } elif (command[1] == "z") {
-            canvas_size_z = command[2];
+    } elif (command_name == "element") {
+        # set any element in the UI. Arguments: string_id, index_offset, value_to_set
+        local element_index = command[1] in UI_data_element_id;
+        if (element_index == 0) { 
+            error "element id doesn't exist: " & element_index;
         } else {
-            canvas_size_x = command[1];
-            canvas_size_y = command[2];
-            canvas_size_z = command[3];
+            UI_data[UI_data_element_index[element_index]+command[2]] = command[3];
         }
-        require_composite = true;
-
-    } elif (command_name == "clear") {
-        broadcast "clear canvas";
-        broadcast "zoom extents";
-        require_composite = true;
 
     } else {
         print "Unrecognised command: `" & command_name & "`", 4;

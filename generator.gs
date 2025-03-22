@@ -21,16 +21,38 @@ on "*" {
 }
 
 
-on "generate maze" {
+on "io.new_canvas.run"{
+    delete UI_return;
+    setting_from_id("io.new_canvas.size_x");
+    setting_from_id("io.new_canvas.size_y");
+    setting_from_id("io.new_canvas.size_z");
+    setting_from_id("io.new_canvas.include_base");
+    setting_from_id("io.new_canvas.base_col");
+    
+    # no custom block needed
+    canvas_size_x = UI_return[1];
+    canvas_size_y = UI_return[2];
+    canvas_size_z = UI_return[3];
+    clear_canvas;
+    reset_depositor;
+    if UI_return[4] {
+        set_depositor_from_number UI_return[5];
+        draw_base_layer;
+    }
+}
+
+
+on "gen.maze.run" {
     delete UI_return;
     setting_from_id("gen.maze.cell_count");
     setting_from_id("gen.maze.cell_size");
     setting_from_id("gen.maze.wall_thickness");
+    setting_from_id("gen.maze.wall_height");
     setting_from_id("gen.maze.pertubation");
 
     setting_from_id("gen.maze.ground_col");
     setting_from_id("gen.maze.wall_col");
-    generate_maze UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6]; 
+    generate_maze UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6], UI_return[7]; 
 }
 
 %define MGSOFFSET(DX,DY,SIDE) (maze_graph[(((edit_x+(DX))%$cell_count) + ((edit_y+(DY))%$cell_count)*$cell_count)*2+(SIDE)])
@@ -38,7 +60,7 @@ on "generate maze" {
 %define MGSOFFSETY(DY,SIDE) (maze_graph[(edit_x + ((edit_y+(DY))%$cell_count)*$cell_count)*2+(SIDE)])
 %define MGS(SIDE) (maze_graph[(edit_x + (edit_y*$cell_count))*2+(SIDE)])
 
-proc generate_maze cell_count, cell_size, wall_thickness, pertubation, ground_col, wall_col {
+proc generate_maze cell_count, cell_size, wall_thickness, wall_height, pertubation, ground_col, wall_col {
     local total_cell_size = ($cell_size+$wall_thickness);
 
     # first generate the maze graph, 2 items per cell for the 2 walls (they make an L shape in the cell)
@@ -85,7 +107,7 @@ proc generate_maze cell_count, cell_size, wall_thickness, pertubation, ground_co
     # generate the canvas
     canvas_size_x = $cell_count*total_cell_size;
     canvas_size_y = $cell_count*total_cell_size;
-    canvas_size_z = $cell_size;
+    canvas_size_z = $wall_height+1;
     clear_canvas;
     reset_depositor;
     set_depositor_from_number $ground_col;
@@ -98,11 +120,11 @@ proc generate_maze cell_count, cell_size, wall_thickness, pertubation, ground_co
         repeat $cell_count {
             if maze_graph[2*(ix+iy*$cell_count)+1] {
                 # horz
-                draw_cuboid_corner_size ix*total_cell_size, iy*total_cell_size, 0, -1-total_cell_size, $wall_thickness, $cell_size;
+                draw_cuboid_corner_size ix*total_cell_size, iy*total_cell_size, 0, -1-total_cell_size, $wall_thickness, canvas_size_z;
             }
             if maze_graph[2*(ix+iy*$cell_count)+2] {
                 # vert
-                draw_cuboid_corner_size ix*total_cell_size, iy*total_cell_size, 0, $wall_thickness, -1-total_cell_size, $cell_size;
+                draw_cuboid_corner_size ix*total_cell_size, iy*total_cell_size, 0, $wall_thickness, -1-total_cell_size, canvas_size_z;
             }
             ix++;
         }
@@ -114,7 +136,7 @@ proc generate_maze cell_count, cell_size, wall_thickness, pertubation, ground_co
 }
 
 
-on "generate pipes" {
+on "gen.pipes.run" {
     canvas_size_x = 64;
     canvas_size_y = 64;
     canvas_size_z = 8;
@@ -134,7 +156,7 @@ on "generate pipes" {
 }
 
 
-on "generate refinery" {
+on "gen.refinery.run" {
     canvas_size_x = 64;
     canvas_size_y = 64;
     canvas_size_z = 16;
@@ -167,7 +189,7 @@ on "generate refinery" {
 }
 
 
-on "generate city" { generate_city; }
+on "gen.city.run" { generate_city; }
 proc generate_city {
     canvas_size_x = 128;
     canvas_size_y = 128;
@@ -214,7 +236,7 @@ proc generate_city {
 
 
 
-on "generate unknown" { generate_unknown; }
+on "gen.unknown.run" { generate_unknown; }
 proc generate_unknown {
     canvas_size_x = 128;
     canvas_size_y = 128;
@@ -244,7 +266,7 @@ proc generate_unknown {
 
 
 
-on "generate carpet" { generate_carpet; }
+on "gen.carpet.run" { generate_carpet; }
 proc generate_carpet {
     canvas_size_x = 64;
     canvas_size_y = 64;
@@ -268,7 +290,7 @@ proc generate_carpet {
 }
 
 
-on "generate green weave" { generate_gw; }
+on "gen.weave.run" { generate_gw; }
 proc generate_gw {
     canvas_size_x = 128;
     canvas_size_y = 128;
@@ -293,7 +315,7 @@ proc generate_gw {
 }
 
 
-on "generate grad" { generate_grad; }
+on "gen.grad.run" { generate_grad; }
 proc generate_grad {
     canvas_size_x = 101;
     canvas_size_y = 101;
@@ -472,7 +494,7 @@ proc set_voxel x, y, z {
 ################################
 
 
-on "clear canvas" { clear_canvas; }
+on "clear canvas" { clear_canvas; } # not the same as io.new_canvas.run
 proc clear_canvas  {
     delete canvas;
     repeat (canvas_size_x * canvas_size_y * canvas_size_z) {
@@ -713,7 +735,7 @@ proc draw_line_DDA x, y, z, dx, dy, dz, r {
 
 
 ################################
-#       Global effects         #
+#        Global effects        #
 ################################
 # (glbfx)
 

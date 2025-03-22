@@ -67,7 +67,7 @@ onkey "any" {
 
 
 onkey "p" {
-    broadcast "generate carpet"; # debug
+    broadcast "gen.carpet.run"; # debug
     broadcast "zoom extents";
 }
 

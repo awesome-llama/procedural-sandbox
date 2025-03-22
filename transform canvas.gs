@@ -25,7 +25,14 @@ on "*" {
     crop_centered 10, 10, canvas_size_z;
 }
 
+on "fx.translate.run" {
+    delete UI_return;
+    setting_from_id("fx.translate.dx");
+    setting_from_id("fx.translate.dy");
+    setting_from_id("fx.translate.dz");
 
+    translate UI_return[1], UI_return[2], UI_return[3];
+}
 # translate with wrapping
 proc translate dx, dy, dz {
     delete temp;
@@ -48,7 +55,14 @@ proc translate dx, dy, dz {
     require_composite = true;
 }
 
+on "fx.scale.run" {
+    delete UI_return;
+    setting_from_id("fx.scale.dx");
+    setting_from_id("fx.scale.dy");
+    setting_from_id("fx.scale.dz");
 
+    scale UI_return[1], UI_return[2], UI_return[3];
+}
 # scale independently along x, y, z, axes
 proc scale scale_x, scale_y, scale_z {
     local step_x = 1/$scale_x;

@@ -122,12 +122,15 @@ panels['menu.io'] = Container([
     btn_menu_set_page('New canvas', 'io.new_canvas'),
     Separator(0, 5),
     btn_menu_set_page('Save canvas', 'io.save_canvas'),
-    btn_menu_set_page('Load canvas', 'io.load_canvas'),
+    Button('Load canvas', 'io.load_canvas.run'), # run button, no page
+    Separator(0, 5),
+    Button('Export rendered canvas', 'io.export_rendered_canvas.run'), # run button, no page
     Separator(0, 5),
     btn_menu_set_page('Import height map', 'io.import_height_map'),
     btn_menu_set_page('Import color map', 'io.import_color_map'),
     btn_menu_set_page('Export height map', 'io.export_height_map'),
-    #btn_menu_set_page('Export .stl point cloud', 'io.export_stl'),
+    Separator(0, 5),
+    Button('Export .ply point cloud', 'io.export_ply.run'), # run button, no page
 ])
 
 panels['menu.gen'] = Container([
@@ -157,12 +160,30 @@ panels['menu.draw'] = Container([
 #              IO              #
 ################################
 
+panels['io.new_canvas'] = Container([
+    Label.title('New empty canvas'),
+    Separator(),
+    Expander('Dimensions', '', True, [
+        Value('Size X', 'io.new_canvas.size_x', 64, 1, 512, 0, 4096, snap_frac=1),
+        Value('Size Y', 'io.new_canvas.size_y', 64, 1, 512, 0, 4096, snap_frac=1),
+        Value('Size Z', 'io.new_canvas.size_z', 16, 1, 512, 0, 4096, snap_frac=1),
+    ]),
+    Expander('Base layer', '', True, [
+        Checkbox('Include base layer', 'io.new_canvas.include_base', False),
+        Color('Wall color', 'io.new_canvas.base_col', '808080'),
+    ]),
+    Button('Create new canvas', 'io.new_canvas.run'),
+])
+
 panels['io.save_canvas'] = Container([
     Label.title('Save canvas'),
     Separator(),
-    Label('All data remains intact'),
-    Checkbox('Include opacity', 'io.save_canvas.include_opacity', True),
-    Button('Save', 'io.save_canvas.save'),
+    Label('Can be losslessly loaded later'),
+    Expander('Layers', '', True, [
+        Checkbox('Include opacity (alpha)', 'io.save_canvas.include_opacity', True),
+        Checkbox('Include emission', 'io.save_canvas.include_emission', True),
+    ]),
+    Button('Save', 'io.save_canvas.run'),
 ])
 
 panels['io.import_height_map'] = Container([
@@ -170,7 +191,7 @@ panels['io.import_height_map'] = Container([
     Separator(),
     Expander('Canvas', '', True, [
         Checkbox('Erase canvas', 'io.import_height_map.erase_canvas', True),
-        Value('New size Z', 'io.import_height_map.size_z', 16, 1, 512, 0, 4096, 1),
+        Value('New size Z', 'io.import_height_map.size_z', 16, 1, 512, 0, 4096, snap_frac=1),
         Color('New voxel color', 'io.import_height_map.new_color', 'aaaaaa'),
     ]),
     Expander('Channel weights', '', True, [
@@ -180,27 +201,31 @@ panels['io.import_height_map'] = Container([
         Label('All usually should add to 1'),
     ]),
     Expander('Remap height', '', True, [
-        Value('Map 0 to height', 'io.import_height_map.map_0', 0, -2, 2, snap_frac=100),
-        Value('Map 1 to height', 'io.import_height_map.map_1', 1, -2, 2, snap_frac=100),
+        Value('Map 0 to height', 'io.import_height_map.map_0', 0, -2, 2, snap_frac=1000),
+        Value('Map 1 to height', 'io.import_height_map.map_1', 1, -2, 2, snap_frac=1000),
     ]),
-    Button('Input height map', 'io.import_height_map.btn_input_height_map'),
+    Button('Input height map', 'io.import_height_map.run'),
 ])
 
 panels['io.import_color_map'] = Container([
     Label.title('Import color map'),
     Separator(),
-    Checkbox('Crop if size mismatch', 'io.import_color_map.crop', True),
+    Label('Replaces voxel colors'),
+    Label('Does not affect opacity'),
+    Separator(),
+    Checkbox('Resize canvas if needed', 'io.import_color_map.resize_canvas', True),
     Checkbox('Interpret as linear', 'io.import_color_map.interpret_linear', False),
-    Button('Input color map', 'io.import_color_map.btn_input_color_map'),
+    Button('Input color map', 'io.import_color_map.run'),
 ])
 
 panels['io.export_height_map'] = Container([
-    Label.title('Export'),
+    Label.title('Export height map'),
     Separator(),
-    Label('Normalised heights'),
-    Value('Map 0 to value', 'io.export_height_map.map_0', 0, -2, 2, snap_frac=100),
-    Value('Map 1 to value', 'io.export_height_map.map_1', 1, -2, 2, snap_frac=100),
-    Button('Export as TextImage', 'io.export_height_map.btn_export'),
+    Expander('Map normalised heights', '', True, [
+        Value('Map 0 to value', 'io.export_height_map.map_0', 0, -2, 2, snap_frac=1000),
+        Value('Map 1 to value', 'io.export_height_map.map_1', 1, -2, 2, snap_frac=1000),
+    ]),
+    Button('Export height map', 'io.export_height_map.run'),
 ])
 
 
@@ -209,66 +234,65 @@ panels['io.export_height_map'] = Container([
 ################################
 
 panels['gen.maze'] = Container([
-    Label.title('Maze'),
+    Label.title('Generate maze'),
     Separator(),
     Expander('Dimensions', '', True, [
-        Value('Cell count', 'gen.maze.cell_count', 24, 1, 64, 1, 1024, 1),
-        Value('Cell size', 'gen.maze.cell_size', 2, 1, 8, 1, 256, 1),
-        Value('Wall thickness', 'gen.maze.wall_thickness', 1, 1, 8, 1, 256, 1),
+        Value('Cell count', 'gen.maze.cell_count', 24, 1, 64, 1, 1024, snap_frac=1),
+        Value('Cell size', 'gen.maze.cell_size', 2, 1, 8, 1, 256, snap_frac=1),
+        Value('Wall thickness', 'gen.maze.wall_thickness', 1, 1, 8, 1, 256, snap_frac=1),
+        Value('Wall height', 'gen.maze.wall_height', 2, 0, 8, 0, 256, snap_frac=1),
         Value('Pertubation', 'gen.maze.pertubation', 0.5, 0, 1, snap_frac=100),
     ]),
     Expander('Color', '', True, [
         Color('Ground color', 'gen.maze.ground_col', 'ffffff'),
         Color('Wall color', 'gen.maze.wall_col', '000000'),
     ]),
-    Button('Generate', 'gen.maze.generate'),
+    Button('Generate', 'gen.maze.run'),
 ])
 
 panels['gen.city'] = Container([
-    Label.title('City'),
+    Label.title('Generate city'),
     Separator(),
     Expander('Canvas', '', True, [
-        Value('Size X', 'gen.city.size_x', 64, 1, 512, 0, 4096, 1),
-        Value('Size Y', 'gen.city.size_y', 64, 1, 512, 0, 4096, 1),
-        Value('Size Z', 'gen.city.size_z', 16, 1, 512, 0, 4096, 1),
+        Value('Size X', 'gen.city.size_x', 64, 1, 512, 0, 4096, snap_frac=1),
+        Value('Size Y', 'gen.city.size_y', 64, 1, 512, 0, 4096, snap_frac=1),
+        Value('Size Z', 'gen.city.size_z', 16, 1, 512, 0, 4096, snap_frac=1),
     ]),
     Expander('Color', '', True, [
         Color('Ground color', 'gen.city.ground_col', 'aaaaaa'),
     ]),
-    Button('Generate', 'gen.city.generate'),
+    Button('Generate', 'gen.city.run'),
 ])
 
 panels['gen.pipelines'] = Container([
-    Label.title('Pipelines'),
+    Label.title('Generate pipelines'),
     Separator(),
     Expander('Canvas', '', True, [
-        Value('Size X', 'gen.pipelines.size_x', 64, 1, 512, 0, 4096, 1),
-        Value('Size Y', 'gen.pipelines.size_y', 64, 1, 512, 0, 4096, 1),
-        Value('Size Z', 'gen.pipelines.size_z', 16, 1, 512, 0, 4096, 1),
+        Value('Size X', 'gen.pipelines.size_x', 64, 1, 512, 0, 4096, snap_frac=1),
+        Value('Size Y', 'gen.pipelines.size_y', 64, 1, 512, 0, 4096, snap_frac=1),
+        Value('Size Z', 'gen.pipelines.size_z', 16, 1, 512, 0, 4096, snap_frac=1),
     ]),
     Expander('Color', '', True, [
         Color('Ground color', 'gen.pipelines.ground_col', 'aaaaaa'),
     ]),
-    Button('Generate', 'gen.pipelines.generate'),
+    Button('Generate', 'gen.pipelines.run'),
 ])
 
 panels['gen.erosion'] = Container([
     Label.title('Hydraulic erosion'),
     Separator(),
     Expander('Initial terrain', '', True, [
-        Value('Size X', 'gen.erosion.size_x', 64, 1, 512, 0, 4096, 1),
-        Value('Size Y', 'gen.erosion.size_y', 64, 1, 512, 0, 4096, 1),
-        Value('Size Z', 'gen.erosion.size_z', 16, 1, 512, 0, 4096, 1),
-        Separator(),
+        Value('Size X', 'gen.erosion.size_x', 64, 1, 512, 0, 4096, snap_frac=1),
+        Value('Size Y', 'gen.erosion.size_y', 64, 1, 512, 0, 4096, snap_frac=1),
+        Value('Size Z', 'gen.erosion.size_z', 16, 1, 512, 0, 4096, snap_frac=1),
         #Checkbox('Perlin', 'perlin'),
-        Separator(),
-        Button('Generate', 'gen.erosion.run_generate'),
+        Button('Generate', 'gen.erosion.run.generate'),
     ]),
     Expander('Erode', '', True, [
         Value('Steps', 'gen.erosion.steps', 1, 0, 1000, 0, snap_frac=10),
         Value('Stream strength', 'gen.erosion.strength', 0.1, 0, 1, 0, snap_frac=100),
         Value('Stream capacity', 'gen.erosion.capacity', 5, 0, 10, 0, snap_frac=10),
-        Button('Run', 'gen.erosion.run_erode'),
+        Button('Run', 'gen.erosion.run.erode'),
     ]),
     Expander('Finalise', '', True, [
         Value('Water level', 'gen.erosion.water_level_fac', 0.2, 0, 1, snap_frac=1000),
@@ -276,7 +300,7 @@ panels['gen.erosion'] = Container([
         Value('Grass amount', 'gen.erosion.grass_fac', 0.5, 0, 1, snap_frac=1000),
         Color('Grass color', 'gen.erosion.grass_col', '70aa60'),
         Value('Tree amount', 'gen.erosion.tree_fac', 0.2, 0, 1, snap_frac=1000),
-        Button('Run', 'gen.erosion.run_finalise'),
+        Button('Run', 'gen.erosion.run.finalise'),
     ]),
 ])
 
@@ -285,7 +309,28 @@ panels['gen.erosion'] = Container([
 #              FX              #
 ################################
 
+panels['fx.translate'] = Container([
+    Label.title('Translate canvas'),
+    Separator(),
+    Expander('Translation vector', '', True, [
+        Value('X', 'fx.translate.dx', 0, -512, 512, -4096, 4096, snap_frac=1),
+        Value('Y', 'fx.translate.dy', 0, -512, 512, -4096, 4096, snap_frac=1),
+        Value('Z', 'fx.translate.dz', 0, -512, 512, -4096, 4096, snap_frac=1),
+    ]),
+    Button('Save', 'fx.translate.run'),
+])
 
+panels['fx.scale'] = Container([
+    Label.title('Scale canvas'),
+    Separator(),
+    Expander('Translation vector', '', True, [
+        #Label('Fractional change in scale'), # TODO
+        Value('X', 'fx.scale.dx', 1, 0.25, 4, -4096, 4096, snap_frac=1000),
+        Value('Y', 'fx.scale.dy', 1, 0.25, 4, -4096, 4096, snap_frac=1000),
+        Value('Z', 'fx.scale.dz', 1, 0.25, 4, -4096, 4096, snap_frac=1000),
+    ]),
+    Button('Save', 'fx.scale.run'),
+])
 
 
 ################################
@@ -296,7 +341,7 @@ panels['project.settings'] = Container([
     Label.title('Project settings'),
     Separator(),
     Checkbox('Dark background', 'project.settings.bg_dark', True),
-    Value('Slider sensitivity', 'project.settings.slider_sensitivity', 200, 10, 1000, 0, 10000, 0.1),
+    Value('Slider sensitivity', 'project.settings.slider_sensitivity', 200, 10, 1000, 0, 10000, snap_frac=0.1),
     Button('Apply changes', 'project.settings.apply'),
 ])
 

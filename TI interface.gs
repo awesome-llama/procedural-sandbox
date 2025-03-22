@@ -17,71 +17,13 @@ on "hard reset" {
 
 
 ################################
-#            Export            #
-################################
-
-on "export canvas" {
-    copy_canvas_to_TI_px_buffer;
-    broadcast_and_wait "write TextImage";
-    delete copy_this;
-    add TextImage_file to copy_this;
-    show copy_this;
-}
-proc copy_canvas_to_TI_px_buffer {
-    TI_image_size_x = canvas_size_x;
-    TI_image_size_y = (canvas_size_y * canvas_size_z);
-    delete TI_1_r;
-    delete TI_2_g;
-    delete TI_3_b;
-    delete TI_4_a;
-    i = 1;
-    repeat (canvas_size_x * canvas_size_y * canvas_size_z) {
-        # transform to sRGB
-        add floor(POW(canvas[i].r, 2.2)*255) to TI_1_r;
-        add floor(POW(canvas[i].g, 2.2)*255) to TI_2_g;
-        add floor(POW(canvas[i].b, 2.2)*255) to TI_3_b;
-        add floor(canvas[i].opacity*255) to TI_4_a;
-        i++;
-    }
-}
-
-
-on "export render" {
-    copy_render_buffer_to_TI_buffer;
-    broadcast_and_wait "write TextImage";
-    delete copy_this;
-    add TextImage_file to copy_this;
-    show copy_this;
-}
-proc copy_render_buffer_to_TI_buffer {
-    # The render buffer is 2D and opaque
-    
-    TI_image_size_x = canvas_size_x;
-    TI_image_size_y = canvas_size_y;
-    delete TI_1_r;
-    delete TI_2_g;
-    delete TI_3_b;
-    delete TI_4_a;
-    i = 1;
-    repeat (length render_cache_final_col) {
-        # render cache is sRGB combined. No transform needed, only separation into channels.
-        add (floor((render_cache_final_col[i]/65536))%256) to TI_1_r;
-        add (floor((render_cache_final_col[i]/256))%256) to TI_2_g;
-        add (render_cache_final_col[i]%256) to TI_3_b;
-        add 255 to TI_4_a;
-        i++;
-    }
-}
-
-
-################################
 #            Import            #
 ################################
 
 
-on "import canvas" {
+on "io.load_canvas.run" {
     stop_other_scripts;
-    ask "paste canvas";
+    ask "paste TextImage file, leave blank to cancel";
     if (answer() != "") {
         TextImage_file = answer();
         broadcast_and_wait "read TextImage";
@@ -113,9 +55,9 @@ proc copy_TI_px_buffer_to_canvas {
 }
 
 
-on "import height map" {
+on "io.import_height_map.run" {
     stop_other_scripts;
-    ask "paste canvas";
+    ask "paste TextImage file, leave blank to cancel";
     if (answer() != "") {
         TextImage_file = answer(); 
         broadcast_and_wait "read TextImage";
@@ -178,19 +120,28 @@ proc copy_TI_px_buffer_to_canvas_as_height_map erase_canvas, size_z, new_col_r, 
 }
 
 
-on "import color map" {
+on "io.import_color_map.run" {
     stop_other_scripts;
-    ask "paste canvas";
+    ask "paste TextImage file, leave blank to cancel";
     if (answer() != "") {
         TextImage_file = answer(); 
         broadcast_and_wait "read TextImage";
-        read_TI_px_buffer_to_canvas_as_2D_color_map;
+
+        delete UI_return;
+        setting_from_id("io.import_color_map.resize_canvas");
+        setting_from_id("io.import_color_map.interpret_linear");
+
+        read_TI_px_buffer_to_canvas_as_2D_color_map UI_return[1], UI_return[2];
         require_composite = true;
     }
 }
-proc read_TI_px_buffer_to_canvas_as_2D_color_map {
-    if (canvas_size_x != TI_image_size_x or canvas_size_y != TI_image_size_y) {
-        crop floor((canvas_size_x-TI_image_size_x)/2), floor((canvas_size_y-TI_image_size_y)/2), 0, TI_image_size_x, TI_image_size_y, canvas_size_z;
+proc read_TI_px_buffer_to_canvas_as_2D_color_map resize_canvas, interpret_linear {
+    if $resize_canvas {
+        if (canvas_size_x != TI_image_size_x or canvas_size_y != TI_image_size_y) {
+            crop floor((canvas_size_x-TI_image_size_x)/2), floor((canvas_size_y-TI_image_size_y)/2), 0, TI_image_size_x, TI_image_size_y, canvas_size_z;
+        }
+    } else {
+        error "not implemented"; # loop over the pixels which do fit
     }
 
     layer_size = (canvas_size_x * canvas_size_y);
@@ -199,11 +150,75 @@ proc read_TI_px_buffer_to_canvas_as_2D_color_map {
         local heightmap_write_z = 0;
         repeat canvas_size_z {
             # transform sRGB into linear
-            canvas[i + heightmap_write_z].r = ROOT(TI_1_r[i]/255, 2.2);
-            canvas[i + heightmap_write_z].g = ROOT(TI_2_g[i]/255, 2.2);
-            canvas[i + heightmap_write_z].b = ROOT(TI_3_b[i]/255, 2.2);
+            if $interpret_linear {
+                canvas[i + heightmap_write_z].r = TI_1_r[i]/255;
+                canvas[i + heightmap_write_z].g = TI_2_g[i]/255;
+                canvas[i + heightmap_write_z].b = TI_3_b[i]/255;
+            } else {
+                canvas[i + heightmap_write_z].r = ROOT(TI_1_r[i]/255, 2.2);
+                canvas[i + heightmap_write_z].g = ROOT(TI_2_g[i]/255, 2.2);
+                canvas[i + heightmap_write_z].b = ROOT(TI_3_b[i]/255, 2.2);
+            }
             heightmap_write_z += layer_size;
         }
+        i++;
+    }
+}
+
+
+################################
+#            Export            #
+################################
+
+on "io.save_canvas.run" {
+    copy_canvas_to_TI_px_buffer;
+    broadcast_and_wait "write TextImage";
+    delete copy_this;
+    add TextImage_file to copy_this;
+    show copy_this;
+}
+proc copy_canvas_to_TI_px_buffer {
+    TI_image_size_x = canvas_size_x;
+    TI_image_size_y = (canvas_size_y * canvas_size_z);
+    delete TI_1_r;
+    delete TI_2_g;
+    delete TI_3_b;
+    delete TI_4_a;
+    i = 1;
+    repeat (canvas_size_x * canvas_size_y * canvas_size_z) {
+        # transform to sRGB
+        add floor(POW(canvas[i].r, 2.2)*255) to TI_1_r;
+        add floor(POW(canvas[i].g, 2.2)*255) to TI_2_g;
+        add floor(POW(canvas[i].b, 2.2)*255) to TI_3_b;
+        add floor(canvas[i].opacity*255) to TI_4_a;
+        i++;
+    }
+}
+
+
+on "io.export_rendered_canvas.run" {
+    copy_render_buffer_to_TI_buffer;
+    broadcast_and_wait "write TextImage";
+    delete copy_this;
+    add TextImage_file to copy_this;
+    show copy_this;
+}
+proc copy_render_buffer_to_TI_buffer {
+    # The render buffer is 2D and opaque
+    
+    TI_image_size_x = canvas_size_x;
+    TI_image_size_y = canvas_size_y;
+    delete TI_1_r;
+    delete TI_2_g;
+    delete TI_3_b;
+    delete TI_4_a;
+    i = 1;
+    repeat (length render_cache_final_col) {
+        # render cache is sRGB combined. No transform needed, only separation into channels.
+        add (floor((render_cache_final_col[i]/65536))%256) to TI_1_r;
+        add (floor((render_cache_final_col[i]/256))%256) to TI_2_g;
+        add (render_cache_final_col[i]%256) to TI_3_b;
+        add 255 to TI_4_a;
         i++;
     }
 }

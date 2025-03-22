@@ -8,7 +8,7 @@ hide;
 %define RC(NUM) (round((NUM)*10000)/10000)
 
 
-on "export PLY" { export_ply; }
+on "io.export_ply.run" { export_ply; }
 proc export_ply {
     delete copy_this;
     add "ply" to copy_this;
