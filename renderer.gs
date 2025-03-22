@@ -9,7 +9,7 @@ on "initalise" {
 
 on "render viewport" {
     if (viewport_mode == ViewportMode.COMPOSITOR) {
-        render_edge_lines;
+        render_edge_lines 240, 180;
         render_canvas;
     }
 }
@@ -31,9 +31,9 @@ proc render_canvas {
         min_x = border;
         repeat_x -= border/render_resolution;
     }
-    local border = (((240/cam_scale)+cam_x)//render_resolution)*render_resolution;
-    if ((border - min_x)/render_resolution < repeat_x) {
-        repeat_x = (border - min_x)/render_resolution;
+    local border = ((((240-(UI_sidebar_width/2))/cam_scale)+cam_x)//render_resolution)*render_resolution;
+    if ((border - min_x)/render_resolution+1 < repeat_x) {
+        repeat_x = (border - min_x)/render_resolution+1; # add 1 to extend 1 px offscreen
     }
 
     local border = (((-180/cam_scale)+cam_y)//render_resolution)*render_resolution;
@@ -42,8 +42,8 @@ proc render_canvas {
         repeat_y -= border/render_resolution;
     }
     local border = (((160/cam_scale)+cam_y)//render_resolution)*render_resolution;
-    if ((border - min_y)/render_resolution < repeat_y) {
-        repeat_y = (border - min_y)/render_resolution;
+    if ((border - min_y)/render_resolution+1 < repeat_y) {
+        repeat_y = (border - min_y)/render_resolution+1; # add 1 to extend 1 px offscreen
     }
 
     local pixel_screen_size = cam_scale * render_resolution;
@@ -76,28 +76,28 @@ proc render_canvas {
 }
 
 
-proc render_edge_lines  {
+proc render_edge_lines bound_x, bound_y {
     set_pen_color "#727272";
     set_pen_size 1;
     goto_world_space 0, 0;
-    set_y -180;
+    set_y -$bound_y;
     pen_down;
-    set_y 180;
+    set_y $bound_y;
     pen_up;
     goto_world_space (canvas_size_x), 0;
-    set_y -180;
+    set_y -$bound_y;
     pen_down;
-    set_y 180;
+    set_y $bound_y;
     pen_up;
     goto_world_space 0, 0;
-    set_x -240;
+    set_x -$bound_x;
     pen_down;
-    set_x 240;
+    set_x $bound_x;
     pen_up;
     goto_world_space 0, (canvas_size_y);
-    set_x -240;
+    set_x -$bound_x;
     pen_down;
-    set_x 240;
+    set_x $bound_x;
     pen_up;
 }
 

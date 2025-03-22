@@ -123,26 +123,25 @@ proc render_top_bar x, y {
 
     # arrow
     if (UI_sidebar_width < 8) {
-        stamp_button "open side bar", "triangle", TOP_BAR_OFFSET(1), $y-10, false;
+        top_bar_button "open side bar", "triangle", TOP_BAR_OFFSET(1), $y-10, false;
     } else {
         point_in_direction -90;
-        stamp_button "close side bar", "triangle", TOP_BAR_OFFSET(1), $y-10, false;
+        top_bar_button "close side bar", "triangle", TOP_BAR_OFFSET(1), $y-10, false;
         point_in_direction 90;
     }
 
     # viewport buttons
-    stamp_button "viewport 2D", "viewport 2D", TOP_BAR_OFFSET(3), $y-10, (viewport_mode == ViewportMode.COMPOSITOR);
-    stamp_button "viewport 3D", "viewport 3D", TOP_BAR_OFFSET(4), $y-10, (viewport_mode == ViewportMode._3D);
-    stamp_button "section", "section", TOP_BAR_OFFSET(6), $y-10, false; # TODO section dropdown
-    stamp_button "compositor mode", "texture", TOP_BAR_OFFSET(7), $y-10, false;
+    top_bar_button "viewport 2D", "viewport 2D", TOP_BAR_OFFSET(3), $y-10, (viewport_mode == ViewportMode.COMPOSITOR);
+    top_bar_button "viewport 3D", "viewport 3D", TOP_BAR_OFFSET(4), $y-10, (viewport_mode == ViewportMode._3D);
+    top_bar_button "section", "section", TOP_BAR_OFFSET(6), $y-10, false; # TODO section dropdown
+    top_bar_button "compositor mode", "texture", TOP_BAR_OFFSET(7), $y-10, false;
 
     # right-aligned settings cog
-    stamp_button "settings", "settings", 240-10, $y-10, false;
+    top_bar_button "settings", "settings", 240-10, $y-10, false;
 }
 
-
-proc stamp_button id, costume, x, y, enabled {
-
+# custom implementation, not general-purpose
+proc top_bar_button id, costume, x, y, enabled {
     if (abs(mouse_x()-$x) < 10 and abs(mouse_y()-$y) < 10) {
         UI_hovered_group = "top bar";
         UI_hovered_element = $id;
@@ -189,10 +188,14 @@ proc render_element index, x, y, width {
 
     } elif (elem_type == "LABEL") {
         # [type, text]
-        set_pen_color THEME_COL_TEXT;
+        if (UI_data[$index+2] == "") { # custom color
+            set_pen_color THEME_COL_TEXT;
+        } else {
+            set_pen_color UI_data[$index+2];
+        }
         plainText $x, $y-TXT_Y_OFFSET, 1, UI_data[$index+1];
         UI_y -= LINEHIGHT;
-        render_element $index+2, $x, UI_y, $width;
+        render_element $index+3, $x, UI_y, $width;
 
     } elif (elem_type == "SEPARATOR") {
         # [type, line_width_fac, height]

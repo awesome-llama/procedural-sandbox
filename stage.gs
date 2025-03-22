@@ -66,7 +66,7 @@ on "initalise" {
     UI_last_hovered_group = "";
     UI_last_hovered_element = "";
 
-    UI_current_panel = "import_height_map";
+    UI_current_panel = "menu.io";
     UI_sidebar_width = 160; # set to 0 to hide
 }
 

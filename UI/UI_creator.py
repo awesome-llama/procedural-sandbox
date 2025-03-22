@@ -21,9 +21,14 @@ class Element:
 
 
 class Label(Element):
-    def __init__(self, text):
+    def __init__(self, text, color=''):
         super().__init__()
-        self.items = ['LABEL', text]
+        self.items = ['LABEL', text, color]
+
+    @staticmethod
+    def title(text):
+        # create a label suitable for a panel title
+        return Label(text, "#FF8CFF")
 
 class Separator(Element):
     def __init__(self, width_fac=1, height=3):
@@ -71,7 +76,7 @@ class Value(Element):
 
 class Color(Element):
     def __init__(self, label='Color', id='', color="808080"):
-        #if len(color) != 6: raise ValueError('color must be 6 hexadecimal digits')
+        if len(color) != 6: raise ValueError('color must be 6 hexadecimal digits')
         super().__init__()
         self.items = ['COLOR', label, id, int(color, 16)]
 
@@ -125,7 +130,7 @@ class Container(Element):
 panels = {}
 
 panels['gen.maze'] = Container([
-    Label('Maze'),
+    Label.title('Maze'),
     Separator(),
     Expander('Dimensions', '', True, [
         Value('Cell count', 'gen.maze.cell_count', 24, 1, 64, 1, 1024, 1),
@@ -141,7 +146,8 @@ panels['gen.maze'] = Container([
 ])
 
 panels['gen.city'] = Container([
-    Label('City'),
+    Label.title('City'),
+    Separator(),
     Expander('Canvas', '', True, [
         Value('Size X', 'gen.city.size_x', 64, 1, 512, 0, 4096, 1),
         Value('Size Y', 'gen.city.size_y', 64, 1, 512, 0, 4096, 1),
@@ -154,7 +160,8 @@ panels['gen.city'] = Container([
 ])
 
 panels['gen.pipelines'] = Container([
-    Label('Pipelines'),
+    Label.title('Pipelines'),
+    Separator(),
     Expander('Canvas', '', True, [
         Value('Size X', 'gen.pipelines.size_x', 64, 1, 512, 0, 4096, 1),
         Value('Size Y', 'gen.pipelines.size_y', 64, 1, 512, 0, 4096, 1),
@@ -167,7 +174,8 @@ panels['gen.pipelines'] = Container([
 ])
 
 panels['gen.erosion'] = Container([
-    Label('Hydraulic erosion'),
+    Label.title('Hydraulic erosion'),
+    Separator(),
     Expander('Initial terrain', '', True, [
         Value('Size X', 'gen.erosion.size_x', 64, 1, 512, 0, 4096, 1),
         Value('Size Y', 'gen.erosion.size_y', 64, 1, 512, 0, 4096, 1),
@@ -194,7 +202,7 @@ panels['gen.erosion'] = Container([
 ])
 
 panels['io.save_canvas'] = Container([
-    Label('Save canvas'),
+    Label.title('Save canvas'),
     Separator(),
     Label('All data remains intact'),
     Checkbox('Include opacity', 'io.save_canvas.include_opacity', True),
@@ -202,7 +210,8 @@ panels['io.save_canvas'] = Container([
 ])
 
 panels['io.import_height_map'] = Container([
-    Label('Import height map'),
+    Label.title('Import height map'),
+    Separator(),
     Expander('Canvas', '', True, [
         Checkbox('Erase canvas', 'io.import_height_map.erase_canvas', True),
         Value('New size Z', 'io.import_height_map.size_z', 16, 1, 512, 0, 4096, 1),
@@ -222,7 +231,7 @@ panels['io.import_height_map'] = Container([
 ])
 
 panels['io.import_color_map'] = Container([
-    Label('Import color map'),
+    Label.title('Import color map'),
     Separator(),
     Checkbox('Crop if size mismatch', 'io.import_color_map.crop', True),
     Checkbox('Interpret as linear', 'io.import_color_map.interpret_linear', False),
@@ -230,7 +239,7 @@ panels['io.import_color_map'] = Container([
 ])
 
 panels['io.export_height_map'] = Container([
-    Label('Export'),
+    Label.title('Export'),
     Separator(),
     Label('Normalised heights'),
     Value('Map 0 to value', 'io.export_height_map.map_0', 0, -2, 2, snap_frac=100),
@@ -239,13 +248,16 @@ panels['io.export_height_map'] = Container([
 ])
 
 panels['project.settings'] = Container([
-    Label('Project settings'),
+    Label.title('Project settings'),
     Separator(),
     Checkbox('Dark background', 'project.settings.bg_dark', True),
     Value('Slider sensitivity', 'project.settings.slider_sensitivity', 200, 10, 1000, 0, 10000, 0.1),
+    Button('Apply changes', 'project.settings.apply'),
 ])
 
-panels['project.credits'] = Container([
+panels['project.info'] = Container([
+    Label.title('Info'),
+    Separator(),
     Label('Created by awesome-llama'),
     Label('Developed w/ goboscript'),
     Separator(),
@@ -257,13 +269,14 @@ panels['project.credits'] = Container([
 def btn_menu_set_page(label, page):
     return Button.set_page(label, 'menu.'+page, page)
 
-
 panels['menu.io'] = Container([
-    Separator(0),
+    Label.title('Import/Export'),
+    Separator(),
     btn_menu_set_page('New canvas', 'io.new_canvas'),
+    Separator(0, 5),
     btn_menu_set_page('Save canvas', 'io.save_canvas'),
     btn_menu_set_page('Load canvas', 'io.load_canvas'),
-    Separator(),
+    Separator(0, 5),
     btn_menu_set_page('Import height map', 'io.import_height_map'),
     btn_menu_set_page('Import color map', 'io.import_color_map'),
     btn_menu_set_page('Export height map', 'io.export_height_map'),
@@ -271,7 +284,8 @@ panels['menu.io'] = Container([
 ])
 
 panels['menu.gen'] = Container([
-    Separator(0),
+    Label.title('Generate'),
+    Separator(),
     btn_menu_set_page('Maze', 'gen.maze'),
     btn_menu_set_page('City', 'gen.city'),
     btn_menu_set_page('Pipelines', 'gen.pipelines'),
@@ -279,13 +293,16 @@ panels['menu.gen'] = Container([
 ])
 
 panels['menu.fx'] = Container([
-    Separator(0),
-    Label('Effects'),
+    Label.title('Effects'),
+    Separator(),
+    btn_menu_set_page('Translate', 'fx.translate'),
+    btn_menu_set_page('Scale', 'fx.scale'),
+    btn_menu_set_page('Crop', 'fx.crop'),
 ])
 
 panels['menu.draw'] = Container([
-    Separator(0),
-    Label('Draw'),
+    Label.title('Draw'),
+    Separator(),
 ])
 
 
