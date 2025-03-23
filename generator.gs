@@ -46,6 +46,117 @@ on "io.new_canvas.run"{
 }
 
 
+on "gen.eca.run" {
+    delete UI_return;
+    setting_from_id("gen.eca.size_x");
+    setting_from_id("gen.eca.size_y");
+    setting_from_id("gen.eca.rule");
+    setting_from_id("gen.eca.random_initial_condition");
+    setting_from_id("gen.eca.state_0_col");
+    setting_from_id("gen.eca.state_1_col");
+    generate_elementary_cellular_automata UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6];
+}
+proc generate_elementary_cellular_automata size_x, size_y, rule, random_start, state_0_col, state_1_col {
+    # generate the canvas
+    canvas_size_x = $size_x;
+    canvas_size_y = $size_y;
+    canvas_size_z = 1;
+    clear_canvas;
+    reset_depositor;
+    set_depositor_from_number $state_0_col;
+    draw_base_layer;
+    set_depositor_from_number $state_1_col;
+
+    # generate the lookup table (convert rule to binary)
+    delete eca_lut;
+    local remaining = floor($rule);
+    repeat 8 {
+        add 1-((remaining % 2)<1) to eca_lut;
+        remaining /= 2;
+    }
+
+    # generate the initial state
+    delete custom_grid;
+    ix = 0;
+    if $random_start {
+        repeat canvas_size_x {
+            if random(0,1) {
+                add 1 to custom_grid;
+                set_voxel ix, (canvas_size_y-1), 0;
+            } else {
+                add 0 to custom_grid;
+            }
+            ix++;
+        }
+    } else {
+        repeat canvas_size_x {
+            add 0 to custom_grid;
+        }
+        custom_grid[1+canvas_size_x//2] = 1;
+        set_voxel canvas_size_x//2, (canvas_size_y-1), 0;
+    }
+
+    # iterate and set voxels
+    iy = 0;
+    repeat (canvas_size_y-1) {
+        ix = 0;
+        repeat canvas_size_x {
+            # get the adj
+            if eca_lut[1 + \
+            custom_grid[iy*canvas_size_x + (ix-1)%canvas_size_x + 1]*4 + \
+            custom_grid[iy*canvas_size_x + ix + 1]*2 + \
+            custom_grid[iy*canvas_size_x + (ix+1)%canvas_size_x + 1]] {
+                add 1 to custom_grid;
+                set_voxel ix, (canvas_size_y-2)-iy, 0;
+            } else {
+                add 0 to custom_grid;
+            }
+            ix++;
+        }
+        iy++;
+    }
+
+    delete custom_grid;
+    delete eca_lut;
+    require_composite = true;
+}
+
+
+on "gen.extruded_grid.run" {
+    delete UI_return;
+    setting_from_id("gen.extruded_grid.cell_count");
+    setting_from_id("gen.extruded_grid.cell_size");
+    setting_from_id("gen.extruded_grid.cell_spacing");
+    setting_from_id("gen.extruded_grid.max_height");
+    setting_from_id("gen.extruded_grid.jitter_fac");
+    setting_from_id("gen.extruded_grid.col1");
+    setting_from_id("gen.extruded_grid.col2");
+    generate_extruded_grid UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6], UI_return[7];
+}
+proc generate_extruded_grid cell_count, cell_size, cell_spacing, max_height, jitter_fac, col1, col2 {
+    local total_cell_size = ($cell_size+$cell_spacing);
+    
+    canvas_size_x = $cell_count*total_cell_size;
+    canvas_size_y = $cell_count*total_cell_size;
+    canvas_size_z = $max_height;
+    clear_canvas;
+    reset_depositor;
+    set_depositor_from_number $col1;
+    draw_base_layer;
+
+    set_depositor_from_number $col2; # TODO randomly interpolate
+    iy = 0;
+    repeat $cell_count {
+        ix = 0;
+        repeat $cell_count {
+            draw_cuboid_corner_size ix+($jitter_fac*total_cell_size*random(0,"1.0")), iy+($jitter_fac*total_cell_size*random(0,"1.0")), 0, $cell_size, $cell_size, random(1,$max_height);
+            ix += total_cell_size;
+        }
+        iy += total_cell_size;
+    }
+}
+
+
 on "gen.maze.run" {
     delete UI_return;
     setting_from_id("gen.maze.cell_count");
@@ -138,85 +249,6 @@ proc generate_maze cell_count, cell_size, wall_thickness, wall_height, pertubati
     delete maze_graph;
     require_composite = true;
 }
-
-
-on "gen.eca.run" {
-    delete UI_return;
-    setting_from_id("gen.eca.size_x");
-    setting_from_id("gen.eca.size_y");
-    setting_from_id("gen.eca.rule");
-    setting_from_id("gen.eca.random_initial_condition");
-    setting_from_id("gen.eca.state_0_col");
-    setting_from_id("gen.eca.state_1_col");
-    generate_elementary_cellular_automata UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6];
-}
-proc generate_elementary_cellular_automata size_x, size_y, rule, random_start, state_0_col, state_1_col {
-    # generate the canvas
-    canvas_size_x = $size_x;
-    canvas_size_y = $size_y;
-    canvas_size_z = 1;
-    clear_canvas;
-    reset_depositor;
-    set_depositor_from_number $state_0_col;
-    draw_base_layer;
-    set_depositor_from_number $state_1_col;
-
-    # generate the lookup table (convert rule to binary)
-    delete eca_lut;
-    local remaining = floor($rule);
-    repeat 8 {
-        add 1-((remaining % 2)<1) to eca_lut;
-        remaining /= 2;
-    }
-
-    # generate the initial state
-    delete custom_grid;
-    ix = 0;
-    if $random_start {
-        repeat canvas_size_x {
-            if random(0,1) {
-                add 1 to custom_grid;
-                set_voxel ix, (canvas_size_y-1), 0;
-            } else {
-                add 0 to custom_grid;
-            }
-            ix++;
-        }
-    } else {
-        repeat canvas_size_x {
-            add 0 to custom_grid;
-        }
-        custom_grid[1+canvas_size_x//2] = 1;
-        set_voxel canvas_size_x//2, (canvas_size_y-1), 0;
-    }
-
-    
-    # iterate and set voxels
-    iy = 0;
-    repeat (canvas_size_y-1) {
-        ix = 0;
-        repeat canvas_size_x {
-            # get the adj
-            if eca_lut[1 + \
-            custom_grid[iy*canvas_size_x + (ix-1)%canvas_size_x + 1]*4 + \
-            custom_grid[iy*canvas_size_x + ix + 1]*2 + \
-            custom_grid[iy*canvas_size_x + (ix+1)%canvas_size_x + 1]] {
-                add 1 to custom_grid;
-                set_voxel ix, (canvas_size_y-2)-iy, 0;
-            } else {
-                add 0 to custom_grid;
-            }
-            ix++;
-        }
-        iy++;
-    }
-
-    delete custom_grid;
-    delete eca_lut;
-    require_composite = true;
-}
-
-
 
 
 on "gen.pipes.run" {

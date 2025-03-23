@@ -138,6 +138,7 @@ panels['menu.gen'] = Container([
     Separator(),
     btn_menu_set_page('City', 'gen.city'),
     btn_menu_set_page('Elem. cellular automata', 'gen.eca'),
+    btn_menu_set_page('Extruded grid', 'gen.extruded_grid'),
     btn_menu_set_page('Erosion', 'gen.erosion'),
     btn_menu_set_page('Maze', 'gen.maze'),
     btn_menu_set_page('Pipelines', 'gen.pipelines'),
@@ -234,23 +235,6 @@ panels['io.export_height_map'] = Container([
 #             Gen              #
 ################################
 
-panels['gen.maze'] = Container([
-    Label.title('Generate maze'),
-    Separator(),
-    Expander('Dimensions', '', True, [
-        Value('Cell count', 'gen.maze.cell_count', 24, 1, 64, 1, 1024, snap_frac=1),
-        Value('Cell size', 'gen.maze.cell_size', 2, 1, 8, 1, 256, snap_frac=1),
-        Value('Wall thickness', 'gen.maze.wall_thickness', 1, 1, 8, 1, 256, snap_frac=1),
-        Value('Wall height', 'gen.maze.wall_height', 2, 0, 8, 0, 256, snap_frac=1),
-        Value('Pertubation', 'gen.maze.pertubation', 0.5, 0, 1, snap_frac=100),
-    ]),
-    Expander('Color', '', True, [
-        Color('Ground color', 'gen.maze.ground_col', 'ffffff'),
-        Color('Wall color', 'gen.maze.wall_col', '000000'),
-    ]),
-    Button('Generate', 'gen.maze.run'),
-])
-
 panels['gen.city'] = Container([
     Label.title('Generate city'),
     Separator(),
@@ -265,18 +249,25 @@ panels['gen.city'] = Container([
     Button('Generate', 'gen.city.run'),
 ])
 
-panels['gen.pipelines'] = Container([
-    Label.title('Generate pipelines'),
+panels['gen.eca'] = Container([
+    Label.title('Elementary cellular automata'),
     Separator(),
     Expander('Canvas', '', True, [
-        Value('Size X', 'gen.pipelines.size_x', 64, 1, 512, 0, 4096, snap_frac=1),
-        Value('Size Y', 'gen.pipelines.size_y', 64, 1, 512, 0, 4096, snap_frac=1),
-        Value('Size Z', 'gen.pipelines.size_z', 16, 1, 512, 0, 4096, snap_frac=1),
+        Value('Size X', 'gen.eca.size_x', 64, 1, 512, 0, 4096, snap_frac=1),
+        Value('Size Y', 'gen.eca.size_y', 64, 1, 512, 0, 4096, snap_frac=1),
+    ]),
+    Expander('Variant', '', True, [
+        Label('Suggested rules:'),
+        Label('18, 30, 45, 73, 90, 105, 110, 184'),
+        Separator(0),
+        Value('Rule', 'gen.eca.rule', 110, 0, 255, 0, 255, snap_frac=1),
+        Checkbox('Random initial condition', 'gen.eca.random_initial_condition'),
     ]),
     Expander('Color', '', True, [
-        Color('Ground color', 'gen.pipelines.ground_col', 'aaaaaa'),
+        Color('State 0', 'gen.eca.state_0_col', '000000'),
+        Color('State 1', 'gen.eca.state_1_col', 'ffffff'),
     ]),
-    Button('Generate', 'gen.pipelines.run'),
+    Button('Generate', 'gen.eca.run'),
 ])
 
 panels['gen.erosion'] = Container([
@@ -305,26 +296,52 @@ panels['gen.erosion'] = Container([
     ]),
 ])
 
-
-panels['gen.eca'] = Container([
-    Label.title('Elementary cellular automata'),
+panels['gen.extruded_grid'] = Container([ # "I call them cities"
+    Label.title('Generate grid'),
     Separator(),
-    Expander('Canvas', '', True, [
-        Value('Size X', 'gen.eca.size_x', 64, 1, 512, 0, 4096, snap_frac=1),
-        Value('Size Y', 'gen.eca.size_y', 64, 1, 512, 0, 4096, snap_frac=1),
-    ]),
-    Expander('Variant', '', True, [
-        Label('Suggested rules:'),
-        Label('18, 30, 45, 73, 90, 105, 110, 184'),
-        Separator(0),
-        Value('Rule', 'gen.eca.rule', 110, 0, 255, 0, 255, snap_frac=1),
-        Checkbox('Random initial condition', 'gen.eca.random_initial_condition'),
+    Expander('Dimensions', '', True, [
+        Value('Cell count', 'gen.extruded_grid.cell_count', 16, 1, 64, 1, 1024, snap_frac=1),
+        Value('Cell size', 'gen.extruded_grid.cell_size', 4, 1, 8, 1, 256, snap_frac=1),
+        Value('Cell spacing', 'gen.extruded_grid.cell_spacing', 0, 0, 8, 0, 256, snap_frac=1),
+        Value('Max height', 'gen.extruded_grid.max_height', 8, 1, 16, 1, 256, snap_frac=1),
+        Value('Jitter', 'gen.extruded_grid.jitter_fac', 0, 0, 1, snap_frac=1000),
     ]),
     Expander('Color', '', True, [
-        Color('State 0', 'gen.eca.state_0_col', '000000'),
-        Color('State 1', 'gen.eca.state_1_col', 'ffffff'),
+        Color('Color 1', 'gen.extruded_grid.col1', '000000'),
+        Color('Color 2', 'gen.extruded_grid.col2', 'ffffff'),
     ]),
-    Button('Generate', 'gen.eca.run'),
+    Button('Generate', 'gen.extruded_grid.run'),
+])
+
+panels['gen.maze'] = Container([
+    Label.title('Generate maze'),
+    Separator(),
+    Expander('Dimensions', '', True, [
+        Value('Cell count', 'gen.maze.cell_count', 24, 1, 64, 1, 1024, snap_frac=1),
+        Value('Cell size', 'gen.maze.cell_size', 2, 1, 8, 1, 256, snap_frac=1),
+        Value('Wall thickness', 'gen.maze.wall_thickness', 1, 1, 8, 1, 256, snap_frac=1),
+        Value('Wall height', 'gen.maze.wall_height', 2, 0, 8, 0, 256, snap_frac=1),
+        Value('Pertubation', 'gen.maze.pertubation', 0.5, 0, 1, snap_frac=100),
+    ]),
+    Expander('Color', '', True, [
+        Color('Ground color', 'gen.maze.ground_col', 'ffffff'),
+        Color('Wall color', 'gen.maze.wall_col', '000000'),
+    ]),
+    Button('Generate', 'gen.maze.run'),
+])
+
+panels['gen.pipelines'] = Container([
+    Label.title('Generate pipelines'),
+    Separator(),
+    Expander('Canvas', '', True, [
+        Value('Size X', 'gen.pipelines.size_x', 64, 1, 512, 0, 4096, snap_frac=1),
+        Value('Size Y', 'gen.pipelines.size_y', 64, 1, 512, 0, 4096, snap_frac=1),
+        Value('Size Z', 'gen.pipelines.size_z', 16, 1, 512, 0, 4096, snap_frac=1),
+    ]),
+    Expander('Color', '', True, [
+        Color('Ground color', 'gen.pipelines.ground_col', 'aaaaaa'),
+    ]),
+    Button('Generate', 'gen.pipelines.run'),
 ])
 
 
