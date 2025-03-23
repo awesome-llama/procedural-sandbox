@@ -136,10 +136,11 @@ panels['menu.io'] = Container([
 panels['menu.gen'] = Container([
     Label.title('Generate'),
     Separator(),
-    btn_menu_set_page('Maze', 'gen.maze'),
     btn_menu_set_page('City', 'gen.city'),
-    btn_menu_set_page('Pipelines', 'gen.pipelines'),
+    btn_menu_set_page('Elem. cellular automata', 'gen.eca'),
     btn_menu_set_page('Erosion', 'gen.erosion'),
+    btn_menu_set_page('Maze', 'gen.maze'),
+    btn_menu_set_page('Pipelines', 'gen.pipelines'),
 ])
 
 panels['menu.fx'] = Container([
@@ -302,6 +303,28 @@ panels['gen.erosion'] = Container([
         Value('Tree amount', 'gen.erosion.tree_fac', 0.2, 0, 1, snap_frac=1000),
         Button('Run', 'gen.erosion.run.finalise'),
     ]),
+])
+
+
+panels['gen.eca'] = Container([
+    Label.title('Elementary cellular automata'),
+    Separator(),
+    Expander('Canvas', '', True, [
+        Value('Size X', 'gen.eca.size_x', 64, 1, 512, 0, 4096, snap_frac=1),
+        Value('Size Y', 'gen.eca.size_y', 64, 1, 512, 0, 4096, snap_frac=1),
+    ]),
+    Expander('Variant', '', True, [
+        Label('Suggested rules:'),
+        Label('18, 30, 45, 73, 90, 105, 110, 184'),
+        Separator(0),
+        Value('Rule', 'gen.eca.rule', 110, 0, 255, 0, 255, snap_frac=1),
+        Checkbox('Random initial condition', 'gen.eca.random_initial_condition'),
+    ]),
+    Expander('Color', '', True, [
+        Color('State 0', 'gen.eca.state_0_col', '000000'),
+        Color('State 1', 'gen.eca.state_1_col', 'ffffff'),
+    ]),
+    Button('Generate', 'gen.eca.run'),
 ])
 
 

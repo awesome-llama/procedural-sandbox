@@ -82,10 +82,18 @@ on "render ui" {
         tab_button tab_offset, 42, "Draw", "menu.draw";
     }
 
-    get_unfenced_mouse;
+    render_color_picker; # TODO
     
     switch_costume "icon";
 }
+
+proc render_color_picker {
+    # render the color picker. There should be variables storing its open state.
+    # maybe make it temporary and share vars with other menus such as section
+}
+
+
+
 
 proc render_gen_opt_panel x, y, width, height {
     local curr_index = (UI_current_panel in UI_data_panels);
@@ -199,7 +207,7 @@ proc render_element index, x, y, width {
 
     } elif (elem_type == "SEPARATOR") {
         # [type, line_width_fac, height]
-        if ($width > 0) {
+        if (UI_data[$index+1] > 0) {
             set_pen_color THEME_COL_FILL;
             set_pen_size 1;
             goto $x, $y-ceil(UI_data[$index+2]/2);

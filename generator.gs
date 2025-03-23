@@ -4,6 +4,8 @@ costumes "costumes/blank.svg" as "blank";
 hide;
 
 list maze_graph;
+list custom_grid;
+list eca_lut;
 
 on "initalise" {
     hide;
@@ -11,6 +13,8 @@ on "initalise" {
 
 on "hard reset" {
     delete maze_graph;
+    delete custom_grid;
+    delete eca_lut;
 }
 
 on "*" {
@@ -134,6 +138,85 @@ proc generate_maze cell_count, cell_size, wall_thickness, wall_height, pertubati
     delete maze_graph;
     require_composite = true;
 }
+
+
+on "gen.eca.run" {
+    delete UI_return;
+    setting_from_id("gen.eca.size_x");
+    setting_from_id("gen.eca.size_y");
+    setting_from_id("gen.eca.rule");
+    setting_from_id("gen.eca.random_initial_condition");
+    setting_from_id("gen.eca.state_0_col");
+    setting_from_id("gen.eca.state_1_col");
+    generate_elementary_cellular_automata UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6];
+}
+proc generate_elementary_cellular_automata size_x, size_y, rule, random_start, state_0_col, state_1_col {
+    # generate the canvas
+    canvas_size_x = $size_x;
+    canvas_size_y = $size_y;
+    canvas_size_z = 1;
+    clear_canvas;
+    reset_depositor;
+    set_depositor_from_number $state_0_col;
+    draw_base_layer;
+    set_depositor_from_number $state_1_col;
+
+    # generate the lookup table (convert rule to binary)
+    delete eca_lut;
+    local remaining = floor($rule);
+    repeat 8 {
+        add 1-((remaining % 2)<1) to eca_lut;
+        remaining /= 2;
+    }
+
+    # generate the initial state
+    delete custom_grid;
+    ix = 0;
+    if $random_start {
+        repeat canvas_size_x {
+            if random(0,1) {
+                add 1 to custom_grid;
+                set_voxel ix, (canvas_size_y-1), 0;
+            } else {
+                add 0 to custom_grid;
+            }
+            ix++;
+        }
+    } else {
+        repeat canvas_size_x {
+            add 0 to custom_grid;
+        }
+        custom_grid[1+canvas_size_x//2] = 1;
+        set_voxel canvas_size_x//2, (canvas_size_y-1), 0;
+    }
+
+    
+    # iterate and set voxels
+    iy = 0;
+    repeat (canvas_size_y-1) {
+        ix = 0;
+        repeat canvas_size_x {
+            # get the adj
+            if eca_lut[1 + \
+            custom_grid[iy*canvas_size_x + (ix-1)%canvas_size_x + 1]*4 + \
+            custom_grid[iy*canvas_size_x + ix + 1]*2 + \
+            custom_grid[iy*canvas_size_x + (ix+1)%canvas_size_x + 1]] {
+                add 1 to custom_grid;
+                set_voxel ix, (canvas_size_y-2)-iy, 0;
+            } else {
+                add 0 to custom_grid;
+            }
+            ix++;
+        }
+        iy++;
+    }
+
+    delete custom_grid;
+    delete eca_lut;
+    require_composite = true;
+}
+
+
 
 
 on "gen.pipes.run" {
