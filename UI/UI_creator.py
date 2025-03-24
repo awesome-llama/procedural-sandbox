@@ -149,7 +149,8 @@ panels['menu.fx'] = Container([
     Separator(),
     btn_menu_set_page('Translate', 'fx.translate'),
     btn_menu_set_page('Scale', 'fx.scale'),
-    btn_menu_set_page('Crop', 'fx.crop'),
+    Separator(0, 5),
+    btn_menu_set_page('Gradient recolor', 'fx.recolor'),
 ])
 
 panels['menu.draw'] = Container([
@@ -196,7 +197,7 @@ panels['io.import_height_map'] = Container([
         Value('New size Z', 'io.import_height_map.size_z', 16, 1, 512, 0, 4096, snap_frac=1),
         Color('New voxel color', 'io.import_height_map.new_color', 'aaaaaa'),
     ]),
-    Expander('Channel weights', '', True, [
+    Expander('Channel weights', '', False, [
         Value('Red', 'io.import_height_map.weight_r', 0.25, 0, 1, snap_frac=1000),
         Value('Green', 'io.import_height_map.weight_g', 0.5,  0, 1, snap_frac=1000),
         Value('Blue', 'io.import_height_map.weight_b', 0.25, 0, 1, snap_frac=1000),
@@ -357,7 +358,7 @@ panels['fx.translate'] = Container([
         Value('Y', 'fx.translate.dy', 0, -512, 512, -4096, 4096, snap_frac=1),
         Value('Z', 'fx.translate.dz', 0, -512, 512, -4096, 4096, snap_frac=1),
     ]),
-    Button('Save', 'fx.translate.run'),
+    Button('Run', 'fx.translate.run'),
 ])
 
 panels['fx.scale'] = Container([
@@ -369,9 +370,30 @@ panels['fx.scale'] = Container([
         Value('Y', 'fx.scale.dy', 1, 0.25, 4, -4096, 4096, snap_frac=1000),
         Value('Z', 'fx.scale.dz', 1, 0.25, 4, -4096, 4096, snap_frac=1000),
     ]),
-    Button('Save', 'fx.scale.run'),
+    Button('Run', 'fx.scale.run'),
 ])
 
+panels['fx.recolor'] = Container([
+    Label.title('Gradient recolor'),
+    Separator(),
+    Expander('Channel weights', '', False, [
+        Value('Red', 'fx.recolor.weight_r', 0.25, 0, 1, snap_frac=1000),
+        Value('Green', 'fx.recolor.weight_g', 0.5,  0, 1, snap_frac=1000),
+        Value('Blue', 'fx.recolor.weight_b', 0.25, 0, 1, snap_frac=1000),
+        Label('All usually should add to 1'),
+    ]),
+    Expander('Input range', '', True, [
+        Value('Map 0 to value', 'fx.recolor.map_0', 0, -2, 2, snap_frac=1000),
+        Value('Map 1 to value', 'fx.recolor.map_1', 1, -2, 2, snap_frac=1000),
+    ]),
+    Expander('Output colors', '', True, [
+        Color('Val 0 to color', 'fx.recolor.col_0', '000000'),
+        Color('Val 1 to color', 'fx.recolor.col_1', 'ffffff'),
+    ]),
+    Checkbox('Interpolate in sRGB', 'fx.recolor.use_sRGB', True),
+    Separator(0),
+    Button('Run', 'fx.recolor.run'),
+])
 
 ################################
 #             Misc             #

@@ -144,16 +144,19 @@ proc generate_extruded_grid cell_count, cell_size, cell_spacing, max_height, jit
     set_depositor_from_number $col1;
     draw_base_layer;
 
-    set_depositor_from_number $col2; # TODO randomly interpolate
     iy = 0;
     repeat $cell_count {
         ix = 0;
         repeat $cell_count {
-            draw_cuboid_corner_size ix+($jitter_fac*total_cell_size*random(0,"1.0")), iy+($jitter_fac*total_cell_size*random(0,"1.0")), 0, $cell_size, $cell_size, random(1,$max_height);
+            set_depositor_from_sRGB_value RANDOM_0_1();
+            draw_cuboid_corner_size ix+($jitter_fac*total_cell_size*RANDOM_0_1()), iy+($jitter_fac*total_cell_size*RANDOM_0_1()), 0, $cell_size, $cell_size, random(1,$max_height);
             ix += total_cell_size;
         }
         iy += total_cell_size;
     }
+
+    recolor 0.25, 0.5, 0.25, 0, 1, $col1, $col2, true;
+    require_composite = true;
 }
 
 
@@ -261,7 +264,7 @@ on "gen.pipes.run" {
     draw_base_layer;
 
     repeat 100 {
-        set_depositor_from_sRGB random(0, "1.0"), random(0, "1.0"), random(0, "1.0");
+        set_depositor_from_sRGB RANDOM_0_1(), RANDOM_0_1(), RANDOM_0_1();
         depositor_voxel.opacity = random(0.5, "1.0");
 
         random_walk_taxicab RANDOM_X, RANDOM_Y, RANDOM_Z, 20, 5;
@@ -283,16 +286,14 @@ on "gen.refinery.run" {
     tank_rad = 8;
     # spherical tanks
     repeat 3 {
-        brightness = random(0.9, 1);
-        set_depositor_from_sRGB brightness, brightness, brightness;
+        set_depositor_from_sRGB_value random(0.9, 1);
         
         tank_x = floor(RANDOM_X * 16)/16;
         tank_y = floor(RANDOM_Y * 16)/16;
 
         draw_sphere tank_x, tank_y, tank_rad/2, tank_rad;
 
-        brightness = random(0.5, 1);
-        set_depositor_from_sRGB brightness, brightness, brightness;
+        set_depositor_from_sRGB_value random(0.5, 1);
 
         random_walk_taxicab tank_x+tank_rad, tank_y, random(1, tank_rad/2), 12, 16;
         random_walk_taxicab tank_x-tank_rad, tank_y, random(1, tank_rad/2), 12, 16;
@@ -455,6 +456,87 @@ proc generate_grad {
 }
 
 
+on "fx.recolor.run" {
+    delete UI_return;
+    setting_from_id("fx.recolor.weight_r");
+    setting_from_id("fx.recolor.weight_g");
+    setting_from_id("fx.recolor.weight_b");
+    setting_from_id("fx.recolor.map_0");
+    setting_from_id("fx.recolor.map_1");
+    setting_from_id("fx.recolor.col_0");
+    setting_from_id("fx.recolor.col_1");
+    setting_from_id("fx.recolor.use_sRGB");
+    recolor UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6], UI_return[7], UI_return[8];
+}
+# remaps colors
+proc recolor weight_r, weight_g, weight_b, map_0, map_1, col_0, col_1, use_sRGB {
+    if $use_sRGB {
+        # interpolate in sRGB, this is confirmed correct. Assumes the map values are also sRGB values.
+        local c0r = ((($col_0//65536)%256)/255);
+        local c0g = ((($col_0//256)%256)/255);
+        local c0b = (($col_0%256)/255);
+        local c1r = ((($col_1//65536)%256)/255);
+        local c1g = ((($col_1//256)%256)/255);
+        local c1b = (($col_1%256)/255);
+        
+        i = 1;
+        repeat (canvas_size_x * canvas_size_y * canvas_size_z) {
+            # get RGB converted to value
+
+            t = canvas[i].r*$weight_r + canvas[i].g*$weight_g + canvas[i].b*$weight_b;
+            t = UNLERP($map_0, $map_1, FROM_LINEAR(t));
+            
+            # clamp
+            if t < 0 {
+                t = 0;
+            } elif t > 1 {
+                t = 1;
+            }
+
+            # use fac to interpolate colours
+            canvas[i].r = TO_LINEAR(LERP(c0r,c1r,t));
+            canvas[i].g = TO_LINEAR(LERP(c0g,c1g,t));
+            canvas[i].b = TO_LINEAR(LERP(c0b,c1b,t));
+            i++;
+        }
+    } else {
+        # interpolate in linear space. Map values are also linear. This probably isn't very useful.
+
+        local c0r = TO_LINEAR((($col_0//65536)%256)/255);
+        local c0g = TO_LINEAR((($col_0//256)%256)/255);
+        local c0b = TO_LINEAR(($col_0%256)/255);
+        local c1r = TO_LINEAR((($col_1//65536)%256)/255);
+        local c1g = TO_LINEAR((($col_1//256)%256)/255);
+        local c1b = TO_LINEAR(($col_1%256)/255);
+        
+        i = 1;
+        repeat (canvas_size_x * canvas_size_y * canvas_size_z) {
+            # get RGB converted to value
+
+            t = canvas[i].r*$weight_r + canvas[i].g*$weight_g + canvas[i].b*$weight_b;
+            t = UNLERP($map_0, $map_1, t);
+            
+            # clamp
+            if t < 0 {
+                t = 0;
+            } elif t > 1 {
+                t = 1;
+            }
+
+            # use fac to interpolate colours
+            canvas[i].r = (LERP(c0r,c1r,t));
+            canvas[i].g = (LERP(c0g,c1g,t));
+            canvas[i].b = (LERP(c0b,c1b,t));
+            i++;
+        }
+    }
+    
+    require_composite = true;
+}
+
+
+
+
 ################################
 #          Templates           #
 ################################
@@ -553,18 +635,23 @@ proc set_depositor_to_air {
 proc set_depositor_from_number number {
     # number assumed to be 0-16777215
     depositor_mode = DepositorMode.DRAW;
-    depositor_voxel = VOXEL_SOLID(ROOT(($number//65536)%256/256, 2.2), ROOT(($number//256)%256/256, 2.2), ROOT($number%256/256, 2.2)); # convert to linear
+    depositor_voxel = VOXEL_SOLID(TO_LINEAR(($number//65536)%256/255), TO_LINEAR(($number//256)%256/255), TO_LINEAR($number%256/255)); # convert to linear
 }
 
 proc set_depositor_from_sRGB r, g, b {
     depositor_mode = DepositorMode.DRAW;
-    depositor_voxel = VOXEL_SOLID(ROOT($r, 2.2), ROOT($g, 2.2), ROOT($b, 2.2)); # convert to linear
+    depositor_voxel = VOXEL_SOLID(TO_LINEAR($r), TO_LINEAR($g), TO_LINEAR($b)); # convert to linear
+}
+
+proc set_depositor_from_sRGB_value value {
+    depositor_mode = DepositorMode.DRAW;
+    depositor_voxel = VOXEL_SOLID(TO_LINEAR($value), TO_LINEAR($value), TO_LINEAR($value)); # convert to linear
 }
 
 proc set_depositor_from_HSV h, s, v {
     local RGB col = HSV_to_RGB($h, $s, $v); 
     depositor_mode = DepositorMode.DRAW;
-    depositor_voxel = VOXEL_SOLID(ROOT(col.r, 2.2), ROOT(col.g, 2.2), ROOT(col.b, 2.2)); # convert to linear
+    depositor_voxel = VOXEL_SOLID(TO_LINEAR(col.r), TO_LINEAR(col.g), TO_LINEAR(col.b)); # convert to linear
 }
 
 proc set_depositor_to_template slot_index, ox, oy, oz {
@@ -916,7 +1003,7 @@ proc glbfx_jitter probability {
         local jitter_z = random(0, canvas_size_z-2); # do not cross upper boundary
 
         local jitter_i1 = INDEX_FROM_3D_CANVAS_INTS(jitter_x, jitter_y, jitter_z, canvas_size_x, canvas_size_y);
-        if RANDOM_0_1 < 0.333 {
+        if RANDOM_0_1() < 0.333 {
             local jitter_i2 = INDEX_FROM_3D_CANVAS_INTS(jitter_x+1, jitter_y, jitter_z, canvas_size_x, canvas_size_y); # x
         } elif random(0,1) == 0 {
             local jitter_i2 = INDEX_FROM_3D_CANVAS_INTS(jitter_x, jitter_y+1, jitter_z, canvas_size_x, canvas_size_y); # y
@@ -939,7 +1026,7 @@ proc glbfx_melt probability {
         local jitter_z = random(0, canvas_size_z-2); # do not cross upper boundary
 
         local jitter_i1 = INDEX_FROM_3D_CANVAS_INTS(jitter_x, jitter_y, jitter_z, canvas_size_x, canvas_size_y);
-        if RANDOM_0_1 < 0.333 {
+        if RANDOM_0_1() < 0.333 {
             local jitter_i2 = INDEX_FROM_3D_CANVAS_INTS(jitter_x+1, jitter_y, jitter_z, canvas_size_x, canvas_size_y); # x
         } elif random(0,1) == 0 {
             local jitter_i2 = INDEX_FROM_3D_CANVAS_INTS(jitter_x, jitter_y+1, jitter_z, canvas_size_x, canvas_size_y); # y

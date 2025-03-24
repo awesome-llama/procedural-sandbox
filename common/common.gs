@@ -116,11 +116,27 @@ struct template_metadata {
 %define CLAMP_0_1(VAL) (1 - (((VAL)<1) * (1-POSITIVE_CLAMP(VAL))) )
 
 # random float
-%define RANDOM_0_1 random("0.0", "1.0")
+%define RANDOM_0_1() random("0.0", "1.0")
 
 %define AVERAGE(A,B) (((A)+(B))/2)
 
+# lerp
+%define LERP(OUT0,OUT1,T) ((OUT0)+(T)*((OUT1)-(OUT0)))
+
+# opposite of lerp. Gets t from a value.
+%define UNLERP(IN0,IN1,VAL) (((VAL)-(IN0))/((IN1)-(IN0)))
+
+# map a value from input range to output range.
+%define REMAP(IN0,IN1,OUT0,OUT1,T) (LERP(OUT0,OUT1,UNLERP(IN0,IN1,T)))
+
+
 ### Specific to this project:
+
+# sRGB to linear Rec.709 (not piecewise)
+%define TO_LINEAR(VAL) ROOT(VAL, 2.2)
+
+# linear Rec.709 to sRGB (not piecewise)
+%define FROM_LINEAR(VAL) POW(VAL, 2.2)
 
 # Convert 2D coordinates into index, assumes ints that do not wrap
 %define INDEX_FROM_2D_NOWRAP_INTS(X,Y,SIZE_X) (1 + (((SIZE_X)*(Y)) + (X)))
@@ -190,7 +206,7 @@ proc setting_col_from_id element_id {
     local element_index = $element_id in UI_data_element_id;
     if (element_index == 0) { error "element id doesn't exist: " & $element_id; }
     local col = UI_data[UI_data_element_index[element_index]+3];
-    add ROOT((col//65536)%256/256, 2.2) to UI_return;
-    add ROOT((col//256)%256/256, 2.2) to UI_return;
-    add ROOT(col%256/256, 2.2) to UI_return;
+    add ROOT((col//65536)%256/255, 2.2) to UI_return;
+    add ROOT((col//256)%256/255, 2.2) to UI_return;
+    add ROOT(col%256/255, 2.2) to UI_return;
 }

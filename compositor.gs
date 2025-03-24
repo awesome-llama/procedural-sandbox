@@ -102,9 +102,7 @@ proc composite  {
     # make combined values
     i = 1;
     repeat (canvas_size_x * canvas_size_y) {
-        
-        # linear Rec.709 to sRGB (not piecewise)
-        render_cache_final_col[i] = COMBINE_RGB_CHANNELS(POW(render_cache_1_r[i], 2.2), POW(render_cache_2_g[i], 2.2), POW(render_cache_3_b[i], 2.2));
+        render_cache_final_col[i] = COMBINE_RGB_CHANNELS(FROM_LINEAR(render_cache_1_r[i]), FROM_LINEAR(render_cache_2_g[i]), FROM_LINEAR(render_cache_3_b[i]));
         i++;
     }
     

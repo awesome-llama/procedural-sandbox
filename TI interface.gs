@@ -49,7 +49,7 @@ proc copy_TI_px_buffer_to_canvas {
     i = 1;
     repeat (length TI_1_r) {
         # transform sRGB into linear
-        add voxel {opacity:floor(TI_4_a[i]*255), r:floor(ROOT(TI_1_r[i], 2.2)*255), g:floor(ROOT(TI_2_g[i], 2.2)*255), b:floor(ROOT(TI_3_b[i], 2.2)*255)} to canvas;
+        add voxel {opacity:floor(TI_4_a[i]*255), r:floor(TO_LINEAR(TI_1_r[i])*255), g:floor(TO_LINEAR(TI_2_g[i])*255), b:floor(TO_LINEAR(TI_3_b[i])*255)} to canvas;
         i++;
     }
 }
@@ -155,9 +155,9 @@ proc read_TI_px_buffer_to_canvas_as_2D_color_map resize_canvas, interpret_linear
                 canvas[i + heightmap_write_z].g = TI_2_g[i]/255;
                 canvas[i + heightmap_write_z].b = TI_3_b[i]/255;
             } else {
-                canvas[i + heightmap_write_z].r = ROOT(TI_1_r[i]/255, 2.2);
-                canvas[i + heightmap_write_z].g = ROOT(TI_2_g[i]/255, 2.2);
-                canvas[i + heightmap_write_z].b = ROOT(TI_3_b[i]/255, 2.2);
+                canvas[i + heightmap_write_z].r = TO_LINEAR(TI_1_r[i]/255);
+                canvas[i + heightmap_write_z].g = TO_LINEAR(TI_2_g[i]/255);
+                canvas[i + heightmap_write_z].b = TO_LINEAR(TI_3_b[i]/255);
             }
             heightmap_write_z += layer_size;
         }
@@ -187,9 +187,9 @@ proc copy_canvas_to_TI_px_buffer {
     i = 1;
     repeat (canvas_size_x * canvas_size_y * canvas_size_z) {
         # transform to sRGB
-        add floor(POW(canvas[i].r, 2.2)*255) to TI_1_r;
-        add floor(POW(canvas[i].g, 2.2)*255) to TI_2_g;
-        add floor(POW(canvas[i].b, 2.2)*255) to TI_3_b;
+        add floor(FROM_LINEAR(canvas[i].r)*255) to TI_1_r;
+        add floor(FROM_LINEAR(canvas[i].g)*255) to TI_2_g;
+        add floor(FROM_LINEAR(canvas[i].b)*255) to TI_3_b;
         add floor(canvas[i].opacity*255) to TI_4_a;
         i++;
     }
