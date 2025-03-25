@@ -143,6 +143,10 @@ proc render_top_bar x, y {
     top_bar_button "viewport 3D", "viewport 3D", TOP_BAR_OFFSET(4), $y-10, (viewport_mode == ViewportMode._3D);
     top_bar_button "section", "section", TOP_BAR_OFFSET(6), $y-10, false; # TODO section dropdown
     top_bar_button "compositor mode", "texture", TOP_BAR_OFFSET(7), $y-10, false;
+    
+    top_bar_button "zoom out", "zoom out", TOP_BAR_OFFSET(9), $y-10, false;
+    top_bar_button "zoom fit", "zoom fit", TOP_BAR_OFFSET(10), $y-10, false;
+    top_bar_button "zoom in", "zoom in", TOP_BAR_OFFSET(11), $y-10, false;
 
     # right-aligned settings cog
     top_bar_button "settings", "settings", 240-10, $y-10, false;
@@ -421,6 +425,14 @@ on "stage clicked" {
             
         } elif (clicked_element == "compositor mode") {
             
+        } elif (clicked_element == "zoom in") {
+            broadcast "center camera";
+            broadcast "zoom in";
+        } elif (clicked_element == "zoom out") {
+            broadcast "center camera";
+            broadcast "zoom out";
+        } elif (clicked_element == "zoom fit") {
+            broadcast "zoom extents";
         } elif (clicked_element == "settings") {
             UI_current_panel = "project.settings";
             if (UI_sidebar_width < 8) {

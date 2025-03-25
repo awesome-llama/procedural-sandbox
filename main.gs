@@ -90,25 +90,30 @@ on "stage clicked" {
     }
 }
 
-# zoom in
-onkey "up arrow" {
-    cam_scale = (cam_scale*2);
-    if (cam_scale > 32) {
-        cam_scale = 32;
-    }
+
+onkey "space" {
+    # manual debug refresh
+    require_composite = true;
+    require_screen_refresh = true;
+}
+
+onkey "up arrow" { broadcast "zoom in"; }
+on "zoom in" {
+    #cam_scale = (cam_scale*2);
+    change_zoom 1;
+    
     limit_scroll;
     require_screen_refresh = true;
 }
 
-# zoom out
-onkey "down arrow" {
-    cam_scale = (cam_scale/2);
-    if (cam_scale < 0.125) {
-        cam_scale = 0.125;
-    }
+onkey "down arrow" { broadcast "zoom out"; }
+on "zoom out" {
+    #cam_scale = (cam_scale/2);
+    change_zoom -1;
     limit_scroll;
     require_screen_refresh = true;
 }
+
 
 # limit camera position to within the canvas
 proc limit_scroll  {
@@ -125,25 +130,44 @@ proc limit_scroll  {
     }
 }
 
-onkey "space" {
-    require_composite = true;
-    require_screen_refresh = true;
-}
-
-on "zoom extents" {zoom_extents;}
+on "zoom extents" { zoom_extents; }
 proc zoom_extents {
+    # first get avail width and height of viewport
+    local viewport_width = 480-UI_sidebar_width;
+    local viewport_height = 360;
+
     cam_x = (canvas_size_x/2);
     cam_y = (canvas_size_y/2);
     
     if canvas_size_x == 0 or canvas_size_y == 0 {
         cam_scale = 1;
-    } elif ((canvas_size_x/canvas_size_y) > (4.0/3.0)) {
-        cam_scale = ceil((0.5+(ln((480/canvas_size_x))/ln(2))));
+    } elif ((canvas_size_x/canvas_size_y) > (viewport_width/viewport_height)) { # find which side will reach the limit first
+        # x is largest
+        cam_scale = ceil((0.5+(ln((viewport_width/canvas_size_x))/ln(2)))); # TODO
     } else {
-        cam_scale = ceil((0.5+(ln((360/canvas_size_y))/ln(2))));
+        # y is largest
+        cam_scale = ceil((0.5+(ln((viewport_height/canvas_size_y))/ln(2))));
     }
 
     require_screen_refresh = true;
 }
 
+
+on "center camera" {
+    cam_x = (canvas_size_x/2);
+    cam_y = (canvas_size_y/2);
+}
+
+
+proc change_zoom increment {
+    local snap = sqrt(2);
+    cam_scale = POW(snap, round(LOG(cam_scale, snap) + $increment));
+    
+    # limits
+    if (cam_scale < 0.125) {
+        cam_scale = 0.125;
+    } elif (cam_scale > 32) {
+        cam_scale = 32;
+    }
+}
 

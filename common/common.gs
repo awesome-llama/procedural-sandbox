@@ -96,6 +96,9 @@ struct template_metadata {
 # 
 %define ROOT(BASE,R) antiln(ln(BASE)/(R))
 
+# logarithm of any base
+%define LOG(VAL,BASE) (ln(VAL)/ln(BASE))
+
 # Dot product
 %define DOT_PRODUCT_2D(X1,Y1,X2,Y2) ((X1)*(X2) + (Y1)*(Y2))
 
