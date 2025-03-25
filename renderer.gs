@@ -77,7 +77,7 @@ proc render_canvas {
 
 
 proc render_edge_lines bound_x, bound_y {
-    set_pen_color "#727272";
+    set_pen_color "#656565";
     set_pen_size 1;
     goto_world_space 0, 0;
     set_y -$bound_y;

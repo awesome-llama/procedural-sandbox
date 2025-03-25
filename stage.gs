@@ -38,6 +38,13 @@ list UI_data_element_index = file ```UI/UI_data_element_index.txt```;
 
 list UI_return; # for user-triggered operations that need additional data retrieved from the UI.
 
+# col_picker list stores all data for the colour picker. Empty if not visible. Items are ordered:
+# - showing (always true if there are list items)
+# - x
+# - y
+# - index of element
+# - mode?
+list col_picker; 
 
 on "initalise" {
     dev = round((username() == "awesome-llama")); # developer mode
@@ -93,6 +100,7 @@ on "hard reset" {
     delete depositor_template_voxels;
 
     delete UI_return;
+    delete col_picker;
 }
 
 onflag {

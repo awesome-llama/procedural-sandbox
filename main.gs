@@ -11,6 +11,9 @@ on "hard reset" {
 
 }
 
+# 2^(1/increment)
+%define ZOOM_INCREMENT sqrt(2)
+
 on "start main loop" {
     render_resolution = 1;
     zoom_extents;
@@ -160,8 +163,7 @@ on "center camera" {
 
 
 proc change_zoom increment {
-    local snap = sqrt(2);
-    cam_scale = POW(snap, round(LOG(cam_scale, snap) + $increment));
+    cam_scale = POW(ZOOM_INCREMENT, round(LOG(cam_scale, ZOOM_INCREMENT) + $increment));
     
     # limits
     if (cam_scale < 0.125) {

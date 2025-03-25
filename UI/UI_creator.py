@@ -298,7 +298,7 @@ panels['gen.erosion'] = Container([
 ])
 
 panels['gen.extruded_grid'] = Container([ # "I call them cities"
-    Label.title('Generate grid'),
+    Label.title('Generate extruded grid'),
     Separator(),
     Expander('Dimensions', '', True, [
         Value('Cell count', 'gen.extruded_grid.cell_count', 16, 1, 64, 1, 1024, snap_frac=1),

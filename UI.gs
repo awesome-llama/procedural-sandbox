@@ -34,7 +34,7 @@ on "hard reset" {
 # the darker fill colour inside elements, highlighted
 %define THEME_COL_FILL_HIGHLIGHT "#404040"
 
-# border of elements (not containers)
+# border of elements
 %define THEME_COL_OUTLINE "#707070"
 
 # outline when hovered
@@ -82,14 +82,44 @@ on "render ui" {
         tab_button tab_offset, 42, "Draw", "menu.draw";
     }
 
-    render_color_picker; # TODO
+    render_color_picker;
     
     switch_costume "icon";
 }
 
+%define CP_WIDTH 100
+
 proc render_color_picker {
     # render the color picker. There should be variables storing its open state.
-    # maybe make it temporary and share vars with other menus such as section
+    
+    if col_picker[1] {
+        # fence the picker if needed
+        if col_picker[2] < -240 {
+            col_picker[2] = -240;
+        } elif col_picker[2] > 240-CP_WIDTH {
+            col_picker[2] = 240-CP_WIDTH;
+        }
+        if col_picker[3] < -180 {
+            col_picker[3] = -180;
+        } elif col_picker[3] > 180 {
+            col_picker[3] = 180;
+        }
+
+        draw_UI_rect col_picker[2], col_picker[3], CP_WIDTH+1, 80, 3, THEME_COL_OUTLINE, THEME_COL_BG;
+        # the original colour should still be previewed for matching
+        draw_UI_rect col_picker[2]+5, col_picker[3]-5, 45, 10, 0, UI_data[col_picker[4]+3], UI_data[col_picker[4]+3];
+        draw_UI_rect col_picker[2]+50, col_picker[3]-5, 45, 10, 0, col_picker[5], col_picker[5];
+
+        #set_pen_color "#ffffff";
+        #plainText col_picker[2]+5, col_picker[3]-30, 1, UI_data[col_picker[4]+3];
+
+        # draw the UI elements depending on mode
+        # just do RGB for now?
+
+        #UI_data[clicked_element+3] = "0xff0000" + 0; # not typically possible in scratch
+    }
+
+
 }
 
 
@@ -355,8 +385,9 @@ proc UI_check_touching_mouse x, y, width, height, id1, id2 {
 
 on "stage clicked" {
     stop_other_scripts; # stop previous ask block
+    clicked_element = UI_last_hovered_element; # alias
+
     if (UI_last_hovered_group == "modular panel") {
-        clicked_element = UI_last_hovered_element; # alias
         if (UI_data[clicked_element] == "BUTTON") {
             # check for button behvaviour type
             if (UI_data[clicked_element+3] == "set_page") {
@@ -395,14 +426,22 @@ on "stage clicked" {
             }
 
         } elif (UI_data[clicked_element] == "COLOR") {
-            UI_data[clicked_element+3] = "0xff0000" + 0; # not typically possible in scratch
+            # open the picker if it is closed
+            delete col_picker;
+            add true to col_picker; # showing
+            add round(mouse_x()) to col_picker; # x
+            add round(mouse_y()) to col_picker; # y
+            add clicked_element to col_picker; # index
+            add UI_data[clicked_element+3] to col_picker; # combined preview decimal color
+            add "" to col_picker; # mode (reserved for now)
+
+            require_screen_refresh = true; # update previous picker, temporary solution
 
         } elif (UI_data[clicked_element] == "EXPANDER") {
             UI_data[clicked_element+3] = 1 - UI_data[clicked_element+3];
         }
     
     } elif (UI_last_hovered_group == "tabs") {
-        clicked_element = UI_last_hovered_element; # alias
 
         if clicked_element != "" {
             UI_current_panel = clicked_element;
@@ -410,7 +449,6 @@ on "stage clicked" {
 
     } elif (UI_last_hovered_group == "top bar") {
         # top bar
-        clicked_element = UI_last_hovered_element; # alias
         if (clicked_element == "close side bar") {
             UI_sidebar_width = 0;
             require_screen_refresh = true;
