@@ -471,7 +471,7 @@ on "fx.recolor.run" {
 # remaps colors
 proc recolor weight_r, weight_g, weight_b, map_0, map_1, col_0, col_1, use_sRGB {
     if $use_sRGB {
-        # interpolate in sRGB, this is confirmed correct. Assumes the map values are also sRGB values.
+        # interpolate in sRGB. Assumes the map values are also sRGB values.
         local c0r = ((($col_0//65536)%256)/255);
         local c0g = ((($col_0//256)%256)/255);
         local c0b = (($col_0%256)/255);
@@ -484,7 +484,7 @@ proc recolor weight_r, weight_g, weight_b, map_0, map_1, col_0, col_1, use_sRGB 
             # get RGB converted to value
 
             t = canvas[i].r*$weight_r + canvas[i].g*$weight_g + canvas[i].b*$weight_b;
-            t = UNLERP($map_0, $map_1, FROM_LINEAR(t));
+            t = UNLERP($map_0, $map_1, t);
             
             # clamp
             if t < 0 {
@@ -494,13 +494,13 @@ proc recolor weight_r, weight_g, weight_b, map_0, map_1, col_0, col_1, use_sRGB 
             }
 
             # use fac to interpolate colours
-            canvas[i].r = TO_LINEAR(LERP(c0r,c1r,t));
-            canvas[i].g = TO_LINEAR(LERP(c0g,c1g,t));
-            canvas[i].b = TO_LINEAR(LERP(c0b,c1b,t));
+            canvas[i].r = (LERP(c0r,c1r,t));
+            canvas[i].g = (LERP(c0g,c1g,t));
+            canvas[i].b = (LERP(c0b,c1b,t));
             i++;
         }
     } else {
-        # interpolate in linear space. Map values are also linear. This probably isn't very useful.
+        # interpolate in linear space. This probably isn't very useful.
 
         local c0r = TO_LINEAR((($col_0//65536)%256)/255);
         local c0g = TO_LINEAR((($col_0//256)%256)/255);
@@ -524,9 +524,9 @@ proc recolor weight_r, weight_g, weight_b, map_0, map_1, col_0, col_1, use_sRGB 
             }
 
             # use fac to interpolate colours
-            canvas[i].r = (LERP(c0r,c1r,t));
-            canvas[i].g = (LERP(c0g,c1g,t));
-            canvas[i].b = (LERP(c0b,c1b,t));
+            canvas[i].r = FROM_LINEAR(LERP(c0r,c1r,t));
+            canvas[i].g = FROM_LINEAR(LERP(c0g,c1g,t));
+            canvas[i].b = FROM_LINEAR(LERP(c0b,c1b,t));
             i++;
         }
     }
@@ -635,23 +635,23 @@ proc set_depositor_to_air {
 proc set_depositor_from_number number {
     # number assumed to be 0-16777215
     depositor_mode = DepositorMode.DRAW;
-    depositor_voxel = VOXEL_SOLID(TO_LINEAR(($number//65536)%256/255), TO_LINEAR(($number//256)%256/255), TO_LINEAR($number%256/255)); # convert to linear
+    depositor_voxel = VOXEL_SOLID((($number//65536)%256/255), (($number//256)%256/255), ($number%256/255));
 }
 
 proc set_depositor_from_sRGB r, g, b {
     depositor_mode = DepositorMode.DRAW;
-    depositor_voxel = VOXEL_SOLID(TO_LINEAR($r), TO_LINEAR($g), TO_LINEAR($b)); # convert to linear
+    depositor_voxel = VOXEL_SOLID($r, $g, $b);
 }
 
 proc set_depositor_from_sRGB_value value {
     depositor_mode = DepositorMode.DRAW;
-    depositor_voxel = VOXEL_SOLID(TO_LINEAR($value), TO_LINEAR($value), TO_LINEAR($value)); # convert to linear
+    depositor_voxel = VOXEL_SOLID($value, $value, $value);
 }
 
 proc set_depositor_from_HSV h, s, v {
     local RGB col = HSV_to_RGB($h, $s, $v); 
     depositor_mode = DepositorMode.DRAW;
-    depositor_voxel = VOXEL_SOLID(TO_LINEAR(col.r), TO_LINEAR(col.g), TO_LINEAR(col.b)); # convert to linear
+    depositor_voxel = VOXEL_SOLID(col.r, col.g, col.b);
 }
 
 proc set_depositor_to_template slot_index, ox, oy, oz {

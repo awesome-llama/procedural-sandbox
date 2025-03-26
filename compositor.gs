@@ -50,7 +50,7 @@ onkey "6" {
 ################################
 
 on "composite" { composite; }
-proc composite  {
+proc composite {
     
     # if the canvas lists are the wrong size, create them again
     # this doesn't happen often enough to optimise?
@@ -102,7 +102,7 @@ proc composite  {
     # make combined values
     i = 1;
     repeat (canvas_size_x * canvas_size_y) {
-        render_cache_final_col[i] = COMBINE_RGB_CHANNELS(FROM_LINEAR(render_cache_1_r[i]), FROM_LINEAR(render_cache_2_g[i]), FROM_LINEAR(render_cache_3_b[i]));
+        render_cache_final_col[i] = COMBINE_RGB_CHANNELS((render_cache_1_r[i]), (render_cache_2_g[i]), (render_cache_3_b[i]));
         i++;
     }
     
@@ -117,7 +117,7 @@ proc composite  {
 
 
 # the topmost non-0-opacity voxel, found by raycasting downwards. The index of the solid voxel, not the air above it.
-proc generate_pass_topmost  {
+proc generate_pass_topmost {
     layer_size = (canvas_size_x * canvas_size_y);
     i = 1;
     repeat layer_size {
@@ -132,7 +132,7 @@ proc generate_pass_topmost  {
 
 
 # ambient occlusion in 2D
-proc generate_pass_ao  {
+proc generate_pass_ao {
     layer_size = (canvas_size_x * canvas_size_y);
     i = 1;
     iy = 0.5; # center of voxel
@@ -162,7 +162,7 @@ proc generate_pass_ao  {
 
 
 # simply the colour map looking down, no translucency handling
-proc composite_topmost_colour  {
+proc composite_topmost_colour {
     layer_size = (canvas_size_x * canvas_size_y);
     i = 1;
     repeat layer_size {
@@ -182,37 +182,37 @@ proc composite_topmost_colour  {
 
 
 # a semi-realistic shaded style, accounting for translucency and AO.
-proc composite_shaded_color  {
+proc composite_shaded_color {
     make_brightness_LUT 0.8, 1;
     layer_size = (canvas_size_x * canvas_size_y);
     i = 1;
     repeat layer_size {
         iz = 0;
         local brightness_index = 1; # brightness is slightly altered by depth
-        local r = 0.5; # the background colour
-        local g = 0.5;
-        local b = 0.5;
+        local r = TO_LINEAR(0.5); # the background colour
+        local g = TO_LINEAR(0.5);
+        local b = TO_LINEAR(0.5);
 
         repeat canvas_size_z {
             if (canvas[i+iz].opacity > 0) {
-                r += (canvas[i+iz].opacity * ((brightness[brightness_index]*canvas[i+iz].r)-r));
-                g += (canvas[i+iz].opacity * ((brightness[brightness_index]*canvas[i+iz].g)-g));
-                b += (canvas[i+iz].opacity * ((brightness[brightness_index]*canvas[i+iz].b)-b));
+                r += (canvas[i+iz].opacity * (TO_LINEAR(brightness[brightness_index]*canvas[i+iz].r)-r));
+                g += (canvas[i+iz].opacity * (TO_LINEAR(brightness[brightness_index]*canvas[i+iz].g)-g));
+                b += (canvas[i+iz].opacity * (TO_LINEAR(brightness[brightness_index]*canvas[i+iz].b)-b));
             }
             iz += layer_size;
             brightness_index += 1;
         }
-        local ao_fac = (0.7 + (0.3 * render_cache_ao[i]));
-        render_cache_1_r[i] = (r * ao_fac);
-        render_cache_2_g[i] = (g * ao_fac);
-        render_cache_3_b[i] = (b * ao_fac);
+        local ao_fac = 0.7 + (0.3 * render_cache_ao[i]);
+        render_cache_1_r[i] = FROM_LINEAR(r * ao_fac);
+        render_cache_2_g[i] = FROM_LINEAR(g * ao_fac);
+        render_cache_3_b[i] = FROM_LINEAR(b * ao_fac);
         i++;
     }
 }
 
 
 # heightmap of the topmost non-transparent voxel, normalised to greyscale 0-1
-proc composite_heightmap  {
+proc composite_heightmap {
     i = 1;
     repeat (canvas_size_x * canvas_size_y) {
         local height = (render_cache_topmost[i]+1) / canvas_size_z;
@@ -225,7 +225,7 @@ proc composite_heightmap  {
 
 
 # ambient occlusion, normalised to greyscale 0-1
-proc composite_ao  {
+proc composite_ao {
     i = 1;
     repeat (canvas_size_x * canvas_size_y) {
         local ao_fac = (1 * render_cache_ao[i]);
@@ -255,7 +255,7 @@ proc composite_density {
 }
 
 # raycast down, for visualising transparency, normalised to greyscale 0-1
-proc composite_penetration  {
+proc composite_penetration {
     layer_size = (canvas_size_x * canvas_size_y);
     i = 1;
     repeat layer_size {

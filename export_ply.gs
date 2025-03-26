@@ -34,7 +34,6 @@ proc export_ply {
             local ix = 0;
             repeat canvas_size_x {
                 if (canvas[i].opacity > 0) {
-                    # this is still linear
                     add ix &" "& iy &" "& iz &" "& RC(canvas[i].opacity) &" "& RC(canvas[i].r) &" "& RC(canvas[i].g) &" "& RC(canvas[i].b) &" "& RC(canvas[i].emission) to copy_this;
                     vertex_count++;
                 }

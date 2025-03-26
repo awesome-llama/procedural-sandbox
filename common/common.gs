@@ -50,7 +50,8 @@ enum CompositorMode {
     HEIGHT = "HEIGHT", # heightmap, topmost voxel elevation
     AO = "AO", # ambient occlusion
     DENSITY = "DENSITY", # number of voxels in the column, weighted by opacity
-    PENETRATION = "PENETRATION" # opacity of topmost non-empty voxel
+    PENETRATION = "PENETRATION", # opacity of topmost non-empty voxel
+    NORMAL = "NORMAL" # heightmap converted to normal map
 }
 
 enum ViewportMode {
@@ -144,7 +145,7 @@ struct template_metadata {
 # Convert 2D coordinates into index, assumes ints that do not wrap
 %define INDEX_FROM_2D_NOWRAP_INTS(X,Y,SIZE_X) (1 + (((SIZE_X)*(Y)) + (X)))
 
-%define INDEX_FROM_2D_INTS(X,Y,SIZE_X) (1 + (((SIZE_X)*((Y)%(SIZE_X))) + ((X)%(SIZE_X))))
+%define INDEX_FROM_2D_INTS(X,Y,SIZE_X,SIZE_Y) (1 + (((SIZE_X)*((Y)%(SIZE_Y))) + ((X)%(SIZE_X))))
 
 # Convert 3D coordinates into index, wrapping along all axes. Remember that lists are 1-indexed.
 %define INDEX_FROM_3D(X,Y,Z,SIZE_X,SIZE_Y,SIZE_Z) (1 + ((((SIZE_X)*(SIZE_Y)) * (floor(Z) % (SIZE_Z))) + (((SIZE_X)*(floor(Y) % (SIZE_Y))) + (floor(X) % (SIZE_X)))))

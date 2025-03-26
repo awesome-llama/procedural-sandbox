@@ -43,7 +43,7 @@ proc translate dx, dy, dz {
         repeat canvas_size_y {
             ix = (0-floor($dx));
             repeat canvas_size_x {
-                local index = INDEX_FROM_3D_CANVAS(ix, iy, iz, canvas_size_x, canvas_size_y);
+                local index = INDEX_FROM_3D(ix, iy, iz, canvas_size_x, canvas_size_y, canvas_size_z);
                 add canvas[index] to temp;
                 ix++;
             }
@@ -196,7 +196,7 @@ proc crop x, y, z, size_x, size_y, size_z {
         repeat $size_y {
             ix = $z;
             repeat $size_x {
-                local index = INDEX_FROM_3D_CANVAS(ix, iy, iz, canvas_size_x, canvas_size_y);
+                local index = INDEX_FROM_3D(ix, iy, iz, canvas_size_x, canvas_size_y, canvas_size_z);
                 add canvas[index] to temp;
                 ix++;
             }
