@@ -82,47 +82,72 @@ on "render ui" {
         tab_button tab_offset, 42, "Draw", "menu.draw";
     }
 
-    render_color_picker;
+    render_popup;
     
     switch_costume "icon";
 }
 
-%define CP_WIDTH 100
 
-proc render_color_picker {
-    # render the color picker. There should be variables storing its open state.
+proc render_popup {
     
-    if col_picker[1] {
-        # fence the picker if needed
-        if col_picker[2] < -240 {
-            col_picker[2] = -240;
-        } elif col_picker[2] > 240-CP_WIDTH {
-            col_picker[2] = 240-CP_WIDTH;
-        }
-        if col_picker[3] < -180 {
-            col_picker[3] = -180;
-        } elif col_picker[3] > 180 {
-            col_picker[3] = 180;
-        }
+    if UI_popup[1] {
+        
+        draw_UI_rect UI_popup[3], UI_popup[4], UI_popup[5]+1, UI_popup[6], 3, THEME_COL_OUTLINE, THEME_COL_BG;
 
-        draw_UI_rect col_picker[2], col_picker[3], CP_WIDTH+1, 80, 3, THEME_COL_OUTLINE, THEME_COL_BG;
-        # the original colour should still be previewed for matching
-        draw_UI_rect col_picker[2]+5, col_picker[3]-5, 45, 10, 0, UI_data[col_picker[4]+3], UI_data[col_picker[4]+3];
-        draw_UI_rect col_picker[2]+50, col_picker[3]-5, 45, 10, 0, col_picker[5], col_picker[5];
+        # render the different popups depending on data
+        if UI_popup[2] == "color picker" {
+            
+            # the original colour should still be previewed for matching
+            draw_UI_rect UI_popup[3]+5, UI_popup[4]-5, 45, 10, 0, UI_data[UI_popup[7]+3], UI_data[UI_popup[7]+3];
+            draw_UI_rect UI_popup[3]+50, UI_popup[4]-5, 45, 10, 0, UI_popup[8], UI_popup[8];
 
-        #set_pen_color "#ffffff";
-        #plainText col_picker[2]+5, col_picker[3]-30, 1, UI_data[col_picker[4]+3];
+            #set_pen_color "#ffffff";
+            #plainText UI_popup[3]+5, UI_popup[4]-30, 1, UI_data[UI_popup[4]+3];
 
-        # draw the UI elements depending on mode
-        # just do RGB for now?
+            # draw the UI elements depending on mode
+            # just do RGB for now?
 
-        #UI_data[clicked_element+3] = "0xff0000" + 0; # not typically possible in scratch
+            #UI_data[clicked_element+3] = "0xff0000" + 0; # not typically possible in scratch
+        
+        } elif UI_popup[2] == "compositor mode" {
+            
+        } elif UI_popup[2] == "section" {
+            
+        } elif UI_popup[2] == "dropdown" {
+            # not implemented, there aren't any dropdowns yet
+        } 
+
     }
-
-
 }
 
 
+# create a new popup with the common properties. Add extra list items after calling this for any custom data.
+proc create_popup type, x, y, width, height {
+    delete UI_popup;
+    add true to UI_popup; # truthy first item means the popup is showing
+    add $type to UI_popup;
+
+    # fence x
+    if ($x < -240) {
+        add -240 to UI_popup;
+    } elif ($x+$width > 240) {
+        add 240-$width to UI_popup;
+    } else {
+        add round($x) to UI_popup;
+    }
+
+    # fence y
+    if ($y > 180) {
+        add 180 to UI_popup;
+    } elif ($y-$height < -180) {
+        add -180+$height to UI_popup;
+    } else {
+        add round($y) to UI_popup;
+    }
+
+    add $width to UI_popup;
+    add $height to UI_popup;
+}
 
 
 proc render_gen_opt_panel x, y, width, height {
@@ -427,13 +452,11 @@ on "stage clicked" {
 
         } elif (UI_data[clicked_element] == "COLOR") {
             # open the picker if it is closed
-            delete col_picker;
-            add true to col_picker; # showing
-            add round(mouse_x()) to col_picker; # x
-            add round(mouse_y()) to col_picker; # y
-            add clicked_element to col_picker; # index
-            add UI_data[clicked_element+3] to col_picker; # combined preview decimal color
-            add "" to col_picker; # mode (reserved for now)
+            create_popup "color picker", round(mouse_x()), round(mouse_y()), 100, 80;
+            
+            add clicked_element to UI_popup; # index
+            add UI_data[clicked_element+3] to UI_popup; # combined preview decimal color
+            add "" to UI_popup; # mode (reserved for now)
 
             require_screen_refresh = true; # update previous picker, temporary solution
 
