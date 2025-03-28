@@ -214,3 +214,12 @@ proc setting_col_from_id element_id {
     add ROOT((col//256)%256/255, 2.2) to UI_return;
     add ROOT(col%256/255, 2.2) to UI_return;
 }
+
+proc set_setting_from_id element_id, value {
+    local element_index = $element_id in UI_data_element_id;
+    if (element_index == 0) { 
+        error "element id doesn't exist: " & $element_id; 
+    } else {
+        UI_data[UI_data_element_index[element_index]+3] = $value;
+    }
+}

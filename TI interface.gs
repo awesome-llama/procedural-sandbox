@@ -63,16 +63,16 @@ on "io.import_height_map.run" {
         broadcast_and_wait "read TextImage";
         
         delete UI_return;
-        setting_from_id("io.import_height_map.erase_canvas");
-        setting_from_id("io.import_height_map.size_z");
-        setting_col_from_id("io.import_height_map.new_color");
+        setting_from_id "io.import_height_map.erase_canvas";
+        setting_from_id "io.import_height_map.size_z";
+        setting_col_from_id "io.import_height_map.new_color";
 
-        setting_from_id("io.import_height_map.weight_r");
-        setting_from_id("io.import_height_map.weight_g");
-        setting_from_id("io.import_height_map.weight_b");
+        setting_from_id "io.import_height_map.weight_r";
+        setting_from_id "io.import_height_map.weight_g";
+        setting_from_id "io.import_height_map.weight_b";
 
-        setting_from_id("io.import_height_map.map_0");
-        setting_from_id("io.import_height_map.map_1");
+        setting_from_id "io.import_height_map.map_0";
+        setting_from_id "io.import_height_map.map_1";
 
         copy_TI_px_buffer_to_canvas_as_height_map UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6], UI_return[7], UI_return[8], UI_return[9], UI_return[10];
         require_composite = true;
@@ -128,8 +128,8 @@ on "io.import_color_map.run" {
         broadcast_and_wait "read TextImage";
 
         delete UI_return;
-        setting_from_id("io.import_color_map.resize_canvas");
-        setting_from_id("io.import_color_map.interpret_linear");
+        setting_from_id "io.import_color_map.resize_canvas";
+        setting_from_id "io.import_color_map.interpret_linear";
 
         read_TI_px_buffer_to_canvas_as_2D_color_map UI_return[1], UI_return[2];
         require_composite = true;

@@ -357,6 +357,9 @@ panels['fx.translate'] = Container([
         Value('X', 'fx.translate.dx', 0, -512, 512, -4096, 4096, snap_frac=1),
         Value('Y', 'fx.translate.dy', 0, -512, 512, -4096, 4096, snap_frac=1),
         Value('Z', 'fx.translate.dz', 0, -512, 512, -4096, 4096, snap_frac=1),
+        Separator(0),
+        Button('Set to 0', 'fx.translate.set_0'),
+        Button('Set half canvas x,y', 'fx.translate.set_half_canvas_xy'),
     ]),
     Button('Run', 'fx.translate.run'),
 ])
@@ -364,11 +367,15 @@ panels['fx.translate'] = Container([
 panels['fx.scale'] = Container([
     Label.title('Scale canvas'),
     Separator(),
-    Expander('Translation vector', '', True, [
+    Expander('Scale vector', '', True, [
         #Label('Fractional change in scale'), # TODO
         Value('X', 'fx.scale.dx', 1, 0.25, 4, -4096, 4096, snap_frac=1000),
         Value('Y', 'fx.scale.dy', 1, 0.25, 4, -4096, 4096, snap_frac=1000),
         Value('Z', 'fx.scale.dz', 1, 0.25, 4, -4096, 4096, snap_frac=1000),
+        Separator(0),
+        Button('Set to 0.5', 'fx.scale.set_x0.5'),
+        Button('Set to 1', 'fx.scale.set_x1'),
+        Button('Set to 2', 'fx.scale.set_x2'),
     ]),
     Button('Run', 'fx.scale.run'),
 ])

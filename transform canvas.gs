@@ -25,11 +25,23 @@ on "*" {
     crop_centered 10, 10, canvas_size_z;
 }
 
+
+on "fx.translate.set_0" {
+    set_setting_from_id "fx.translate.dx", 0;
+    set_setting_from_id "fx.translate.dy", 0;
+    set_setting_from_id "fx.translate.dz", 0;
+}
+
+on "fx.translate.set_half_canvas_xy" {
+    set_setting_from_id "fx.translate.dx", round(canvas_size_x/2);
+    set_setting_from_id "fx.translate.dy", round(canvas_size_y/2);
+}
+
 on "fx.translate.run" {
     delete UI_return;
-    setting_from_id("fx.translate.dx");
-    setting_from_id("fx.translate.dy");
-    setting_from_id("fx.translate.dz");
+    setting_from_id "fx.translate.dx";
+    setting_from_id "fx.translate.dy";
+    setting_from_id "fx.translate.dz";
 
     translate UI_return[1], UI_return[2], UI_return[3];
 }
@@ -55,11 +67,30 @@ proc translate dx, dy, dz {
     require_composite = true;
 }
 
+
+on "fx.scale.set_x0.5" {
+    set_setting_from_id "fx.scale.dx", 0.5;
+    set_setting_from_id "fx.scale.dy", 0.5;
+    set_setting_from_id "fx.scale.dz", 0.5;
+}
+
+on "fx.scale.set_x1" {
+    set_setting_from_id "fx.scale.dx", 1;
+    set_setting_from_id "fx.scale.dy", 1;
+    set_setting_from_id "fx.scale.dz", 1;
+}
+
+on "fx.scale.set_x2" {
+    set_setting_from_id "fx.scale.dx", 2;
+    set_setting_from_id "fx.scale.dy", 2;
+    set_setting_from_id "fx.scale.dz", 2;
+}
+
 on "fx.scale.run" {
     delete UI_return;
-    setting_from_id("fx.scale.dx");
-    setting_from_id("fx.scale.dy");
-    setting_from_id("fx.scale.dz");
+    setting_from_id "fx.scale.dx";
+    setting_from_id "fx.scale.dy";
+    setting_from_id "fx.scale.dz";
 
     scale UI_return[1], UI_return[2], UI_return[3];
 }
@@ -84,8 +115,8 @@ proc scale scale_x, scale_y, scale_z {
         }
         iz += step_z;
     }
-    canvas_size_x = round(canvas_size_z * $scale_x);
-    canvas_size_y = round(canvas_size_z * $scale_y);
+    canvas_size_x = round(canvas_size_x * $scale_x);
+    canvas_size_y = round(canvas_size_y * $scale_y);
     canvas_size_z = round(canvas_size_z * $scale_z);
 
     _write_temp_lists_to_canvas;

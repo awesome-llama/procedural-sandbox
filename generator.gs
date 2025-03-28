@@ -27,11 +27,11 @@ on "*" {
 
 on "io.new_canvas.run"{
     delete UI_return;
-    setting_from_id("io.new_canvas.size_x");
-    setting_from_id("io.new_canvas.size_y");
-    setting_from_id("io.new_canvas.size_z");
-    setting_from_id("io.new_canvas.include_base");
-    setting_from_id("io.new_canvas.base_col");
+    setting_from_id "io.new_canvas.size_x";
+    setting_from_id "io.new_canvas.size_y";
+    setting_from_id "io.new_canvas.size_z";
+    setting_from_id "io.new_canvas.include_base";
+    setting_from_id "io.new_canvas.base_col";
     
     # no custom block needed
     canvas_size_x = UI_return[1];
@@ -48,12 +48,12 @@ on "io.new_canvas.run"{
 
 on "gen.eca.run" {
     delete UI_return;
-    setting_from_id("gen.eca.size_x");
-    setting_from_id("gen.eca.size_y");
-    setting_from_id("gen.eca.rule");
-    setting_from_id("gen.eca.random_initial_condition");
-    setting_from_id("gen.eca.state_0_col");
-    setting_from_id("gen.eca.state_1_col");
+    setting_from_id "gen.eca.size_x";
+    setting_from_id "gen.eca.size_y";
+    setting_from_id "gen.eca.rule";
+    setting_from_id "gen.eca.random_initial_condition";
+    setting_from_id "gen.eca.state_0_col";
+    setting_from_id "gen.eca.state_1_col";
     generate_elementary_cellular_automata UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6];
 }
 proc generate_elementary_cellular_automata size_x, size_y, rule, random_start, state_0_col, state_1_col {
@@ -124,13 +124,13 @@ proc generate_elementary_cellular_automata size_x, size_y, rule, random_start, s
 
 on "gen.extruded_grid.run" {
     delete UI_return;
-    setting_from_id("gen.extruded_grid.cell_count");
-    setting_from_id("gen.extruded_grid.cell_size");
-    setting_from_id("gen.extruded_grid.cell_spacing");
-    setting_from_id("gen.extruded_grid.max_height");
-    setting_from_id("gen.extruded_grid.jitter_fac");
-    setting_from_id("gen.extruded_grid.col1");
-    setting_from_id("gen.extruded_grid.col2");
+    setting_from_id "gen.extruded_grid.cell_count";
+    setting_from_id "gen.extruded_grid.cell_size";
+    setting_from_id "gen.extruded_grid.cell_spacing";
+    setting_from_id "gen.extruded_grid.max_height";
+    setting_from_id "gen.extruded_grid.jitter_fac";
+    setting_from_id "gen.extruded_grid.col1";
+    setting_from_id "gen.extruded_grid.col2";
     generate_extruded_grid UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6], UI_return[7];
 }
 proc generate_extruded_grid cell_count, cell_size, cell_spacing, max_height, jitter_fac, col1, col2 {
@@ -162,14 +162,14 @@ proc generate_extruded_grid cell_count, cell_size, cell_spacing, max_height, jit
 
 on "gen.maze.run" {
     delete UI_return;
-    setting_from_id("gen.maze.cell_count");
-    setting_from_id("gen.maze.cell_size");
-    setting_from_id("gen.maze.wall_thickness");
-    setting_from_id("gen.maze.wall_height");
-    setting_from_id("gen.maze.pertubation");
+    setting_from_id "gen.maze.cell_count";
+    setting_from_id "gen.maze.cell_size";
+    setting_from_id "gen.maze.wall_thickness";
+    setting_from_id "gen.maze.wall_height";
+    setting_from_id "gen.maze.pertubation";
 
-    setting_from_id("gen.maze.ground_col");
-    setting_from_id("gen.maze.wall_col");
+    setting_from_id "gen.maze.ground_col";
+    setting_from_id "gen.maze.wall_col";
     generate_maze UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6], UI_return[7]; 
 }
 
@@ -458,14 +458,14 @@ proc generate_grad {
 
 on "fx.recolor.run" {
     delete UI_return;
-    setting_from_id("fx.recolor.weight_r");
-    setting_from_id("fx.recolor.weight_g");
-    setting_from_id("fx.recolor.weight_b");
-    setting_from_id("fx.recolor.map_0");
-    setting_from_id("fx.recolor.map_1");
-    setting_from_id("fx.recolor.col_0");
-    setting_from_id("fx.recolor.col_1");
-    setting_from_id("fx.recolor.use_sRGB");
+    setting_from_id "fx.recolor.weight_r";
+    setting_from_id "fx.recolor.weight_g";
+    setting_from_id "fx.recolor.weight_b";
+    setting_from_id "fx.recolor.map_0";
+    setting_from_id "fx.recolor.map_1";
+    setting_from_id "fx.recolor.col_0";
+    setting_from_id "fx.recolor.col_1";
+    setting_from_id "fx.recolor.use_sRGB";
     recolor UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6], UI_return[7], UI_return[8];
 }
 # remaps colors
