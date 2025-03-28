@@ -43,6 +43,10 @@ onkey "6" {
     require_composite = true;
 }
 
+onkey "7" {
+    compositor_mode = CompositorMode.NORMAL;
+    require_composite = true;
+}
 
 
 ################################
@@ -97,6 +101,10 @@ proc composite {
         generate_pass_topmost;
         composite_penetration;
 
+    } elif (compositor_mode == CompositorMode.NORMAL) {
+        generate_pass_topmost;
+        composite_normal 1;
+    
     } else {}
 
     # make combined values
@@ -264,6 +272,63 @@ proc composite_penetration {
         render_cache_2_g[i] = penetration_val;
         render_cache_3_b[i] = penetration_val;
         i++;
+    }
+}
+
+# heightmap of the topmost non-transparent voxel, normalised to greyscale 0-1
+%define NRM_KERNEL_X(DX,DY,WX) \
+dx += WX*(render_cache_topmost[INDEX_FROM_2D_INTS(ix+(DX), iy+(DY), canvas_size_x, canvas_size_y)] - h);
+
+%define NRM_KERNEL_Y(DX,DY,WY) \
+dy += WY*(render_cache_topmost[INDEX_FROM_2D_INTS(ix+(DX), iy+(DY), canvas_size_x, canvas_size_y)] - h);
+
+%define NRM_KERNEL_XY(DX,DY,WX,WY) \
+local kernel_h = (render_cache_topmost[INDEX_FROM_2D_INTS(ix+(DX), iy+(DY), canvas_size_x, canvas_size_y)] - h);\
+dx += WX*kernel_h;\
+dy += WY*kernel_h;\
+
+%define W_EDGE 0.25
+%define W_CORNER 0.125
+
+proc composite_normal intensity {
+    iy = 0;
+    repeat (canvas_size_y) {
+        ix = 0;
+        repeat (canvas_size_x) {
+            i = INDEX_FROM_2D_NOWRAP_INTS(ix, iy, canvas_size_x);
+
+            local dx = 0;
+            local dy = 0;
+            local h = render_cache_topmost[i]; # height of current
+            
+            # x
+            NRM_KERNEL_X(-1,0,W_EDGE)
+            NRM_KERNEL_X(1,0,-W_EDGE)
+            
+            # y
+            NRM_KERNEL_Y(0,-1,W_EDGE)
+            NRM_KERNEL_Y(0,1,-W_EDGE)
+
+            # corners
+            NRM_KERNEL_XY(1,1,-W_CORNER,-W_CORNER)
+            NRM_KERNEL_XY(-1,1,W_CORNER,-W_CORNER)
+            NRM_KERNEL_XY(1,-1,-W_CORNER,W_CORNER)
+            NRM_KERNEL_XY(-1,-1,W_CORNER,W_CORNER)
+
+            # weight
+            dx *= $intensity;
+            dy *= $intensity;
+
+            # normalise
+            local len = VEC3_LEN(dx,dy,1)*2; # multiply by 2 because normal map centers at 0.5
+
+            render_cache_1_r[i] = 0.5+(dx/len);
+            render_cache_2_g[i] = 0.5+(dy/len);
+            render_cache_3_b[i] = 0.5+(1/len);
+
+            ix++;
+        }
+        iy++;
     }
 }
 
