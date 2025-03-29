@@ -41,6 +41,10 @@ list UI_return; # for user-triggered operations that need additional data retrie
 # color picker, section viewer, dropdown menu, etc. Temporary and in front of everything. They only store temporary data.
 list UI_popup; 
 
+# 2-digit hexadecimal lookup table
+list hex_lookup = file ```hex_lookup.txt```;
+
+
 on "initalise" {
     dev = round((username() == "awesome-llama")); # developer mode
     

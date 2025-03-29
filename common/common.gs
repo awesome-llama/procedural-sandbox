@@ -185,6 +185,32 @@ func HSV_to_RGB(h, s, v) RGB {
     }
 }
 
+# HSV to RGB base 10 number 0-16777215
+func HSV_to_number(h, s, v) {
+    local hue = ($h % 1)*6; # [0,6)
+    local sat = CLAMP_0_1($s); # [0,1]
+    local val = POSITIVE_CLAMP($v); # [0,+Inf)
+    if (hue < 3) {
+        if (hue < 1) {
+            return COMBINE_RGB_CHANNELS(val, val*(1-(sat*(1-(hue%1)))), val*(1-sat));
+        } elif (hue < 2) {
+            return COMBINE_RGB_CHANNELS(val*(1-(sat*(hue%1))), val, val*(1-sat));
+        } else {
+            return COMBINE_RGB_CHANNELS(val*(1-sat), val, val*(1-(sat*(1-(hue%1)))));
+        }
+    } else {
+        if (hue < 4) {
+            return COMBINE_RGB_CHANNELS(val*(1-sat), val*(1-(sat*(hue%1))), val);
+        } elif (hue < 5) {
+            return COMBINE_RGB_CHANNELS(val*(1-(sat*(1-(hue%1)))), val*(1-sat), val);
+        } else {
+            return COMBINE_RGB_CHANNELS(val, val*(1-sat), val*(1-(sat*(hue%1))));
+        }
+    }
+}
+
+
+
 
 ################################
 #             Misc             #
@@ -210,9 +236,9 @@ proc setting_col_from_id element_id {
     local element_index = $element_id in UI_data_element_id;
     if (element_index == 0) { error "element id doesn't exist: " & $element_id; }
     local col = UI_data[UI_data_element_index[element_index]+3];
-    add ROOT((col//65536)%256/255, 2.2) to UI_return;
-    add ROOT((col//256)%256/255, 2.2) to UI_return;
-    add ROOT(col%256/255, 2.2) to UI_return;
+    add (col//65536)%256/255 to UI_return;
+    add (col//256)%256/255 to UI_return;
+    add col%256/255 to UI_return;
 }
 
 proc set_setting_from_id element_id, value {
@@ -222,4 +248,9 @@ proc set_setting_from_id element_id, value {
     } else {
         UI_data[UI_data_element_index[element_index]+3] = $value;
     }
+}
+
+
+func rgb_num_to_hex_code(col) {
+    return (hex_lookup[($col//65536)%256 + 1] & hex_lookup[($col//256)%256 + 1] & hex_lookup[$col%256 + 1]);
 }

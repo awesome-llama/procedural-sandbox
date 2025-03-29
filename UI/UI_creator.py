@@ -61,6 +61,11 @@ class Value(Element):
     def to_flat_list(self, ids_list):
         add_id(ids_list, self.items[2], -2)
         return list(self.items)
+    
+    @staticmethod
+    def fac(label, id, value=0):
+        # create a button that sets the page
+        return Value(label, id, value, 0, 1, hard_min=0, hard_max=1, snap_frac=1000)
 
 class Color(Element):
     def __init__(self, label='Color', id='', color="808080"):
@@ -108,6 +113,34 @@ class Container(Element):
 ################################
 
 panels = {}
+
+
+################################
+#      High-speed access       #
+################################
+
+panels['popup.color_picker'] = Container([
+    Label.title('Color picker'),
+    Color('Color', 'popup.color_picker.color', 'ff3000'),
+    Value('Mode', 'popup.color_picker.mode', 0, 0, 3, snap_frac=1), # 0=HSV, 1=RGB
+    
+    Value.fac('Hue', 'popup.color_picker.hue', 0.1),
+    Value.fac('Sat', 'popup.color_picker.sat', 0.4),
+    Value.fac('Val', 'popup.color_picker.val', 1.0),
+    End(),
+    
+    Value.fac('R', 'popup.color_picker.r', 0.1), # it's easier to be decimal
+    Value.fac('G', 'popup.color_picker.g', 0.8),
+    Value.fac('B', 'popup.color_picker.b', 1.0),
+    End(),
+
+    Button('Set from hex code', 'popup.color_picker.set_from_hex'),
+    Button('Cancel', 'popup.color_picker.cancel'),
+    Button('Apply', 'popup.color_picker.apply'),
+    End(),
+])
+
+
 
 ################################
 #             Tabs             #
