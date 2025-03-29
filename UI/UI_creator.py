@@ -47,7 +47,7 @@ class Button(Element):
 class Checkbox(Element):
     def __init__(self, label, id='', checked=False):
         super().__init__()
-        self.items = ['CHECKBOX', label, id, int(checked)]
+        self.items = ['CHECKBOX', label, id, int(checked), int(checked)]
 
     def to_flat_list(self, ids_list):
         add_id(ids_list, self.items[2], -2)
@@ -56,7 +56,7 @@ class Checkbox(Element):
 class Value(Element):
     def __init__(self, label, id='', value=0, soft_min=0, soft_max=1, hard_min="-Infinity", hard_max="Infinity", snap_frac=100):
         super().__init__()
-        self.items = ['VALUE', label, id, value, soft_min, soft_max, hard_min, hard_max, snap_frac]
+        self.items = ['VALUE', label, id, value, value, soft_min, soft_max, hard_min, hard_max, snap_frac]
 
     def to_flat_list(self, ids_list):
         add_id(ids_list, self.items[2], -2)
@@ -66,7 +66,7 @@ class Color(Element):
     def __init__(self, label='Color', id='', color="808080"):
         if len(color) != 6: raise ValueError('color must be 6 hexadecimal digits')
         super().__init__()
-        self.items = ['COLOR', label, id, int(color, 16)]
+        self.items = ['COLOR', label, id, int(color, 16), int(color, 16)]
 
     def to_flat_list(self, ids_list):
         add_id(ids_list, self.items[2], -2)

@@ -312,7 +312,7 @@ proc render_element index, x, y, width {
             pen_up;
         }
         UI_y -= LINEHIGHT;
-        render_element $index+4, $x, UI_y, $width;
+        render_element $index+5, $x, UI_y, $width;
 
     } elif (elem_type == "VALUE") {
         # [type, label, id, val, soft_min, soft_max, hard_min, hard_max, step]
@@ -329,7 +329,7 @@ proc render_element index, x, y, width {
         plainText (($x+$width)-INPUT_WIDTH)+3, $y-TXT_Y_OFFSET, 1, UI_data[$index+3];
         
         UI_y -= LINEHIGHT;
-        render_element $index+9, $x, UI_y, $width;
+        render_element $index+10, $x, UI_y, $width;
 
         if (IS_HOVERED()) {
             set_pen_color THEME_COL_OUTLINE_HIGHLIGHT;
@@ -350,7 +350,7 @@ proc render_element index, x, y, width {
             draw_UI_rect (($x+$width)-32), ($y-1), 32, LINEHIGHT-2, 4, THEME_COL_OUTLINE, UI_data[$index+3];
         }
         UI_y -= LINEHIGHT;
-        render_element $index+4, $x, UI_y, $width;
+        render_element $index+5, $x, UI_y, $width;
 
     } elif (elem_type == "EXPANDER") {
         # [type, label, id, opened, height, size_of_self (number of items)]
@@ -437,23 +437,30 @@ on "stage clicked" {
                 }
                 if mouse_moved { # only edit the slider if the mouse moved
                     if key_pressed("shift") {
-                        set_value_element clicked_element, start_value + abs(UI_data[clicked_element+5]-UI_data[clicked_element+4])*(unfenced_mouse_x-start_mouse_x)/1200, 1;
+                        delta_per_px = abs(UI_data[clicked_element+6]-UI_data[clicked_element+5])/1200;
                     } else {
-                        set_value_element clicked_element, start_value + abs(UI_data[clicked_element+5]-UI_data[clicked_element+4])*(unfenced_mouse_x-start_mouse_x)/300, 1;
+                        delta_per_px = abs(UI_data[clicked_element+6]-UI_data[clicked_element+5])/300;
                     }
+                    if (UI_data[clicked_element+9] != 0) {
+                        # require that the slider changes with max 20px of mouse movement
+                        if (delta_per_px*UI_data[clicked_element+9] < 0.05) {
+                            delta_per_px = 0.05*UI_data[clicked_element+9];
+                        }
+                    }
+                    
+                    set_value_element clicked_element, start_value + delta_per_px*(unfenced_mouse_x-start_mouse_x), true;
                 }
             }
             if not mouse_moved {
                 ask "set \"" & UI_data[clicked_element+1] & "\" to number";
                 if (answer() != "") {
-                    set_value_element clicked_element, answer()+0, 0;
+                    set_value_element clicked_element, answer()+0, false;
                 }
             }
 
         } elif (UI_data[clicked_element] == "COLOR") {
-            # open the picker if it is closed
+            # open the picker
             create_popup "color picker", round(mouse_x()), round(mouse_y()), 100, 80;
-            
             add clicked_element to UI_popup; # index
             add UI_data[clicked_element+3] to UI_popup; # combined preview decimal color
             add "" to UI_popup; # mode (reserved for now)
@@ -466,7 +473,7 @@ on "stage clicked" {
     
     } elif (UI_last_hovered_group == "tabs") {
 
-        if clicked_element != "" {
+        if (clicked_element != "") {
             UI_current_panel = clicked_element;
         }
 
@@ -504,30 +511,65 @@ on "stage clicked" {
     }
 }
 
+# for the VALUE element
 proc set_value_element index, val, use_soft_limits {
     # snap
-    if UI_data[$index+8] == 0 {
+    if (UI_data[$index+9] == 0) {
         UI_data[$index+3] = $val; # no snapping
     } else {
-        UI_data[$index+3] = round(($val)*UI_data[$index+8])/UI_data[$index+8]; # multiply then divide is more robust
+        UI_data[$index+3] = round(($val)*UI_data[$index+9])/UI_data[$index+9]; # multiply then divide is more robust
     }
 
     # clamp
     if ($use_soft_limits == 1) {
-        if (UI_data[$index+3] < UI_data[$index+4]) {
-            UI_data[$index+3] = UI_data[$index+4];
-        } elif (UI_data[$index+3] > UI_data[$index+5]) {
+        if (UI_data[$index+3] < UI_data[$index+5]) {
             UI_data[$index+3] = UI_data[$index+5];
+        } elif (UI_data[$index+3] > UI_data[$index+6]) {
+            UI_data[$index+3] = UI_data[$index+6];
         }
     }
     # clamp hard limits (must run)
-    if (UI_data[$index+3] < UI_data[$index+6]) {
-        UI_data[$index+3] = UI_data[$index+6];
-    } elif (UI_data[$index+3] > UI_data[$index+7]) {
+    if (UI_data[$index+3] < UI_data[$index+7]) {
         UI_data[$index+3] = UI_data[$index+7];
+    } elif (UI_data[$index+3] > UI_data[$index+8]) {
+        UI_data[$index+3] = UI_data[$index+8];
     }
 }
 
+
+%define HOVERED_IS_INPUT_ELEM() ((UI_data[UI_last_hovered_element] == "CHECKBOX") or (UI_data[UI_last_hovered_element] == "VALUE") or (UI_data[UI_last_hovered_element] == "COLOR"))
+
+# reset hovered element
+onkey "r" {
+    if (UI_last_hovered_group == "modular panel") {
+        if (HOVERED_IS_INPUT_ELEM()) {
+            UI_data[UI_last_hovered_element+3] = UI_data[UI_last_hovered_element+4];
+        }
+    }
+}
+
+# copy value
+onkey "c" {
+    if (UI_last_hovered_group == "modular panel") {
+        if (HOVERED_IS_INPUT_ELEM()) {
+            UI_clipboard_source = UI_last_hovered_element;
+        } else {
+            UI_clipboard_source = 0;
+        }
+    }
+}
+
+# paste value
+onkey "v" {
+    if (UI_last_hovered_group == "modular panel") {
+        if (HOVERED_IS_INPUT_ELEM()) {
+            if (UI_data[UI_last_hovered_element] == UI_data[UI_clipboard_source]) {
+                set_value_element UI_last_hovered_element, UI_data[UI_clipboard_source+3], false;
+            }
+        }
+        
+    }
+}
 
 
 ################################
