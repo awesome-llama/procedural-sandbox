@@ -70,7 +70,7 @@ on "render ui" {
     
     UI_check_touching_mouse -240, 180, UI_sidebar_width, 360, "side bar", "";
     if (UI_sidebar_width > 8) {
-        render_gen_opt_panel -236, 180-TOP_BAR_HEIGHT, UI_sidebar_width-8, 360-TOP_BAR_HEIGHT; # scroll bar might be needed
+        render_side_bar -236, 180-TOP_BAR_HEIGHT, UI_sidebar_width-8, 360-TOP_BAR_HEIGHT; # scroll bar might be needed
 
         # tabs
         draw_rect -240, 180-TOP_BAR_HEIGHT, UI_sidebar_width, TOP_BAR_HEIGHT, 0, "#271D33";
@@ -88,6 +88,17 @@ on "render ui" {
 }
 
 
+proc render_side_bar x, y, width, height {
+    local curr_index = (UI_current_panel in UI_data_panels);
+    if curr_index > 0 {
+        render_modular_element UI_data_panels[curr_index + 1], $x, $y, $width, "side bar";
+    }
+}
+
+
+# get the index of a UI element
+%define UI_DATA_INDEX(ID) UI_data_element_index[(ID) in UI_data_element_id]
+
 proc render_popup {
     
     if UI_popup[1] { # is showing
@@ -102,31 +113,25 @@ proc render_popup {
             local CP_col = get_setting_from_id("popup.color_picker.color");
             draw_UI_rect UI_popup[3]+5, UI_popup[4]-5, 90, 10, 0, CP_col, CP_col;
 
-            # the original colour should still be previewed for matching
+            # draw original colour preview
             draw_UI_rect UI_popup[3]+5, UI_popup[4]-5, 20, 10, 0, UI_data[UI_popup[7]+3], UI_data[UI_popup[7]+3];
 
-
             if (get_setting_from_id("popup.color_picker.mode") == 0) { # HSV
-                render_popup_slider "popup.color_picker.hue", UI_popup[3]+5, UI_popup[4]-32-(0*16), 90;
-                render_popup_slider "popup.color_picker.sat", UI_popup[3]+5, UI_popup[4]-32-(1*16), 90;
-                render_popup_slider "popup.color_picker.val", UI_popup[3]+5, UI_popup[4]-32-(2*16), 90;
+                render_modular_element UI_DATA_INDEX("popup.color_picker.hue"), UI_popup[3]+5, UI_popup[4]-32, UI_popup[5]-10, "popup";
 
                 # update color
                 set_setting_from_id "popup.color_picker.color", HSV_to_number(\
                     get_setting_from_id("popup.color_picker.hue"), \
                     get_setting_from_id("popup.color_picker.sat"), \
                     get_setting_from_id("popup.color_picker.val"));
-                
             }
 
-            set_pen_color "#ffffff";
+            set_pen_color THEME_COL_TEXT;
             plainText UI_popup[3]+5, UI_popup[4]-26, 1, "#" & rgb_num_to_hex_code(CP_col);
             #plainText UI_popup[3]+5, UI_popup[4]-37, 1, "dec: " & CP_col; # testing
 
-            render_popup_button "popup.color_picker.cancel", UI_popup[3]+5, UI_popup[4]-80, 40;
-            render_popup_button "popup.color_picker.apply", UI_popup[3]+55, UI_popup[4]-80, 45;
-
-            #UI_data[clicked_element+3] = "0xff0000" + 0; # not typically possible in scratch
+            render_modular_element UI_DATA_INDEX("popup.color_picker.cancel"), UI_popup[3]+5, UI_popup[4]-90, 48, "popup";
+            render_modular_element UI_DATA_INDEX("popup.color_picker.apply"), UI_popup[3]+57, UI_popup[4]-90, 48, "popup";
         
         } elif UI_popup[2] == "compositor mode" {
             
@@ -140,41 +145,34 @@ proc render_popup {
 }
 
 
-# custom renderer using modular elements
-proc render_popup_slider element_id, x, y, width {
-    
-    # get the id in the modular ui
-    local element_index = $element_id in UI_data_element_id;
-    if (element_index == 0) {
-        error "popup slider not found: " & $element_id;
-        stop_this_script;
-    }
-    element_index = UI_data_element_index[element_index]; # lookup the index for UI_data
-
-    UI_check_touching_mouse $x, $y, $width, 14, "popup", element_index;
-
-    # box outline
-    if (UI_last_hovered_group == "popup" and UI_last_hovered_element == element_index) {
-        draw_UI_rect $x, $y, $width, 14, 2, THEME_COL_OUTLINE_HIGHLIGHT, THEME_COL_FILL;
-    } else {
-        draw_UI_rect $x, $y, $width, 14, 2, THEME_COL_OUTLINE, THEME_COL_FILL;
-    }
-
-    # draw the fill indicator
-    draw_rect $x+1, $y-13, round(($width-3)*UI_data[element_index+3]), 11, 0, "#505050"; 
-
-    # text
-    set_pen_color "#ffffff";
-    plainText $x+5, $y-10, 1, (UI_data[element_index+1] & ": " & UI_data[element_index+3]);
+on "popup.color_picker.cancel" {
+    delete UI_popup;
+    require_screen_refresh = true;
 }
 
 
-proc render_popup_button element_id, x, y, width {
-    # get the id in the modular ui
-    local element_index = $element_id in UI_data_element_id;
-    if (element_index == 0) {
-        error "popup button not found: " & $element_id;
-        stop_this_script;
+on "popup.color_picker.apply" {
+    if (UI_popup[2] == "color picker") {
+        # copy to actual col element
+        UI_data[UI_popup[7]+3] = get_setting_from_id("popup.color_picker.color");
+    } else {
+        error "not a color picker";
+    }
+    delete UI_popup;
+    require_screen_refresh = true;
+}
+
+
+proc set_color_picker_sliders_from_color {
+    if (get_setting_from_id("popup.color_picker.mode") == 0) { # HSV
+        # convert RGB num to HSV
+        local CP_col = get_setting_from_id("popup.color_picker.color");
+        local HSV col_picker_hsv = RGB_to_HSV((CP_col//65536)%256/255, (CP_col//256)%256/255, CP_col%256/255);
+        set_value_element UI_DATA_INDEX("popup.color_picker.hue"), col_picker_hsv.h, false;
+        set_value_element UI_DATA_INDEX("popup.color_picker.sat"), col_picker_hsv.s, false;
+        set_value_element UI_DATA_INDEX("popup.color_picker.val"), col_picker_hsv.v, false;
+    } else {
+        error "not implemented";
     }
 }
 
@@ -205,14 +203,6 @@ proc create_popup type, x, y, width, height {
 
     add $width to UI_popup; # 5.
     add $height to UI_popup; # 6.
-}
-
-
-proc render_gen_opt_panel x, y, width, height {
-    local curr_index = (UI_current_panel in UI_data_panels);
-    if curr_index > 0 {
-        render_modular_element UI_data_panels[curr_index + 1], $x, $y, $width;
-    }
 }
 
 
@@ -293,25 +283,25 @@ proc top_bar_button id, costume, x, y, enabled {
 
 on "render viewport text" { render_viewport_text; }
 proc render_viewport_text {
-    set_pen_color "#ffffff";
+    set_pen_color THEME_COL_TEXT;
     plainText UI_sidebar_width-235, 150, 1, ("canvas size: " & ((((canvas_size_x & ", ") & canvas_size_y) & ", ") & canvas_size_z));
     plainText UI_sidebar_width-235, 140, 1, ("timer: " & floor(( 100 *((86400 * days_since_2000()) % 1))));
     
 }
 
 # modular panel specific
-%define IS_HOVERED_MODULAR_PANEL() (UI_last_hovered_group == "modular panel") and (UI_last_hovered_element == $index)
+%define IS_HOVERED_MODULAR_PANEL() (UI_last_hovered_group == $panel_id) and (UI_last_hovered_element == $index)
 
 # modular panel
 # recursive procedure, renders each modular element and then the next until an END is found.
-proc render_modular_element index, x, y, width {
+proc render_modular_element index, x, y, width, panel_id {
     # index is to select what part of the list to read from
 
     UI_y = $y; # used as a return var for container next, required
     local elem_type = UI_data[$index];
     if (elem_type[1] == "#") {
         # spacing or comment, skip
-        render_modular_element $index+1, $x, UI_y, $width;
+        render_modular_element $index+1, $x, UI_y, $width, $panel_id;
 
     } elif (elem_type == "LABEL") {
         # [type, text]
@@ -322,7 +312,7 @@ proc render_modular_element index, x, y, width {
         }
         plainText $x, $y-TXT_Y_OFFSET, 1, UI_data[$index+1];
         UI_y -= LINEHIGHT;
-        render_modular_element $index+3, $x, UI_y, $width;
+        render_modular_element $index+3, $x, UI_y, $width, $panel_id;
 
     } elif (elem_type == "SEPARATOR") {
         # [type, line_width_fac, height]
@@ -335,11 +325,11 @@ proc render_modular_element index, x, y, width {
             pen_up;
         }
         UI_y -= UI_data[$index+2];
-        render_modular_element $index+3, $x, UI_y, $width;
+        render_modular_element $index+3, $x, UI_y, $width, $panel_id;
 
     } elif (elem_type == "BUTTON") {
         # [type, label, id, button_clicked]
-        UI_check_touching_mouse $x, $y+1, $width, LINEHIGHT, "modular panel", $index;
+        UI_check_touching_mouse $x, $y+1, $width, LINEHIGHT, $panel_id, $index;
         if (IS_HOVERED_MODULAR_PANEL()) {
             draw_UI_rect $x, $y-1, $width, LINEHIGHT, 4, THEME_COL_OUTLINE_HIGHLIGHT, "#656565";
         } else {
@@ -349,14 +339,14 @@ proc render_modular_element index, x, y, width {
         set_pen_color THEME_COL_TEXT;
         plainText $x+8, $y-TXT_Y_OFFSET, 1, UI_data[$index+1];
         UI_y -= (LINEHIGHT+2);
-        render_modular_element $index+6, $x, UI_y, $width;
+        render_modular_element $index+6, $x, UI_y, $width, $panel_id;
 
     } elif (elem_type == "CHECKBOX") {
-        # [type, label, id, checked]
+        # [type, label, id, checked, default]
         set_pen_color THEME_COL_TEXT;
         plainText $x, $y-TXT_Y_OFFSET, 1, UI_data[$index+1];
         
-        UI_check_touching_mouse (($x+$width)-LINEHIGHT), $y, LINEHIGHT, LINEHIGHT, "modular panel", $index;
+        UI_check_touching_mouse (($x+$width)-LINEHIGHT), $y, LINEHIGHT, LINEHIGHT, $panel_id, $index;
         if (IS_HOVERED_MODULAR_PANEL()) {
             draw_UI_rect (($x+$width)-12), ($y-2), 12, 12, 2, THEME_COL_OUTLINE_HIGHLIGHT, THEME_COL_FILL_HIGHLIGHT;
         } else {
@@ -371,37 +361,60 @@ proc render_modular_element index, x, y, width {
             pen_up;
         }
         UI_y -= LINEHIGHT;
-        render_modular_element $index+5, $x, UI_y, $width;
+        render_modular_element $index+5, $x, UI_y, $width, $panel_id;
 
     } elif (elem_type == "VALUE") {
-        # [type, label, id, val, soft_min, soft_max, hard_min, hard_max, step]
+        # [type, label, id, val, default, soft_min, soft_max, hard_min, hard_max, step, shape]
 
-        UI_check_touching_mouse (($x+$width)-INPUT_WIDTH), $y, INPUT_WIDTH, LINEHIGHT, "modular panel", $index;
-        if (IS_HOVERED_MODULAR_PANEL()) {
-            draw_UI_rect (($x+$width)-INPUT_WIDTH), ($y-1), INPUT_WIDTH, LINEHIGHT-2, 2, THEME_COL_OUTLINE_HIGHLIGHT, THEME_COL_FILL_HIGHLIGHT;
+        if (UI_data[$index+10] == "full") {
+            UI_check_touching_mouse $x, $y, $width, LINEHIGHT, $panel_id, $index;
+            if (IS_HOVERED_MODULAR_PANEL()) {
+                draw_UI_rect $x, ($y-1), $width, LINEHIGHT-2, 2, THEME_COL_OUTLINE_HIGHLIGHT, THEME_COL_FILL_HIGHLIGHT;
+            } else {
+                draw_UI_rect $x, ($y-1), $width, LINEHIGHT-2, 2, THEME_COL_OUTLINE, THEME_COL_FILL;
+            }
+
+            # draw the fill indicator
+            draw_rect $x+1, $y-(LINEHIGHT-2), round(($width-3)*UNLERP(UI_data[$index+5],UI_data[$index+6],UI_data[$index+3])), LINEHIGHT-5, 0, "#505050"; 
+
+            # text
+            set_pen_color THEME_COL_TEXT;
+            plainText $x+5, $y-TXT_Y_OFFSET, 1, (UI_data[$index+1] & ": " & UI_data[$index+3]);
+
+            if (IS_HOVERED_MODULAR_PANEL()) {
+                set_pen_color THEME_COL_OUTLINE_HIGHLIGHT;
+                draw_triangle $x-2, $y-8, 180;
+                draw_triangle $x+$width+2, $y-8, 0;
+            }
+
         } else {
-            draw_UI_rect (($x+$width)-INPUT_WIDTH), ($y-1), INPUT_WIDTH, LINEHIGHT-2, 2, THEME_COL_OUTLINE, THEME_COL_FILL;
+            UI_check_touching_mouse (($x+$width)-INPUT_WIDTH), $y, INPUT_WIDTH, LINEHIGHT, $panel_id, $index;
+            if (IS_HOVERED_MODULAR_PANEL()) {
+                draw_UI_rect (($x+$width)-INPUT_WIDTH), ($y-1), INPUT_WIDTH, LINEHIGHT-2, 2, THEME_COL_OUTLINE_HIGHLIGHT, THEME_COL_FILL_HIGHLIGHT;
+            } else {
+                draw_UI_rect (($x+$width)-INPUT_WIDTH), ($y-1), INPUT_WIDTH, LINEHIGHT-2, 2, THEME_COL_OUTLINE, THEME_COL_FILL;
+            }
+            
+            set_pen_color THEME_COL_TEXT;
+            plainText $x, $y-TXT_Y_OFFSET, 1, UI_data[$index+1];
+            plainText (($x+$width)-INPUT_WIDTH)+3, $y-TXT_Y_OFFSET, 1, UI_data[$index+3];
+            
+            if (IS_HOVERED_MODULAR_PANEL()) {
+                set_pen_color THEME_COL_OUTLINE_HIGHLIGHT;
+                draw_triangle $x+$width+1, $y-8, 0;
+                draw_triangle $x+$width-INPUT_WIDTH-2, $y-8, 180;
+            }
         }
-        
-        set_pen_color THEME_COL_TEXT;
-        plainText $x, $y-TXT_Y_OFFSET, 1, UI_data[$index+1];
-        plainText (($x+$width)-INPUT_WIDTH)+3, $y-TXT_Y_OFFSET, 1, UI_data[$index+3];
-        
-        UI_y -= LINEHIGHT;
-        render_modular_element $index+10, $x, UI_y, $width;
 
-        if (IS_HOVERED_MODULAR_PANEL()) {
-            set_pen_color THEME_COL_OUTLINE_HIGHLIGHT;
-            draw_triangle $x+$width+1, $y-8, 0;
-            draw_triangle $x+$width-INPUT_WIDTH-2, $y-8, 180;
-        }
+        UI_y -= LINEHIGHT;
+        render_modular_element $index+11, $x, UI_y, $width, $panel_id;
     
     } elif (elem_type == "COLOR") {
-        # [type, label, id, color]
+        # [type, label, id, color, default]
         set_pen_color THEME_COL_TEXT;
         plainText $x, $y-TXT_Y_OFFSET, 1, UI_data[$index+1];
         
-        UI_check_touching_mouse (($x+$width)-32), $y, 32, LINEHIGHT, "modular panel", $index;
+        UI_check_touching_mouse (($x+$width)-32), $y, 32, LINEHIGHT, $panel_id, $index;
         if (IS_HOVERED_MODULAR_PANEL()) {
             draw_UI_rect (($x+$width)-32), ($y-1), 32, LINEHIGHT-2, 4, THEME_COL_OUTLINE_HIGHLIGHT, UI_data[$index+3];
         } else {
@@ -409,14 +422,14 @@ proc render_modular_element index, x, y, width {
         }
 
         UI_y -= LINEHIGHT;
-        render_modular_element $index+5, $x, UI_y, $width;
+        render_modular_element $index+5, $x, UI_y, $width, $panel_id;
 
     } elif (elem_type == "EXPANDER") {
         # [type, label, id, opened, height, size_of_self (number of items)]
 
         if (UI_data[$index+3] == 1) { # open
             UI_y -= (LINEHIGHT+2);
-            render_modular_element $index+5, $x+5, UI_y, $width-10; # first child
+            render_modular_element $index+5, $x+5, UI_y, $width-10, $panel_id; # first child
             
             UI_y -= 3; # line (from bottom of rect) then margin
 
@@ -435,7 +448,7 @@ proc render_modular_element index, x, y, width {
             UI_y -= (LINEHIGHT+2);
         }
 
-        UI_check_touching_mouse $x, $y-1, $width, LINEHIGHT, "modular panel", $index;
+        UI_check_touching_mouse $x, $y-1, $width, LINEHIGHT, $panel_id, $index;
         if (IS_HOVERED_MODULAR_PANEL()) {
             draw_UI_rect $x, $y-1, $width, LINEHIGHT, 3, THEME_COL_OUTLINE_HIGHLIGHT, "#444444";
         } else {
@@ -451,7 +464,7 @@ proc render_modular_element index, x, y, width {
             draw_triangle $x+8, ($y-9), 0;
         }
 
-        render_modular_element $index+UI_data[$index+4], $x, UI_y, $width; # next
+        render_modular_element $index+UI_data[$index+4], $x, UI_y, $width, $panel_id; # next
     }
 }
 
@@ -466,25 +479,20 @@ proc UI_check_touching_mouse x, y, width, height, id1, id2 {
 
 
 
-
 on "stage clicked" {
     stop_other_scripts; # stop previous ask block
     clicked_element = UI_last_hovered_element; # alias
 
     if (UI_last_hovered_group == "popup") {
-        # special handling for popup elements
-        #clicked_popup;
-        #stop_this_script;
+        # pass
     } else {
         # close popup and continue checking for other UI elements
-        if UI_popup[1] { # is showing
-            require_screen_refresh = true;
-        }
+        if UI_popup[1] { require_screen_refresh = true; } # is showing
         delete UI_popup;
     }
 
 
-    if (UI_last_hovered_group == "modular panel" or UI_last_hovered_group == "popup") {
+    if (UI_last_hovered_group == "side bar" or UI_last_hovered_group == "popup") {
         if (UI_data[clicked_element] == "BUTTON") {
             # check for button behvaviour type
             if (UI_data[clicked_element+3] == "set_page") {
@@ -532,10 +540,11 @@ on "stage clicked" {
 
         } elif (UI_data[clicked_element] == "COLOR") {
             # open the picker
-            create_popup "color picker", round(mouse_x()), round(mouse_y()), 100, 120;
+            create_popup "color picker", round(mouse_x()), round(mouse_y()), 110, 120;
             add clicked_element to UI_popup; # 7. index
             
-            #set_setting_from_id "popup.color_picker.color", UI_data[clicked_element+3];
+            set_setting_from_id "popup.color_picker.color", UI_data[clicked_element+3];
+            set_color_picker_sliders_from_color;
 
             require_screen_refresh = true; # update previous picker, temporary solution
 
@@ -613,7 +622,7 @@ proc set_value_element index, val, use_soft_limits {
 
 # reset hovered element
 onkey "r" {
-    if (not mouse_down() and UI_last_hovered_group == "modular panel") {
+    if (not mouse_down() and (UI_last_hovered_group == "side bar" or UI_last_hovered_group == "popup")) {
         if (HOVERED_IS_INPUT_ELEM()) {
             UI_data[UI_last_hovered_element+3] = UI_data[UI_last_hovered_element+4];
         }
@@ -622,7 +631,7 @@ onkey "r" {
 
 # copy value
 onkey "c" {
-    if (not mouse_down() and UI_last_hovered_group == "modular panel") {
+    if (not mouse_down() and (UI_last_hovered_group == "side bar" or UI_last_hovered_group == "popup")) {
         if (HOVERED_IS_INPUT_ELEM()) {
             UI_clipboard_source = UI_last_hovered_element;
         } else {
@@ -633,7 +642,7 @@ onkey "c" {
 
 # paste value
 onkey "v" {
-    if (not mouse_down() and UI_last_hovered_group == "modular panel") {
+    if (not mouse_down() and (UI_last_hovered_group == "side bar" or UI_last_hovered_group == "popup")) {
         if (HOVERED_IS_INPUT_ELEM()) {
             if (UI_data[UI_last_hovered_element] == UI_data[UI_clipboard_source]) {
                 set_value_element UI_last_hovered_element, UI_data[UI_clipboard_source+3], false;

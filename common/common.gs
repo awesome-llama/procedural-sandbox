@@ -43,6 +43,13 @@ struct XYZ {
     z
 }
 
+# HSV channels
+struct HSV {
+    h,
+    s,
+    v
+}
+
 enum CompositorMode {
     NONE = "",
     COLOR = "COLOR", # RGB & Alpha only
@@ -209,6 +216,54 @@ func HSV_to_number(h, s, v) {
     }
 }
 
+
+# RGB to HSV
+# https://math.stackexchange.com/questions/556341/rgb-to-hsv-color-conversion-algorithm
+func RGB_to_HSV(r, g, b) HSV {
+    if ($r < $b) {
+        if ($r < $g) {
+            if ($g < $b) {
+                local minc = $r;
+                local maxc = $b;
+            } else {
+                local minc = $r;
+                local maxc = $g;
+            }
+        } else {
+            local minc = $g;
+            local maxc = $b;
+        }
+    } else {
+        if ($g < $b) {
+            local minc = $g;
+            local maxc = $r;
+        } else {
+            if ($r < $g) {
+                local minc = $b;
+                local maxc = $g;
+            } else {
+                local minc = $b;
+                local maxc = $r;
+            }
+        }
+    }
+    
+    if (minc == maxc) {
+        return HSV { h:0, s:0, v:maxc }; # greyscale
+    }
+    
+    local rc = (maxc-$r) / (maxc-minc);
+    local gc = (maxc-$g) / (maxc-minc);
+    local bc = (maxc-$b) / (maxc-minc);
+    if ($r == maxc) {
+        local h = bc-gc;
+    } elif ($g == maxc) {
+        local h = 2+rc-bc;
+    } else {
+        local h = 4+gc-rc;
+    }
+    return HSV { h:((h/6)%1), s:((maxc-minc)/maxc), v:maxc };
+}
 
 
 

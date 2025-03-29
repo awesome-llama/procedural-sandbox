@@ -76,6 +76,8 @@ on "initalise" {
     UI_sidebar_width = 160; # set to 0 to hide
 
     UI_clipboard_source = 0;
+    
+    delete UI_popup;
 }
 
 

@@ -54,18 +54,18 @@ class Checkbox(Element):
         return list(self.items)
 
 class Value(Element):
-    def __init__(self, label, id='', value=0, soft_min=0, soft_max=1, hard_min="-Infinity", hard_max="Infinity", snap_frac=100):
+    def __init__(self, label, id='', value=0, soft_min=0, soft_max=1, hard_min="-Infinity", hard_max="Infinity", snap_frac=100, shape='sep'):
         super().__init__()
-        self.items = ['VALUE', label, id, value, value, soft_min, soft_max, hard_min, hard_max, snap_frac]
+        self.items = ['VALUE', label, id, value, value, soft_min, soft_max, hard_min, hard_max, snap_frac, shape]
 
     def to_flat_list(self, ids_list):
         add_id(ids_list, self.items[2], -2)
         return list(self.items)
     
     @staticmethod
-    def fac(label, id, value=0):
+    def fraction(label, id, value=0):
         # create a button that sets the page
-        return Value(label, id, value, 0, 1, hard_min=0, hard_max=1, snap_frac=1000)
+        return Value(label, id, value, 0, 1, hard_min=0, hard_max=1, snap_frac=1000, shape='full')
 
 class Color(Element):
     def __init__(self, label='Color', id='', color="808080"):
@@ -124,18 +124,20 @@ panels['popup.color_picker'] = Container([
     Color('Color', 'popup.color_picker.color', 'ff3000'),
     Value('Mode', 'popup.color_picker.mode', 0, 0, 3, snap_frac=1), # 0=HSV, 1=RGB
     
-    Value.fac('Hue', 'popup.color_picker.hue', 0.1),
-    Value.fac('Sat', 'popup.color_picker.sat', 0.4),
-    Value.fac('Val', 'popup.color_picker.val', 1.0),
+    Value.fraction('Hue', 'popup.color_picker.hue', 0.1),
+    Value.fraction('Sat', 'popup.color_picker.sat', 0.4),
+    Value.fraction('Val', 'popup.color_picker.val', 1.0),
     End(),
     
-    Value.fac('R', 'popup.color_picker.r', 0.1), # it's easier to be decimal
-    Value.fac('G', 'popup.color_picker.g', 0.8),
-    Value.fac('B', 'popup.color_picker.b', 1.0),
+    Value.fraction('R', 'popup.color_picker.r', 0.1), # it's easier to be decimal
+    Value.fraction('G', 'popup.color_picker.g', 0.8),
+    Value.fraction('B', 'popup.color_picker.b', 1.0),
     End(),
 
     Button('Set from hex code', 'popup.color_picker.set_from_hex'),
+    End(),
     Button('Cancel', 'popup.color_picker.cancel'),
+    End(),
     Button('Apply', 'popup.color_picker.apply'),
     End(),
 ])
@@ -206,7 +208,7 @@ panels['io.new_canvas'] = Container([
     ]),
     Expander('Base layer', '', True, [
         Checkbox('Include base layer', 'io.new_canvas.include_base', False),
-        Color('Wall color', 'io.new_canvas.base_col', '808080'),
+        Color('Base color', 'io.new_canvas.base_col', '808080'),
     ]),
     Button('Create new canvas', 'io.new_canvas.run'),
 ])
