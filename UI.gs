@@ -111,7 +111,7 @@ proc render_popup {
 
             # draw new proposed color
             local CP_col = get_setting_from_id("popup.color_picker.color");
-            draw_UI_rect UI_popup[3]+5, UI_popup[4]-5, 90, 10, 0, CP_col, CP_col;
+            draw_UI_rect UI_popup[3]+5, UI_popup[4]-5, 100, 10, 0, CP_col, CP_col;
 
             # draw original colour preview
             draw_UI_rect UI_popup[3]+5, UI_popup[4]-5, 20, 10, 0, UI_data[UI_popup[7]+3], UI_data[UI_popup[7]+3];
@@ -128,10 +128,9 @@ proc render_popup {
 
             set_pen_color THEME_COL_TEXT;
             plainText UI_popup[3]+5, UI_popup[4]-26, 1, "#" & rgb_num_to_hex_code(CP_col);
-            #plainText UI_popup[3]+5, UI_popup[4]-37, 1, "dec: " & CP_col; # testing
 
-            render_modular_element UI_DATA_INDEX("popup.color_picker.cancel"), UI_popup[3]+5, UI_popup[4]-90, 48, "popup";
-            render_modular_element UI_DATA_INDEX("popup.color_picker.apply"), UI_popup[3]+57, UI_popup[4]-90, 48, "popup";
+            render_modular_element UI_DATA_INDEX("popup.color_picker.cancel"), UI_popup[3]+5, UI_popup[4]-98, 48, "popup";
+            render_modular_element UI_DATA_INDEX("popup.color_picker.apply"), UI_popup[3]+57, UI_popup[4]-98, 48, "popup";
         
         } elif UI_popup[2] == "compositor mode" {
             
