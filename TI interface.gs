@@ -33,23 +33,31 @@ on "io.load_canvas.run" {
 }
 proc copy_TI_px_buffer_to_canvas {
     canvas_size_x = TI_image_size_x;
-    canvas_size_y = TI_image_size_y;
     canvas_size_z = TI_header[1+("!_z" in TI_header)];
+
     if (canvas_size_z == "") {
-        if (TI_image_size_y % TI_image_size_x == 0) {
-            warn "assuming canvas is a square";
-            canvas_size_y = TI_image_size_x;
-            canvas_size_z = floor(TI_image_size_y / TI_image_size_x);
-        } else {
-            error "canvas size is unknown";
-            stop_this_script;
-        }
+        error "canvas size z is unknown";
+        canvas_size_y = TI_image_size_y;
+        canvas_size_z = 1;
+        UI_current_panel = "fx.reshape_canvas";
+        broadcast "fx.reshape_canvas.get_current_dimensions";
+    } else {
+        canvas_size_y = TI_image_size_y / canvas_size_z;
     }
+    
+    if (canvas_size_y%1 > 0) {
+        error "canvas is of wrong shape (not divisible)";
+        canvas_size_y = TI_image_size_y;
+        canvas_size_z = 1;
+        UI_current_panel = "fx.reshape_canvas";
+        broadcast "fx.reshape_canvas.get_current_dimensions";
+    }
+    
     delete canvas;
     i = 1;
     repeat (length TI_1_r) {
-        # transform sRGB into linear
-        add voxel {opacity:floor(TI_4_a[i]*255), r:floor(TI_1_r[i]*255), g:floor(TI_2_g[i]*255), b:floor(TI_3_b[i]*255)} to canvas;
+        
+        add voxel {opacity:TI_4_a[i]/255, r:TI_1_r[i]/255, g:TI_2_g[i]/255, b:TI_3_b[i]/255} to canvas;
         i++;
     }
 }
@@ -197,13 +205,13 @@ proc copy_canvas_to_TI_px_buffer {
 
 
 on "io.export_rendered_canvas.run" {
-    copy_render_buffer_to_TI_buffer;
+    copy_render_buffer_to_TI_px_buffer;
     broadcast_and_wait "write TextImage";
     delete copy_this;
     add TextImage_file to copy_this;
     show copy_this;
 }
-proc copy_render_buffer_to_TI_buffer {
+proc copy_render_buffer_to_TI_px_buffer {
     # The render buffer is 2D and opaque
     
     TI_image_size_x = canvas_size_x;

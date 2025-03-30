@@ -16,7 +16,7 @@ class Element:
         return list(self.items)
 
 class Label(Element):
-    def __init__(self, text, color=''):
+    def __init__(self, text, color=''): # color should start with hash as it's fed directly into the pen color
         super().__init__()
         self.items = ['LABEL', text, color]
 
@@ -65,8 +65,13 @@ class Value(Element):
     
     @staticmethod
     def fraction(label, id, value=0):
-        # create a button that sets the page
+        # create a slider always between 0-1
         return Value(label, id, value, 0, 1, hard_min=0, hard_max=1, snap_frac=1000, shape='full')
+    
+    @staticmethod
+    def canvas_size(label, id, value=64):
+        # create a value representing a canvas dimension. Always >= 0.
+        return Value(label, id, value, 1, 512, hard_min=0, hard_max=4096, snap_frac=1)
 
 class Color(Element):
     def __init__(self, label='Color', id='', color="808080"):
@@ -161,11 +166,17 @@ panels['menu.io'] = Container([
     Button('Load canvas', 'io.load_canvas.run'), # run button, no page
     Separator(0, 5),
     Button('Export rendered canvas', 'io.export_rendered_canvas.run'), # run button, no page
+    
     Separator(0, 5),
+
+    Label('Textures', '#baaaba'),
     btn_menu_set_page('Import height map', 'io.import_height_map'),
     btn_menu_set_page('Import color map', 'io.import_color_map'),
     btn_menu_set_page('Export height map', 'io.export_height_map'),
+    
     Separator(0, 5),
+
+    Label('3D models', '#baaaba'),
     Button('Export .ply point cloud', 'io.export_ply.run'), # run button, no page
 ])
 
@@ -191,6 +202,8 @@ panels['menu.fx'] = Container([
     btn_menu_set_page('Crop XY', 'fx.crop_xy'),
     btn_menu_set_page('Mirror', 'fx.mirror'),
     btn_menu_set_page('Gradient recolor', 'fx.recolor'),
+    Separator(0, 5),
+    btn_menu_set_page('Reshape', 'fx.reshape_canvas'),
 ])
 
 panels['menu.draw'] = Container([
@@ -207,9 +220,9 @@ panels['io.new_canvas'] = Container([
     Label.title('New empty canvas'),
     Separator(),
     Expander('Dimensions', '', True, [
-        Value('Size X', 'io.new_canvas.size_x', 64, 1, 512, 0, 4096, snap_frac=1),
-        Value('Size Y', 'io.new_canvas.size_y', 64, 1, 512, 0, 4096, snap_frac=1),
-        Value('Size Z', 'io.new_canvas.size_z', 16, 1, 512, 0, 4096, snap_frac=1),
+        Value.canvas_size('Size X', 'io.new_canvas.size_x', 64),
+        Value.canvas_size('Size Y', 'io.new_canvas.size_y', 64),
+        Value.canvas_size('Size Z', 'io.new_canvas.size_z', 16),
     ]),
     Expander('Base layer', '', True, [
         Checkbox('Include base layer', 'io.new_canvas.include_base', False),
@@ -234,7 +247,7 @@ panels['io.import_height_map'] = Container([
     Separator(),
     Expander('Canvas', '', True, [
         Checkbox('Erase canvas', 'io.import_height_map.erase_canvas', True),
-        Value('New size Z', 'io.import_height_map.size_z', 16, 1, 512, 0, 4096, snap_frac=1),
+        Value.canvas_size('New size Z', 'io.import_height_map.size_z', 16),
         Color('New voxel color', 'io.import_height_map.new_color', 'aaaaaa'),
     ]),
     Expander('Channel weights', '', False, [
@@ -258,6 +271,7 @@ panels['io.import_color_map'] = Container([
     Separator(),
     Checkbox('Resize canvas if needed', 'io.import_color_map.resize_canvas', True),
     Checkbox('Interpret as linear', 'io.import_color_map.interpret_linear', False),
+    Separator(0),
     Button('Input color map', 'io.import_color_map.run'),
 ])
 
@@ -280,9 +294,9 @@ panels['gen.city'] = Container([
     Label.title('Generate city'),
     Separator(),
     Expander('Canvas', '', True, [
-        Value('Size X', 'gen.city.size_x', 64, 1, 512, 0, 4096, snap_frac=1),
-        Value('Size Y', 'gen.city.size_y', 64, 1, 512, 0, 4096, snap_frac=1),
-        Value('Size Z', 'gen.city.size_z', 16, 1, 512, 0, 4096, snap_frac=1),
+        Value.canvas_size('Size X', 'gen.city.size_x', 64),
+        Value.canvas_size('Size Y', 'gen.city.size_y', 64),
+        Value.canvas_size('Size Z', 'gen.city.size_z', 16),
     ]),
     Expander('Color', '', True, [
         Color('Ground color', 'gen.city.ground_col', 'aaaaaa'),
@@ -294,8 +308,8 @@ panels['gen.eca'] = Container([
     Label.title('Elementary cellular automata'),
     Separator(),
     Expander('Canvas', '', True, [
-        Value('Size X', 'gen.eca.size_x', 64, 1, 512, 0, 4096, snap_frac=1),
-        Value('Size Y', 'gen.eca.size_y', 64, 1, 512, 0, 4096, snap_frac=1),
+        Value.canvas_size('Size X', 'gen.eca.size_x', 64),
+        Value.canvas_size('Size Y', 'gen.eca.size_y', 64),
     ]),
     Expander('Variant', '', True, [
         Label('Suggested rules:'),
@@ -315,9 +329,9 @@ panels['gen.erosion'] = Container([
     Label.title('Hydraulic erosion'),
     Separator(),
     Expander('Initial terrain', '', True, [
-        Value('Size X', 'gen.erosion.size_x', 64, 1, 512, 0, 4096, snap_frac=1),
-        Value('Size Y', 'gen.erosion.size_y', 64, 1, 512, 0, 4096, snap_frac=1),
-        Value('Size Z', 'gen.erosion.size_z', 16, 1, 512, 0, 4096, snap_frac=1),
+        Value.canvas_size('Size X', 'gen.erosion.size_x', 64),
+        Value.canvas_size('Size Y', 'gen.erosion.size_y', 64),
+        Value.canvas_size('Size Z', 'gen.erosion.size_z', 16),
         #Checkbox('Perlin', 'perlin'),
         Button('Generate', 'gen.erosion.run.generate'),
     ]),
@@ -375,9 +389,9 @@ panels['gen.pipelines'] = Container([
     Label.title('Generate pipelines'),
     Separator(),
     Expander('Canvas', '', True, [
-        Value('Size X', 'gen.pipelines.size_x', 64, 1, 512, 0, 4096, snap_frac=1),
-        Value('Size Y', 'gen.pipelines.size_y', 64, 1, 512, 0, 4096, snap_frac=1),
-        Value('Size Z', 'gen.pipelines.size_z', 16, 1, 512, 0, 4096, snap_frac=1),
+        Value.canvas_size('Size X', 'gen.pipelines.size_x', 64),
+        Value.canvas_size('Size Y', 'gen.pipelines.size_y', 64),
+        Value.canvas_size('Size Z', 'gen.pipelines.size_z', 16),
     ]),
     Expander('Color', '', True, [
         Color('Ground color', 'gen.pipelines.ground_col', 'aaaaaa'),
@@ -391,6 +405,7 @@ panels['gen.wheel'] = Container([
     Value('Rim radius', 'gen.wheel.rim_radius', 25, 1, 512, 0, 4096, snap_frac=1),
     Value('Sidewall height', 'gen.wheel.sidewall_height', 9, 1, 512, 0, 4096, snap_frac=1),
     Value('Tire width', 'gen.wheel.tire_width', 8, 1, 512, 0, 4096, snap_frac=1),
+    Separator(0),
     Button('Run', 'gen.wheel.run'),
 ])
 
@@ -437,8 +452,8 @@ panels['fx.rotate'] = Container([
 panels['fx.crop_xy'] = Container([
     Label.title('Crop XY'),
     Separator(),
-    Value('Size X', 'fx.crop_xy.size_x', 64, 1, 512, 0, 4096, snap_frac=1),
-    Value('Size Y', 'fx.crop_xy.size_y', 64, 1, 512, 0, 4096, snap_frac=1),
+    Value.canvas_size('Size X', 'fx.crop_xy.size_x', 64),
+    Value.canvas_size('Size Y', 'fx.crop_xy.size_y', 64),
     Checkbox('Centered', 'fx.crop_xy.centered', True),
     Button('Crop', 'fx.crop_xy.run'),
 ])
@@ -478,6 +493,20 @@ panels['fx.recolor'] = Container([
     Button('Run', 'fx.recolor.run'),
 ])
 
+panels['fx.reshape_canvas'] = Container([
+    Label.title('Reshape canvas'),
+    Separator(),
+    Label('Nondestructive.'),
+    Separator(0),
+    Button('Get current dimensions', 'fx.reshape_canvas.get_current_dimensions'),
+    Value.canvas_size('Size X', 'fx.reshape_canvas.size_x', ''),
+    Value.canvas_size('Size Y', 'fx.reshape_canvas.size_y', ''),
+    Value.canvas_size('Size Z', 'fx.reshape_canvas.size_z', ''),
+    Checkbox('Allow any size (dangerous)', 'fx.reshape_canvas.any_size', False),
+    Separator(0),
+    Button('Set dimensions', 'fx.reshape_canvas.run'),
+])
+
 ################################
 #             Misc             #
 ################################
@@ -487,6 +516,7 @@ panels['project.settings'] = Container([
     Separator(),
     Checkbox('Dark background', 'project.settings.bg_dark', True),
     Value('Slider sensitivity', 'project.settings.slider_sensitivity', 200, 10, 1000, 0, 10000, snap_frac=0.1),
+    Separator(0),
     Button('Apply changes', 'project.settings.apply'),
 ])
 

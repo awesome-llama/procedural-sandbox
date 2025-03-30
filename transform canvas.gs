@@ -204,6 +204,31 @@ proc crop_centered size_x, size_y, size_z {
 }
 
 
+on "fx.reshape_canvas.get_current_dimensions" {
+    set_setting_from_id "fx.reshape_canvas.size_x", canvas_size_x;
+    set_setting_from_id "fx.reshape_canvas.size_y", canvas_size_y;
+    set_setting_from_id "fx.reshape_canvas.size_z", canvas_size_z;
+}
+
+on "fx.reshape_canvas.run" {
+    delete UI_return;
+    setting_from_id "fx.reshape_canvas.size_x";
+    setting_from_id "fx.reshape_canvas.size_y";
+    setting_from_id "fx.reshape_canvas.size_z";
+    setting_from_id "fx.reshape_canvas.any_size";
+    
+    # no procedure needed
+    if UI_return[4] or (UI_return[1] * UI_return[2] * UI_return[3] == length(canvas)) {
+        canvas_size_x = UI_return[1];
+        canvas_size_y = UI_return[2];
+        canvas_size_z = UI_return[3];
+        require_composite = true;
+    } else {
+        error "does not fit";
+    }
+}
+
+
 
 # final cleanup after the operation was run
 proc _write_temp_lists_to_canvas  {
