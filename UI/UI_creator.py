@@ -189,6 +189,7 @@ panels['menu.fx'] = Container([
     btn_menu_set_page('Scale', 'fx.scale'),
     Separator(0, 5),
     btn_menu_set_page('Crop XY', 'fx.crop_xy'),
+    btn_menu_set_page('Mirror', 'fx.mirror'),
     btn_menu_set_page('Gradient recolor', 'fx.recolor'),
 ])
 
@@ -440,6 +441,19 @@ panels['fx.crop_xy'] = Container([
     Value('Size Y', 'fx.crop_xy.size_y', 64, 1, 512, 0, 4096, snap_frac=1),
     Checkbox('Centered', 'fx.crop_xy.centered', True),
     Button('Crop', 'fx.crop_xy.run'),
+])
+
+panels['fx.mirror'] = Container([
+    Label.title('Mirror'),
+    Separator(),
+    Expander('Flip (nondestructive)', '', True, [
+        Button('Flip X', 'fx.mirror.flip_x'),
+        Button('Flip Y', 'fx.mirror.flip_y'),
+    ]),
+    Expander('Mirror (destructive)', '', True, [
+        Button('Mirror X', 'fx.mirror.mirror_x'),
+        Button('Mirror Y', 'fx.mirror.mirror_y'),
+    ]),
 ])
 
 panels['fx.recolor'] = Container([

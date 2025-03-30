@@ -122,6 +122,14 @@ on "fx.rotate.rotate_-90" {
 on "fx.rotate.rotate_+90" {
     resample_xy 0, canvas_size_y-1, 0, -1, canvas_size_y, 1, 0, canvas_size_x;
 }
+
+on "fx.mirror.flip_x" {
+    resample_xy canvas_size_x-1, 0, -1, 0, canvas_size_x, 0, 1, canvas_size_y;
+}
+on "fx.mirror.flip_y" {
+    resample_xy 0, canvas_size_y-1, 1, 0, canvas_size_x, 0, -1, canvas_size_y;
+}
+
 # iterate over the canvas using start, stop, step for the x and y axes. 
 # origin (ox, oy), 1st axis vector (ax, ay) 1st axis size, 2nd axis vector (bx, by), 2nd axis size
 proc resample_xy origin_x, origin_y, ax, ay, a_size, bx, by, b_size {
@@ -133,9 +141,7 @@ proc resample_xy origin_x, origin_y, ax, ay, a_size, bx, by, b_size {
         repeat ($b_size) {
             ix = 0;
             repeat ($a_size) {
-                local tx = $origin_x + ix*$ax + iy*$bx;
-			    local ty = $origin_y + ix*$ay + iy*$by;
-                local index = INDEX_FROM_3D_CANVAS(tx, ty, iz, canvas_size_x, canvas_size_y);
+                local index = INDEX_FROM_3D_CANVAS(($origin_x + ix*$ax + iy*$bx), ($origin_y + ix*$ay + iy*$by), iz, canvas_size_x, canvas_size_y);
                 add canvas[index] to temp_canvas;
                 ix++;
             }
@@ -144,49 +150,13 @@ proc resample_xy origin_x, origin_y, ax, ay, a_size, bx, by, b_size {
         iz++;
     }
 
-    # swap
+    # set canvas size
     canvas_size_x = $a_size;
     canvas_size_y = $b_size;
 
     _write_temp_lists_to_canvas;
     require_composite = true;
 }
-
-
-# copy one side to the other
-proc mirror_x keep_lower {
-    # no additional list required
-
-    iz = 0;
-    repeat canvas_size_z {
-        iy = 0;
-        repeat canvas_size_y {
-            local row_index = ((canvas_size_x * canvas_size_y) * iz) + (canvas_size_x * iy);
-            ix = 0;
-            if $keep_lower {
-                repeat canvas_size_x//2 {
-                    local source_index = row_index + ix + 1;
-                    local dest_index = row_index + (canvas_size_x-ix);
-                    canvas[dest_index] = canvas[source_index];
-                    ix++;
-                }
-            } else {
-                repeat canvas_size_x//2 {
-                    local source_index = row_index + (canvas_size_x-ix);
-                    local dest_index = row_index + ix + 1;
-                    canvas[dest_index] = canvas[source_index];
-                    ix++;
-                }
-            }
-            iy++;
-        }
-        iz++;
-    }
-    
-    # no rewrite or temp list required
-    require_composite = true;
-}
-
 
 
 on "fx.crop_xy.run" {
@@ -232,6 +202,7 @@ proc crop x, y, z, size_x, size_y, size_z {
 proc crop_centered size_x, size_y, size_z {
     crop floor((canvas_size_x-$size_x)/2), floor((canvas_size_y-$size_y)/2), floor((canvas_size_z-$size_z)/2), $size_x, $size_y, $size_z;
 }
+
 
 
 # final cleanup after the operation was run

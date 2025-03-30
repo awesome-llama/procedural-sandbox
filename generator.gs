@@ -1123,3 +1123,75 @@ proc radial_array dist_offset {
     # TODO
 }
 
+
+
+on "fx.mirror.mirror_x" {
+    glbfx_mirror_x true;
+}
+on "fx.mirror.mirror_y" {
+    glbfx_mirror_y true;
+}
+
+# copy one side to the other
+proc glbfx_mirror_x keep_lower {
+    # no additional list required
+
+    iz = 0;
+    repeat canvas_size_z {
+        iy = 0;
+        repeat canvas_size_y {
+            local row_index = ((canvas_size_x * canvas_size_y) * iz) + (canvas_size_x * iy);
+            ix = 0;
+            if $keep_lower {
+                repeat canvas_size_x//2 {
+                    local source_index = row_index + ix + 1;
+                    local dest_index = row_index + (canvas_size_x-ix);
+                    canvas[dest_index] = canvas[source_index];
+                    ix++;
+                }
+            } else {
+                repeat canvas_size_x//2 {
+                    local source_index = row_index + (canvas_size_x-ix);
+                    local dest_index = row_index + ix + 1;
+                    canvas[dest_index] = canvas[source_index];
+                    ix++;
+                }
+            }
+            iy++;
+        }
+        iz++;
+    }
+    
+    # no rewrite or temp list required
+    require_composite = true;
+}
+
+# copy one side to the other
+proc glbfx_mirror_y keep_lower {
+    # no additional list required
+
+    iz = 0;
+    repeat canvas_size_z {
+        iy = 0;
+        repeat canvas_size_y//2 {
+            ix = 0;
+            repeat canvas_size_x {
+                # TODO make more efficient
+                if $keep_lower {
+                    local source_index = INDEX_FROM_3D_NOWRAP_INTS(ix, iy, iz, canvas_size_x, canvas_size_y);
+                    local dest_index = INDEX_FROM_3D_NOWRAP_INTS(ix, canvas_size_y-1-iy, iz, canvas_size_x, canvas_size_y); 
+                } else {
+                    local source_index = INDEX_FROM_3D_NOWRAP_INTS(ix, canvas_size_y-1-iy, iz, canvas_size_x, canvas_size_y);
+                    local dest_index = INDEX_FROM_3D_NOWRAP_INTS(ix, iy, iz, canvas_size_x, canvas_size_y); 
+                }
+                canvas[dest_index] = canvas[source_index];
+                ix++;
+            }
+            iy++;
+        }
+        iz++;
+    }
+    
+    # no rewrite or temp list required
+    require_composite = true;
+}
