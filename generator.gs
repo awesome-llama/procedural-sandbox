@@ -1125,13 +1125,7 @@ proc radial_array dist_offset {
 
 
 
-on "fx.mirror.mirror_x" {
-    glbfx_mirror_x true;
-}
-on "fx.mirror.mirror_y" {
-    glbfx_mirror_y true;
-}
-
+on "fx.mirror.mirror_x" { glbfx_mirror_x true; }
 # copy one side to the other
 proc glbfx_mirror_x keep_lower {
     # no additional list required
@@ -1166,6 +1160,7 @@ proc glbfx_mirror_x keep_lower {
     require_composite = true;
 }
 
+on "fx.mirror.mirror_y" { glbfx_mirror_y true; }
 # copy one side to the other
 proc glbfx_mirror_y keep_lower {
     # no additional list required
@@ -1174,18 +1169,17 @@ proc glbfx_mirror_y keep_lower {
     repeat canvas_size_z {
         iy = 0;
         repeat canvas_size_y//2 {
-            ix = 0;
+            if $keep_lower {
+                local source_index = INDEX_FROM_3D_NOWRAP_INTS(0, iy, iz, canvas_size_x, canvas_size_y);
+                local dest_index = INDEX_FROM_3D_NOWRAP_INTS(0, canvas_size_y-1-iy, iz, canvas_size_x, canvas_size_y); 
+            } else {
+                local source_index = INDEX_FROM_3D_NOWRAP_INTS(0, canvas_size_y-1-iy, iz, canvas_size_x, canvas_size_y);
+                local dest_index = INDEX_FROM_3D_NOWRAP_INTS(0, iy, iz, canvas_size_x, canvas_size_y); 
+            }
             repeat canvas_size_x {
-                # TODO make more efficient
-                if $keep_lower {
-                    local source_index = INDEX_FROM_3D_NOWRAP_INTS(ix, iy, iz, canvas_size_x, canvas_size_y);
-                    local dest_index = INDEX_FROM_3D_NOWRAP_INTS(ix, canvas_size_y-1-iy, iz, canvas_size_x, canvas_size_y); 
-                } else {
-                    local source_index = INDEX_FROM_3D_NOWRAP_INTS(ix, canvas_size_y-1-iy, iz, canvas_size_x, canvas_size_y);
-                    local dest_index = INDEX_FROM_3D_NOWRAP_INTS(ix, iy, iz, canvas_size_x, canvas_size_y); 
-                }
                 canvas[dest_index] = canvas[source_index];
-                ix++;
+                source_index++;
+                dest_index++;
             }
             iy++;
         }
@@ -1195,3 +1189,4 @@ proc glbfx_mirror_y keep_lower {
     # no rewrite or temp list required
     require_composite = true;
 }
+
