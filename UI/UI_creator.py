@@ -177,6 +177,7 @@ panels['menu.gen'] = Container([
     btn_menu_set_page('Erosion', 'gen.erosion'),
     btn_menu_set_page('Maze', 'gen.maze'),
     btn_menu_set_page('Pipelines', 'gen.pipelines'),
+    btn_menu_set_page('Wheel', 'gen.wheel'),
 ])
 
 panels['menu.fx'] = Container([
@@ -380,6 +381,14 @@ panels['gen.pipelines'] = Container([
     Button('Generate', 'gen.pipelines.run'),
 ])
 
+panels['gen.wheel'] = Container([
+    Label.title('Generate wheel'),
+    Separator(),
+    Value('Rim radius', 'gen.wheel.rim_radius', 25, 1, 512, 0, 4096, snap_frac=1),
+    Value('Sidewall height', 'gen.wheel.sidewall_height', 9, 1, 512, 0, 4096, snap_frac=1),
+    Value('Tire width', 'gen.wheel.tire_width', 8, 1, 512, 0, 4096, snap_frac=1),
+    Button('Run', 'gen.wheel.run'),
+])
 
 ################################
 #              FX              #

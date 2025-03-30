@@ -7,6 +7,8 @@ list maze_graph;
 list custom_grid;
 list eca_lut;
 
+list voxel temp; # list used to store the canvas temporarily
+
 on "initalise" {
     hide;
 }
@@ -15,6 +17,7 @@ on "hard reset" {
     delete maze_graph;
     delete custom_grid;
     delete eca_lut;
+    delete temp;
 }
 
 on "*" {
@@ -155,7 +158,7 @@ proc generate_extruded_grid cell_count, cell_size, cell_spacing, max_height, jit
         iy += total_cell_size;
     }
 
-    recolor 0.25, 0.5, 0.25, 0, 1, $col1, $col2, true;
+    glbfx_recolor 0.25, 0.5, 0.25, 0, 1, $col1, $col2, true;
     require_composite = true;
 }
 
@@ -352,30 +355,32 @@ proc generate_city {
 
 
 
-on "gen.unknown.run" { generate_unknown; }
-proc generate_unknown {
-    canvas_size_x = 128;
-    canvas_size_y = 128;
-    canvas_size_z = 16;
+on "gen.wheel.run" { 
+    delete UI_return;
+    #setting_from_id "gen.wheel.rim_radius";
+    generate_wheel 25, 9, 8; 
+}
+proc generate_wheel rim_radius, sidewall_height, tire_width {
+    canvas_size_x = round($rim_radius + 2*$sidewall_height);
+    canvas_size_y = 1;
+    canvas_size_z = round($tire_width);
     clear_canvas;
     reset_depositor;
-    set_depositor_from_sRGB 0.7, 0.7, 0.6;
-    draw_base_layer;
+    
+    # rim
+    set_depositor_from_sRGB 0.7, 0.9, 0.6;
+    draw_line_DDA 0, 0, 1, 1, 0, 0, $rim_radius*0.5;
+    #set_depositor_from_sRGB 0.4, 0.9, 0.6;
+    draw_line_DDA $rim_radius*0.5, 0, 2, $rim_radius, 0, $tire_width, $rim_radius*0.5+2; # WIP
+    #set_depositor_from_sRGB 0.9, 0.9, 0.6;
+    draw_column $rim_radius, 0, 0, $tire_width;
 
-    repeat 10 {
-        draw_cuboid_corner_size RANDOM_X, RANDOM_Y, 0, random(1,18), random(1,18), random(1, canvas_size_z*0.5);
-    }
+    # tire
+    set_depositor_from_HSV 0.2, 0.02, 0.2;
+    draw_cuboid_corner_size $rim_radius+1, 0, 0, $sidewall_height-1, 1, $tire_width;
+    draw_cuboid_corner_size $rim_radius+$sidewall_height, 0, 1, 1, 1, $tire_width-2;
 
-    repeat 10 {
-        draw_line_DDA RANDOM_X, RANDOM_Y, RANDOM_Z, random("-1.0","1.0"), random("-1.0","1.0"), 0, random(1, 20);
-    }
-    draw_cylinder RANDOM_X, RANDOM_Y, 0, 10, 3;
-    glbfx_jitter 0.2;
-    set_depositor_to_air;
-    glbfx_surface_replace 0.2;
-    glbfx_spatter 0.2;
-    glbfx_melt 0.1;
-    glbfx_color_noise "0.9", "1.1";
+    glbfx_revolve 0;
 
     require_composite = true;
 }
@@ -466,10 +471,10 @@ on "fx.recolor.run" {
     setting_from_id "fx.recolor.col_0";
     setting_from_id "fx.recolor.col_1";
     setting_from_id "fx.recolor.use_sRGB";
-    recolor UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6], UI_return[7], UI_return[8];
+    glbfx_recolor UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6], UI_return[7], UI_return[8];
 }
 # remaps colors
-proc recolor weight_r, weight_g, weight_b, map_0, map_1, col_0, col_1, use_sRGB {
+proc glbfx_recolor weight_r, weight_g, weight_b, map_0, map_1, col_0, col_1, use_sRGB {
     if $use_sRGB {
         # interpolate in sRGB. Assumes the map values are also sRGB values.
         local c0r = ((($col_0//65536)%256)/255);
@@ -1065,3 +1070,56 @@ proc glbfx_color_noise min, max {
         i++;
     }
 }
+
+
+# take a 1 voxel thick canvas as profile and revolve on the xy plane
+proc glbfx_revolve dist_offset {
+    # copy the line of voxels
+    delete temp;
+    local row_index = 1;
+    repeat (canvas_size_z) {
+        ix = 0;
+        repeat (canvas_size_x) {
+            add canvas[row_index + ix] to temp;
+            ix++;
+        }
+        row_index += (canvas_size_x * canvas_size_y);
+    }
+    local temp_width = canvas_size_x;
+
+    # reset canvas
+    delete canvas;
+    canvas_size_x = temp_width * 2;
+    canvas_size_y = temp_width * 2;
+
+    # create revolution
+    local bb_min = 0.5 + (canvas_size_x * -0.5);
+    local row_index = 1; # offset for temp list
+    repeat (canvas_size_z) {
+
+        local iy = bb_min;
+        repeat (canvas_size_y) {
+            local ix = bb_min;
+            repeat (canvas_size_x) {
+                local dist = floor($dist_offset + VEC2_LEN(ix, iy));
+                if (dist < temp_width and dist > -1) {
+                    add temp[row_index + dist] to canvas;
+                } else {
+                    add VOXEL_NONE to canvas;
+                }
+                ix++;
+            }
+            iy++;
+        }
+        row_index += temp_width; # temp list does not have thickness along y
+    }
+    
+    delete temp;
+    require_composite = true;
+}
+
+
+proc radial_array dist_offset {
+    # TODO
+}
+

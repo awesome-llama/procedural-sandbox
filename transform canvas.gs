@@ -21,7 +21,6 @@ on "*" {
     scale_uniform_xy 1;
     translate canvas_size_x/2, canvas_size_y/2, 0;
     mirror_x 1;
-    revolve 0;
     crop_centered 10, 10, canvas_size_z;
 }
 
@@ -164,57 +163,6 @@ proc mirror_x keep_lower {
     require_composite = true;
 }
 
-
-# take a 1 voxel thick canvas as profile and revolve on the xy plane
-proc revolve dist_offset {
-    # copy the line of voxels
-    delete temp;
-    local row_index = 1;
-    repeat (canvas_size_z) {
-        ix = 0;
-        repeat (canvas_size_x) {
-            add canvas[row_index + ix] to temp;
-            ix++;
-        }
-        row_index += (canvas_size_x * canvas_size_y);
-    }
-    local temp_width = canvas_size_x;
-
-    # reset canvas
-    delete canvas;
-    canvas_size_x = temp_width * 2;
-    canvas_size_y = temp_width * 2;
-
-    # create revolution
-    local bb_min = 0.5 + (canvas_size_x * -0.5);
-    local row_index = 1; # offset for temp list
-    repeat (canvas_size_z) {
-
-        local iy = bb_min;
-        repeat (canvas_size_y) {
-            local ix = bb_min;
-            repeat (canvas_size_x) {
-                local dist = floor($dist_offset + VEC2_LEN(ix, iy));
-                if (dist < temp_width and dist > -1) {
-                    add temp[row_index + dist] to canvas;
-                } else {
-                    add VOXEL_NONE to canvas;
-                }
-                ix++;
-            }
-            iy++;
-        }
-        row_index += temp_width; # temp list does not have thickness along y
-    }
-    
-    delete temp;
-    require_composite = true;
-}
-
-
-proc radial_array dist_offset {
-    
-}
 
 
 
