@@ -7,7 +7,7 @@ list maze_graph;
 list custom_grid;
 list eca_lut;
 
-list voxel temp; # list used to store the canvas temporarily
+list voxel temp_canvas; # list used to store the canvas temporarily
 
 on "initalise" {
     hide;
@@ -17,7 +17,7 @@ on "hard reset" {
     delete maze_graph;
     delete custom_grid;
     delete eca_lut;
-    delete temp;
+    delete temp_canvas;
 }
 
 on "*" {
@@ -1075,12 +1075,12 @@ proc glbfx_color_noise min, max {
 # take a 1 voxel thick canvas as profile and revolve on the xy plane
 proc glbfx_revolve dist_offset {
     # copy the line of voxels
-    delete temp;
+    delete temp_canvas;
     local row_index = 1;
     repeat (canvas_size_z) {
         ix = 0;
         repeat (canvas_size_x) {
-            add canvas[row_index + ix] to temp;
+            add canvas[row_index + ix] to temp_canvas;
             ix++;
         }
         row_index += (canvas_size_x * canvas_size_y);
@@ -1103,7 +1103,7 @@ proc glbfx_revolve dist_offset {
             repeat (canvas_size_x) {
                 local dist = floor($dist_offset + VEC2_LEN(ix, iy));
                 if (dist < temp_width and dist > -1) {
-                    add temp[row_index + dist] to canvas;
+                    add temp_canvas[row_index + dist] to canvas;
                 } else {
                     add VOXEL_NONE to canvas;
                 }
@@ -1114,7 +1114,7 @@ proc glbfx_revolve dist_offset {
         row_index += temp_width; # temp list does not have thickness along y
     }
     
-    delete temp;
+    delete temp_canvas;
     require_composite = true;
 }
 

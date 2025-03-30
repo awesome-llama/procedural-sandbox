@@ -2,8 +2,9 @@
 
 import itertools
 
+"""Add an id to the ids list. Skip if empty."""
 def add_id(ids_list: set, new_id, index_offset_from_id):
-    if new_id != '':
+    if new_id != '' and new_id is not None:
         if new_id in ids_list: raise Exception(f'id already exists: {new_id}')
         ids_list[new_id] = index_offset_from_id
 
@@ -30,7 +31,7 @@ class Separator(Element):
         self.items = ['SEPARATOR', max(0, width_fac), height]
 
 class Button(Element):
-    def __init__(self, label, id='', action='run', action_data=''):
+    def __init__(self, label, id='', action='broadcast', action_data=''):
         # id needs to be unique
         super().__init__()
         self.items = ['BUTTON', label, id, action, action_data, 0] # 0 is default false (unclicked)
@@ -184,6 +185,7 @@ panels['menu.fx'] = Container([
     Label.title('Effects'),
     Separator(),
     btn_menu_set_page('Translate', 'fx.translate'),
+    btn_menu_set_page('Rotate', 'fx.rotate'),
     btn_menu_set_page('Scale', 'fx.scale'),
     Separator(0, 5),
     btn_menu_set_page('Gradient recolor', 'fx.recolor'),
@@ -412,7 +414,6 @@ panels['fx.scale'] = Container([
     Label.title('Scale canvas'),
     Separator(),
     Expander('Scale vector', '', True, [
-        #Label('Fractional change in scale'), # TODO
         Value('X', 'fx.scale.dx', 1, 0.25, 4, -4096, 4096, snap_frac=1000),
         Value('Y', 'fx.scale.dy', 1, 0.25, 4, -4096, 4096, snap_frac=1000),
         Value('Z', 'fx.scale.dz', 1, 0.25, 4, -4096, 4096, snap_frac=1000),
@@ -422,6 +423,13 @@ panels['fx.scale'] = Container([
         Button('Set to 2', 'fx.scale.set_x2'),
     ]),
     Button('Run', 'fx.scale.run'),
+])
+
+panels['fx.rotate'] = Container([
+    Label.title('Rotate canvas'),
+    Separator(),
+    Button('Rotate +90 (CCW)', 'fx.rotate.rotate_+90'),
+    Button('Rotate -90 (CW)', 'fx.rotate.rotate_-90'),
 ])
 
 panels['fx.recolor'] = Container([
@@ -502,3 +510,5 @@ save_list('UI/UI_data_panels.txt', panel_lookup)
 # split tuples into separate lists:
 save_list('UI/UI_data_element_id.txt', [l[0] for l in element_lookup])
 save_list('UI/UI_data_element_index.txt', [l[1] for l in element_lookup])
+
+print(f'saved {len(element_list)} items')

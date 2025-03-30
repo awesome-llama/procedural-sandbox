@@ -496,8 +496,10 @@ on "stage clicked" {
             # check for button behvaviour type
             if (UI_data[clicked_element+3] == "set_page") {
                 UI_current_panel = UI_data[clicked_element+4];
-            } elif (UI_data[clicked_element+3] == "run") {
+            } elif (UI_data[clicked_element+3] == "broadcast") {
                 broadcast UI_data[clicked_element+2]; # the button id is broadcasted
+            } elif (UI_data[clicked_element+3] == "command") {
+                warn "not implemented";
             }
             
         } elif (UI_data[clicked_element] == "CHECKBOX") {

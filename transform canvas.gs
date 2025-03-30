@@ -6,7 +6,7 @@ costumes "costumes/transform canvas/icon.svg" as "icon";
 hide;
 
 # lists used to store the canvas temporarily
-list voxel temp;
+list voxel temp_canvas;
 
 
 on "initalise" {
@@ -14,7 +14,7 @@ on "initalise" {
 }
 
 on "hard reset" {
-    delete temp;
+    delete temp_canvas;
 }
 
 on "*" {
@@ -46,7 +46,7 @@ on "fx.translate.run" {
 }
 # translate with wrapping
 proc translate dx, dy, dz {
-    delete temp;
+    delete temp_canvas;
     
     iz = (0-floor($dz));
     repeat canvas_size_z {
@@ -55,7 +55,7 @@ proc translate dx, dy, dz {
             ix = (0-floor($dx));
             repeat canvas_size_x {
                 local index = INDEX_FROM_3D(ix, iy, iz, canvas_size_x, canvas_size_y, canvas_size_z);
-                add canvas[index] to temp;
+                add canvas[index] to temp_canvas;
                 ix++;
             }
             iy++;
@@ -98,7 +98,7 @@ proc scale scale_x, scale_y, scale_z {
     local step_x = 1/$scale_x;
     local step_y = 1/$scale_y;
     local step_z = 1/$scale_z;
-    delete temp;
+    delete temp_canvas;
 
     iz = 0;
     repeat round(canvas_size_z * $scale_z) {
@@ -107,7 +107,7 @@ proc scale scale_x, scale_y, scale_z {
             ix = 0;
             repeat round(canvas_size_x * $scale_x) {
                 local index = INDEX_FROM_3D_CANVAS(ix, iy, iz, canvas_size_x, canvas_size_y);
-                add canvas[index] to temp;
+                add canvas[index] to temp_canvas;
                 ix += step_x;
             }
             iy += step_y;
@@ -126,6 +126,43 @@ proc scale scale_x, scale_y, scale_z {
 # scale uniformly along all 3 axes
 proc scale_uniform_xy scale_fac {
     scale $scale_fac, $scale_fac, $scale_fac;
+}
+
+
+on "fx.rotate.rotate_-90" {
+    resample_xy canvas_size_x-1, 0, 0, 1, canvas_size_y, -1, 0, canvas_size_x;
+}
+on "fx.rotate.rotate_+90" {
+    resample_xy 0, canvas_size_y-1, 0, -1, canvas_size_y, 1, 0, canvas_size_x;
+}
+# iterate over the canvas using start, stop, step for the x and y axes. 
+# origin (ox, oy), 1st axis vector (ax, ay) 1st axis size, 2nd axis vector (bx, by), 2nd axis size
+proc resample_xy origin_x, origin_y, ax, ay, a_size, bx, by, b_size {
+    delete temp_canvas;
+
+    iz = 0;
+    repeat (canvas_size_z) {
+        iy = 0;
+        repeat ($b_size) {
+            ix = 0;
+            repeat ($a_size) {
+                local tx = $origin_x + ix*$ax + iy*$bx;
+			    local ty = $origin_y + ix*$ay + iy*$by;
+                local index = INDEX_FROM_3D_CANVAS(tx, ty, iz, canvas_size_x, canvas_size_y);
+                add canvas[index] to temp_canvas;
+                ix++;
+            }
+            iy++;
+        }
+        iz++;
+    }
+
+    # swap
+    canvas_size_x = $a_size;
+    canvas_size_y = $b_size;
+
+    _write_temp_lists_to_canvas;
+    require_composite = true;
 }
 
 
@@ -168,7 +205,7 @@ proc mirror_x keep_lower {
 
 # crop using origin and width
 proc crop x, y, z, size_x, size_y, size_z {
-    delete temp;
+    delete temp_canvas;
     iz = $z;
     repeat $size_z {
         iy = $y;
@@ -176,7 +213,7 @@ proc crop x, y, z, size_x, size_y, size_z {
             ix = $z;
             repeat $size_x {
                 local index = INDEX_FROM_3D(ix, iy, iz, canvas_size_x, canvas_size_y, canvas_size_z);
-                add canvas[index] to temp;
+                add canvas[index] to temp_canvas;
                 ix++;
             }
             iy++;
@@ -202,10 +239,10 @@ proc crop_centered size_x, size_y, size_z {
 proc _write_temp_lists_to_canvas  {
     delete canvas;
     i = 1;
-    repeat (length temp) {
-        add temp[i] to canvas;
+    repeat (length temp_canvas) {
+        add temp_canvas[i] to canvas;
         i++;
     }
-    delete temp;
+    delete temp_canvas;
 }
 
