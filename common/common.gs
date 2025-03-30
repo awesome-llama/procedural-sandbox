@@ -309,3 +309,19 @@ proc set_setting_from_id element_id, value {
 func rgb_num_to_hex_code(col) {
     return (hex_lookup[($col//65536)%256 + 1] & hex_lookup[($col//256)%256 + 1] & hex_lookup[$col%256 + 1]);
 }
+
+
+# print a message to the project_messages list
+proc print text, duration {
+    # to be displayed with a text engine
+    add $text to project_messages;
+    if $duration == "" {
+        add 5 to project_messages;
+    } else {
+        add $duration to project_messages;
+    }
+}
+
+
+
+

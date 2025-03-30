@@ -79,13 +79,16 @@ proc evaluate_command {
         stop_all;
     }
     
-    if dev != 1 {
-        print "dev=1 required", 4;
-        stop_this_script;
-    }
+    #if dev != 1 { # no developer mode in this project. # buttons also may trigger the command.
+    #    print "dev=1 required", 4;
+    #    stop_this_script;
+    #}
     
     if (command_name == "help") {
         print "look inside the project, `cmd` sprite", 4;
+
+    } elif (command_name == "print") {
+        print command[1], command[2];
 
     } elif (command_name == "wait") {
         wait command[1];
@@ -108,18 +111,6 @@ proc evaluate_command {
     } else {
         print "Unrecognised command: `" & command_name & "`", 4;
 
-    }
-}
-
-
-# print a message to the project_messages list
-proc print text, duration {
-    # to be displayed with a text engine
-    add $text to project_messages;
-    if $duration == "" {
-        add 4 to project_messages;
-    } else {
-        add $duration to project_messages;
     }
 }
 
@@ -147,21 +138,3 @@ on "run command" {
         }
     }
 }
-
-
-on "update cmd messages" { update_cmd_messages; }
-proc update_cmd_messages {
-    # update list of messages, not for rendering them
-    local msg_i = 1;
-    repeat (length project_messages) / 2 {
-        project_messages[msg_i+1] -= 0.033; # replace this with delta time
-        if project_messages[msg_i+1] < 0 {
-            # delete message:
-            delete project_messages[msg_i];
-            delete project_messages[msg_i];
-        } else {
-            msg_i += 2;
-        }
-    }
-}
-

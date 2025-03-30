@@ -37,6 +37,7 @@ proc copy_TI_px_buffer_to_canvas {
 
     if (canvas_size_z == "") {
         error "canvas size z is unknown";
+        print "Error: Canvas size Z is unknown. Set it manually using reshape.", 7;
         canvas_size_y = TI_image_size_y;
         canvas_size_z = 1;
         UI_current_panel = "fx.reshape_canvas";
@@ -47,6 +48,7 @@ proc copy_TI_px_buffer_to_canvas {
     
     if (canvas_size_y%1 > 0) {
         error "canvas is of wrong shape (not divisible)";
+        print "Error: Dimensions are not factors of the voxel count. Set it manually using reshape.", 8;
         canvas_size_y = TI_image_size_y;
         canvas_size_z = 1;
         UI_current_panel = "fx.reshape_canvas";
@@ -150,6 +152,7 @@ proc read_TI_px_buffer_to_canvas_as_2D_color_map resize_canvas, interpret_linear
         }
     } else {
         error "not implemented"; # loop over the pixels which do fit
+        print "not implemented", "";
     }
 
     layer_size = (canvas_size_x * canvas_size_y);

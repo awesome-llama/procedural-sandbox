@@ -83,7 +83,7 @@ on "render ui" {
     }
 
     render_popup;
-    
+    render_project_messages;
     switch_costume "icon";
 }
 
@@ -203,6 +203,27 @@ proc create_popup type, x, y, width, height {
     add $width to UI_popup; # 5.
     add $height to UI_popup; # 6.
 }
+
+
+proc render_project_messages {
+    local msg_i = 1;
+
+    # update list of messages, not for rendering them
+    local msg_i = 1;
+    repeat ((length project_messages) / 2) {
+        project_messages[msg_i+1] -= 0.033; # replace this with delta time
+        if project_messages[msg_i+1] < 0 {
+            # delete message:
+            delete project_messages[msg_i];
+            delete project_messages[msg_i];
+            require_screen_refresh = true;
+        } else {
+            set_pen_color "#00ffff";
+            plainText -220, 160-msg_i*10, 1, project_messages[msg_i];
+            msg_i += 2;
+        }
+    }
+} 
 
 
 # custom implementation, not general-purpose

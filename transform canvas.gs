@@ -224,7 +224,8 @@ on "fx.reshape_canvas.run" {
         canvas_size_z = UI_return[3];
         require_composite = true;
     } else {
-        error "does not fit";
+        print "Reshape failed: " & UI_return[1] & "*" & UI_return[2] & "*" & UI_return[3] & " = " & (UI_return[1] * UI_return[2] * UI_return[3]) & " does not fit voxel count of " & length(canvas), 6;
+        #error "does not fit";
     }
 }
 
