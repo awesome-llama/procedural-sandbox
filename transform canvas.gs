@@ -1,6 +1,6 @@
 %include common/common.gs
 
-# TODO move this into generator because it can benefit from these too (or maybe it's better to copy over the needed ones)
+# User-invoked transformations. Any transformations needed in the generator should be implemented there only.
 
 costumes "costumes/transform canvas/icon.svg" as "icon";
 hide;
@@ -15,13 +15,6 @@ on "initalise" {
 
 on "hard reset" {
     delete temp_canvas;
-}
-
-on "*" {
-    scale_uniform_xy 1;
-    translate canvas_size_x/2, canvas_size_y/2, 0;
-    mirror_x 1;
-    crop_centered 10, 10, canvas_size_z;
 }
 
 
@@ -123,12 +116,6 @@ proc scale scale_x, scale_y, scale_z {
 }
 
 
-# scale uniformly along all 3 axes
-proc scale_uniform_xy scale_fac {
-    scale $scale_fac, $scale_fac, $scale_fac;
-}
-
-
 on "fx.rotate.rotate_-90" {
     resample_xy canvas_size_x-1, 0, 0, 1, canvas_size_y, -1, 0, canvas_size_x;
 }
@@ -202,6 +189,18 @@ proc mirror_x keep_lower {
 
 
 
+on "fx.crop_xy.run" {
+    delete UI_return;
+    setting_from_id "fx.crop_xy.centered";
+    setting_from_id "fx.crop_xy.size_x";
+    setting_from_id "fx.crop_xy.size_y";
+
+    if (UI_return[1]) {
+        crop_centered UI_return[2], UI_return[3], canvas_size_z;
+    } else {
+        crop 0, 0, 0, UI_return[2], UI_return[3], canvas_size_z;
+    }
+}
 
 # crop using origin and width
 proc crop x, y, z, size_x, size_y, size_z {

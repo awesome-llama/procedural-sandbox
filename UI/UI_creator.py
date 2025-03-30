@@ -188,6 +188,7 @@ panels['menu.fx'] = Container([
     btn_menu_set_page('Rotate', 'fx.rotate'),
     btn_menu_set_page('Scale', 'fx.scale'),
     Separator(0, 5),
+    btn_menu_set_page('Crop XY', 'fx.crop_xy'),
     btn_menu_set_page('Gradient recolor', 'fx.recolor'),
 ])
 
@@ -426,10 +427,19 @@ panels['fx.scale'] = Container([
 ])
 
 panels['fx.rotate'] = Container([
-    Label.title('Rotate canvas'),
+    Label.title('Rotate canvas XY'),
     Separator(),
     Button('Rotate +90 (CCW)', 'fx.rotate.rotate_+90'),
     Button('Rotate -90 (CW)', 'fx.rotate.rotate_-90'),
+])
+
+panels['fx.crop_xy'] = Container([
+    Label.title('Crop XY'),
+    Separator(),
+    Value('Size X', 'fx.crop_xy.size_x', 64, 1, 512, 0, 4096, snap_frac=1),
+    Value('Size Y', 'fx.crop_xy.size_y', 64, 1, 512, 0, 4096, snap_frac=1),
+    Checkbox('Centered', 'fx.crop_xy.centered', True),
+    Button('Crop', 'fx.crop_xy.run'),
 ])
 
 panels['fx.recolor'] = Container([
@@ -480,7 +490,7 @@ panels['project.info'] = Container([
 #    Generate lists & save     #
 ################################
 
-element_list = [""] # element data
+element_list = [""]*10 # element data
 panel_lookup = [] # list of where the panels begin
 element_lookup = [] # k-v tuple list of where the elements are
 
