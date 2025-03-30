@@ -13,7 +13,6 @@ on "initalise" {
 
 on "hard reset" {
     delete command;
-    cmd_string = "";
 }
 
 onkey "/" {
@@ -132,6 +131,14 @@ on "open commands" {
     ask "(DEV TOOLS) enter command:";
     if (answer() != "") {
         cmd_string = answer();
+        broadcast "run command";
+    }
+}
+
+
+# run the command given in cmd_string
+on "run command" {
+    if cmd_string != "" {
         i = 1;
         until i >= length(cmd_string) {
             _read_command_until_semicolon;
@@ -142,7 +149,7 @@ on "open commands" {
 }
 
 
-on "update cmd messages" {update_cmd_messages;}
+on "update cmd messages" { update_cmd_messages; }
 proc update_cmd_messages {
     # update list of messages, not for rendering them
     local msg_i = 1;

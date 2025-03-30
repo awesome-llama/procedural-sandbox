@@ -49,6 +49,7 @@ on "start main loop" {
             require_screen_refresh = false;
         }
 
+        broadcast "update cmd messages";
         broadcast "render ui"; # always redraw, no erase. This goes to the UI sprite only.
         # more broadcasts for UI may be added although it's not clear if this is needed
     }

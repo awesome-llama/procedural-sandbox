@@ -499,7 +499,8 @@ on "stage clicked" {
             } elif (UI_data[clicked_element+3] == "broadcast") {
                 broadcast UI_data[clicked_element+2]; # the button id is broadcasted
             } elif (UI_data[clicked_element+3] == "command") {
-                warn "not implemented";
+                cmd_string = UI_data[clicked_element+4];
+                broadcast "run command";
             }
             
         } elif (UI_data[clicked_element] == "CHECKBOX") {

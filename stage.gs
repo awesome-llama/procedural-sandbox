@@ -77,6 +77,8 @@ on "initalise" {
 
     UI_clipboard_source = 0;
     
+    cmd_string = "";
+    
     delete UI_popup;
 }
 
@@ -104,6 +106,8 @@ on "hard reset" {
 
     delete UI_return;
     delete UI_popup;
+    
+    cmd_string = "";
 }
 
 onflag {
