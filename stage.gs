@@ -46,7 +46,7 @@ list hex_lookup = file ```hex_lookup.txt```;
 
 
 on "initalise" {
-    dev = round((username() == "awesome-llama")); # developer mode
+    #dev = round((username() == "awesome-llama")); # developer mode
     
     cam_x = 0;
     cam_y = 0;

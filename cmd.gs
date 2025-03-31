@@ -60,7 +60,7 @@ proc _read_command_until_semicolon {
 
 
 
-proc evaluate_command {
+nowarp proc evaluate_command {
     # evaluate the command stored in the command list
     local command_name = command[1];
     if (command_name[1] == "#") {
@@ -68,11 +68,11 @@ proc evaluate_command {
     }
     delete command[1]; # remove command name, leaving the list of arguments
     
-    if (command_name == "dev") {
-        dev = command[1];
-        print "dev=" & dev, 4;
-        stop_this_script;
-    } 
+    #if (command_name == "dev") {
+    #    dev = command[1];
+    #    print "dev=" & dev, 4;
+    #    stop_this_script;
+    #} 
 
     if (command_name == "reset") {
         broadcast "reset";
