@@ -108,8 +108,11 @@ struct template_metadata {
 # logarithm of any base
 %define LOG(VAL,BASE) (ln(VAL)/ln(BASE))
 
-# Dot product
+# Dot product 2D
 %define DOT_PRODUCT_2D(X1,Y1,X2,Y2) ((X1)*(X2) + (Y1)*(Y2))
+
+# Dot product 3D
+%define DOT_PRODUCT_3D(X1,Y1,Z1,X2,Y2,Z2) ((X1)*(X2) + (Y1)*(Y2) + (Z1)*(Z2))
 
 # Length of a 2D vector
 %define VEC2_LEN(VX,VY) sqrt((VX)*(VX) + (VY)*(VY))

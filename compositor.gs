@@ -331,9 +331,31 @@ proc composite_normal intensity {
 }
 
 
+proc random_vector nx, ny, nz {
+    forever {
+        rand_x = random("-1.0", "1.0");
+        rand_y = random("-1.0", "1.0");
+        rand_z = random("-1.0", "1.0");
+        local vec_len = VEC3_LEN(rand_x, rand_y, rand_z);
+        if (vec_len < 1.001 and vec_len > 0.001) {
+            rand_x /= vec_len;
+            rand_y /= vec_len;
+            rand_z /= vec_len;
+
+            if DOT_PRODUCT_3D(rand_x, rand_y, rand_z, $nx, $ny, $nz) < 0 {
+                rand_x *= -1;
+                rand_y *= -1;
+                rand_z *= -1;
+            }
+
+            stop_this_script;
+        }
+    }
+}
+
+
+
 proc raytrace {
-    # generate samples
-    layer_size = (canvas_size_x * canvas_size_y);
     i = 1;
     iy = 0;
     local samples = 12;
@@ -344,11 +366,61 @@ proc raytrace {
             local total_g = 0;
             local total_b = 0;
             repeat samples {
-                raycast_wrapped_canvas ix+RANDOM_0_1(), iy+RANDOM_0_1(), canvas_size_z+1, 0, 0, -1;
 
-                total_r += canvas[hit_index].r;
-                total_g += canvas[hit_index].g;
-                total_b += canvas[hit_index].b;
+                raycast_wrapped_canvas ix+RANDOM_0_1(), iy+RANDOM_0_1(), canvas_size_z+1, 0, 0, -1;
+                
+                repeat 1 {
+                    if (hit_index > 0) {
+                        if (side == 0) {
+                            if (step_x > 0) { 
+                                # normal -X
+                                random_vector -1, 0, 0;
+                                raycast_wrapped_canvas hit_position.x-0.001, hit_position.y, hit_position.z, rand_x, rand_y, rand_z;
+                            } else { 
+                                # normal +X
+                                random_vector 1, 0, 0;
+                                raycast_wrapped_canvas hit_position.x+0.001, hit_position.y, hit_position.z, rand_x, rand_y, rand_z;
+                            }
+                        } elif (side == 1) {
+                            if (step_y > 0) { 
+                                # normal -Y
+                                random_vector 0, -1, 0;
+                                raycast_wrapped_canvas hit_position.x, hit_position.y-0.001, hit_position.z, rand_x, rand_y, rand_z;
+                            } else { 
+                                # normal +Y
+                                random_vector 0, 1, 0;
+                                raycast_wrapped_canvas hit_position.x, hit_position.y+0.001, hit_position.z, rand_x, rand_y, rand_z;
+                            }
+                        } else {
+                            if (step_z > 0) { 
+                                # normal -Z
+                                random_vector 0, 0, -1;
+                                raycast_wrapped_canvas hit_position.x, hit_position.y, hit_position.z-0.001, rand_x, rand_y, rand_z;
+                            } else { 
+                                # normal +Z
+                                random_vector 0, 0, 1;
+                                raycast_wrapped_canvas hit_position.x, hit_position.y, hit_position.z+0.001, rand_x, rand_y, rand_z;
+                            }
+                        }
+
+                        # 
+
+                    } else {
+                        # pass
+                    }
+                    
+                }
+
+                if hit_index > 0 {
+                    total_r += canvas[hit_index].r;
+                    total_g += canvas[hit_index].g;
+                    total_b += canvas[hit_index].b;
+                } else {
+                    # sky
+                    total_r += 1;
+                    total_g += 1;
+                    total_b += 1;
+                }
             }
 
             render_cache_1_r[i] = total_r / samples;
@@ -388,24 +460,24 @@ proc raycast_AO x, y, z, dx, dy, dz {
     local ray_iy = floor($y);
     local ray_iz = floor($z);
     if ($dx < 0) {
-        local step_x = -1;
+        step_x = -1;
         local len_x = (($x%1)*scale_x);
     } else {
-        local step_x = 1;
+        step_x = 1;
         local len_x = ((1-($x%1))*scale_x);
     }
     if ($dy < 0) {
-        local step_y = -1;
+        step_y = -1;
         local len_y = (($y%1)*scale_y);
     } else {
-        local step_y = 1;
+        step_y = 1;
         local len_y = ((1-($y%1))*scale_y);
     }
     if ($dz < 0) {
-        local step_z = -1;
+        step_z = -1;
         local len_z = (($z%1)*scale_z);
     } else {
-        local step_z = 1;
+        step_z = 1;
         local len_z = ((1-($z%1))*scale_z);
     }
 
@@ -443,6 +515,7 @@ proc raycast_AO x, y, z, dx, dy, dz {
 
 
 # 3D DDA raycast with wrapped canvas
+# some variables are not local because they are used elsewhere
 proc raycast_wrapped_canvas x, y, z, dx, dy, dz {
     local vec_len = sqrt((($dx*$dx)+(($dy*$dy)+($dz*$dz))));
     local scale_x = abs(vec_len/$dx);
@@ -452,24 +525,24 @@ proc raycast_wrapped_canvas x, y, z, dx, dy, dz {
     local ray_iy = floor($y);
     local ray_iz = floor($z);
     if ($dx < 0) {
-        local step_x = -1;
+        step_x = -1;
         local len_x = (($x%1)*scale_x);
     } else {
-        local step_x = 1;
+        step_x = 1;
         local len_x = ((1-($x%1))*scale_x);
     }
     if ($dy < 0) {
-        local step_y = -1;
+        step_y = -1;
         local len_y = (($y%1)*scale_y);
     } else {
-        local step_y = 1;
+        step_y = 1;
         local len_y = ((1-($y%1))*scale_y);
     }
     if ($dz < 0) {
-        local step_z = -1;
+        step_z = -1;
         local len_z = (($z%1)*scale_z);
     } else {
-        local step_z = 1;
+        step_z = 1;
         local len_z = ((1-($z%1))*scale_z);
     }
 
