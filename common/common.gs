@@ -32,7 +32,7 @@ struct voxel {
 # greyscale light (note that the input must return the same value for all uses)
 %define VOXEL_LIGHT(VAL) voxel { opacity:1, r:(VAL), g:(VAL), b:(VAL), emission:(VAL) } # greyscale
 
-# empty colourless air, no parameters
+# empty colorless air, no parameters
 %define VOXEL_NONE voxel { opacity:0, r:0, g:0, b:0, emission:0 }
 
 
@@ -53,7 +53,8 @@ struct HSV {
 enum CompositorMode {
     NONE = "",
     COLOR = "COLOR", # RGB & Alpha only
-    SHADED = "SHADED", # fully processed colour
+    SHADED = "SHADED", # fully processed color
+    RAYTRACED = "RAYTRACED",
     HEIGHT = "HEIGHT", # heightmap, topmost voxel elevation
     AO = "AO", # ambient occlusion
     DENSITY = "DENSITY", # number of voxels in the column, weighted by opacity

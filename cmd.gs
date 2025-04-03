@@ -99,6 +99,9 @@ nowarp proc evaluate_command {
     } elif (command_name == "panel" or command_name == "page" or command_name == "p") {
         UI_current_panel = command[1];
     
+    } elif (command_name == "compositor_mode") {
+        compositor_mode = command[1];
+
     } elif (command_name == "element") {
         # set any element in the UI. Arguments: string_id, index_offset, value_to_set
         local element_index = command[1] in UI_data_element_id;

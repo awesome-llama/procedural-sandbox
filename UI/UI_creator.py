@@ -44,6 +44,11 @@ class Button(Element):
     def set_page(label, id, page):
         # create a button that sets the page
         return Button(label, id, action='set_page', action_data=page)
+    
+    @staticmethod
+    def run_command(label, id, command):
+        # create a button that runs a command
+        return Button(label, id, action='command', action_data=command)
 
 class Checkbox(Element):
     def __init__(self, label, id='', checked=False):
@@ -510,6 +515,11 @@ panels['fx.reshape_canvas'] = Container([
 ################################
 #             Misc             #
 ################################
+
+panels['project.compositor_mode'] = Container([
+    Button.run_command('Color', 'project.compositor_mode.1', 'compositor_mode COLOR'),
+    Button.run_command('Shaded', 'project.compositor_mode.2', 'compositor_mode SHADED'),
+])
 
 panels['project.settings'] = Container([
     Label.title('Project settings'),

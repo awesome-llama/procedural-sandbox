@@ -24,26 +24,21 @@ onkey "2" {
 }
 
 onkey "3" {
-    compositor_mode = CompositorMode.HEIGHT;
+    compositor_mode = CompositorMode.RAYTRACED;
     require_composite = true;
 }
 
 onkey "4" {
-    compositor_mode = CompositorMode.AO;
+    compositor_mode = CompositorMode.HEIGHT;
     require_composite = true;
 }
 
 onkey "5" {
-    compositor_mode = CompositorMode.DENSITY;
+    compositor_mode = CompositorMode.AO;
     require_composite = true;
 }
 
 onkey "6" {
-    compositor_mode = CompositorMode.PENETRATION;
-    require_composite = true;
-}
-
-onkey "7" {
     compositor_mode = CompositorMode.NORMAL;
     require_composite = true;
 }
@@ -78,12 +73,15 @@ proc composite {
     # run different custom blocks depending on mode
     if (compositor_mode == CompositorMode.COLOR) {
         generate_pass_topmost;
-        composite_topmost_colour;
+        composite_topmost_color;
 
     } elif (compositor_mode == CompositorMode.SHADED) {
         generate_pass_topmost;
         generate_pass_ao;
         composite_shaded_color;
+
+    } elif (compositor_mode == CompositorMode.RAYTRACED) {
+        raytrace;
 
     } elif (compositor_mode == CompositorMode.HEIGHT) {
         generate_pass_topmost;
@@ -139,7 +137,7 @@ proc generate_pass_topmost {
 }
 
 
-# ambient occlusion in 2D
+# ambient occlusion in 2D on the topmost non-air voxel
 proc generate_pass_ao {
     layer_size = (canvas_size_x * canvas_size_y);
     i = 1;
@@ -151,7 +149,7 @@ proc generate_pass_ao {
             local cumulative_light = 0;
             repeat samples {
                 local bearing = random("0", "360.0"); # needs to be a float. This is not deterministic
-                raycast_ao ix, iy, render_cache_topmost[i]+1, sin(bearing), cos(bearing), tan(random("18.43", "90.0")), (3 * canvas_size_z);
+                raycast_AO ix, iy, render_cache_topmost[i]+1, sin(bearing), cos(bearing), tan(random("18.43", "90.0"));
                 cumulative_light += ray_light;
             }
             render_cache_ao[i] = cumulative_light / samples;
@@ -169,8 +167,8 @@ proc generate_pass_ao {
 ################################
 
 
-# simply the colour map looking down, no translucency handling
-proc composite_topmost_colour {
+# simply the color map looking down, no translucency handling
+proc composite_topmost_color {
     layer_size = (canvas_size_x * canvas_size_y);
     i = 1;
     repeat layer_size {
@@ -197,7 +195,7 @@ proc composite_shaded_color {
     repeat layer_size {
         iz = 0;
         local brightness_index = 1; # brightness is slightly altered by depth
-        local r = TO_LINEAR(0.5); # the background colour
+        local r = TO_LINEAR(0.5); # the background color
         local g = TO_LINEAR(0.5);
         local b = TO_LINEAR(0.5);
 
@@ -333,6 +331,36 @@ proc composite_normal intensity {
 }
 
 
+proc raytrace {
+    # generate samples
+    layer_size = (canvas_size_x * canvas_size_y);
+    i = 1;
+    iy = 0;
+    local samples = 12;
+    repeat canvas_size_y {
+        ix = 0;
+        repeat canvas_size_x {
+            local total_r = 0;
+            local total_g = 0;
+            local total_b = 0;
+            repeat samples {
+                raycast_DDA ix+RANDOM_0_1(), iy+RANDOM_0_1(), canvas_size_z+1, 0, 0, -1;
+
+                total_r += canvas[hit_index].r;
+                total_g += canvas[hit_index].g;
+                total_b += canvas[hit_index].b;
+            }
+
+            render_cache_1_r[i] = total_r / samples;
+            render_cache_2_g[i] = total_g / samples;
+            render_cache_3_b[i] = total_b / samples;
+            ix++;
+            i++;
+        }
+        iy++;
+    }
+}
+
 
 ################################
 #            Utils             #
@@ -350,15 +378,15 @@ proc make_brightness_LUT start, end {
 }
 
 
-# 3D DDA, returns ray_light
-proc raycast_ao x, y, z, dx, dy, dz, r {
+# Special implementation of 3D DDA, returns ray_light for 2D composited AO. Optimised.
+proc raycast_AO x, y, z, dx, dy, dz {
     local vec_len = sqrt((($dx*$dx)+(($dy*$dy)+($dz*$dz))));
     local scale_x = abs(vec_len/$dx);
     local scale_y = abs(vec_len/$dy);
     local scale_z = abs(vec_len/$dz);
-    local raycast_ix = floor($x);
-    local raycast_iy = floor($y);
-    local raycast_iz = floor($z);
+    local ray_ix = floor($x);
+    local ray_iy = floor($y);
+    local ray_iz = floor($z);
     if ($dx < 0) {
         local step_x = -1;
         local len_x = (($x%1)*scale_x);
@@ -381,36 +409,124 @@ proc raycast_ao x, y, z, dx, dy, dz, r {
         local len_z = ((1-($z%1))*scale_z);
     }
 
-    ray_light = 1; # returned, not local to this script
+    ray_light = 1; # this variable is returned, is not local to this procedure
     
-    until (len_x > $r and len_y > $r and len_z > $r) {
-
+    forever {
         # find the shortest len variable and increase it:
         if (len_x < len_z) {
             if (len_x < len_y) {
                 len_x += scale_x;
-                raycast_ix += step_x;
+                ray_ix += step_x;
             } else {
                 len_y += scale_y;
-                raycast_iy += step_y;
+                ray_iy += step_y;
             }
         } else {
             if (len_y < len_z) {
                 len_y += scale_y;
-                raycast_iy += step_y;
+                ray_iy += step_y;
             } else {
                 len_z += scale_z;
-                raycast_iz += step_z;
+                ray_iz += step_z;
             }
         }
 
-        local alpha = canvas[INDEX_FROM_3D_CANVAS(raycast_ix, raycast_iy, raycast_iz, canvas_size_x, canvas_size_y)].opacity;
+        local alpha = canvas[INDEX_FROM_3D_CANVAS(ray_ix, ray_iy, ray_iz, canvas_size_x, canvas_size_y)].opacity;
 
-        if (alpha == "") { stop_this_script; } # did not get a list item, therefore out of bounds
+        if (alpha == "") { stop_this_script; } # did not get a list item, therefore out of bounds along z
         
-        ray_light = (ray_light*(1-alpha));
+        ray_light *= (1-alpha);
         
-        if (ray_light < 0.0001) { stop_this_script; } # too dark
-        if (raycast_iz > canvas_size_z) { stop_this_script; } # out of bounds, assume air
+        if (ray_light < 0.001) { stop_this_script; } # too dark, hit enough voxels
+    }
+}
+
+
+# general-purpose DDA
+proc raycast_DDA x, y, z, dx, dy, dz {
+    local vec_len = sqrt((($dx*$dx)+(($dy*$dy)+($dz*$dz))));
+    local scale_x = abs(vec_len/$dx);
+    local scale_y = abs(vec_len/$dy);
+    local scale_z = abs(vec_len/$dz);
+    local ray_ix = floor($x);
+    local ray_iy = floor($y);
+    local ray_iz = floor($z);
+    if ($dx < 0) {
+        local step_x = -1;
+        local len_x = (($x%1)*scale_x);
+    } else {
+        local step_x = 1;
+        local len_x = ((1-($x%1))*scale_x);
+    }
+    if ($dy < 0) {
+        local step_y = -1;
+        local len_y = (($y%1)*scale_y);
+    } else {
+        local step_y = 1;
+        local len_y = ((1-($y%1))*scale_y);
+    }
+    if ($dz < 0) {
+        local step_z = -1;
+        local len_z = (($z%1)*scale_z);
+    } else {
+        local step_z = 1;
+        local len_z = ((1-($z%1))*scale_z);
+    }
+
+    hit_index = 0; # no hit
+
+    forever {
+        # find the shortest len variable and increase it:
+        if (len_x < len_z) {
+            if (len_x < len_y) {
+                local last_len = len_x;
+                len_x += scale_x;
+                ray_ix += step_x;
+                side = 0;
+            } else {
+                local last_len = len_y;
+                len_y += scale_y;
+                ray_iy += step_y;
+                side = 1;
+            }
+        } else {
+            if (len_y < len_z) {
+                local last_len = len_y;
+                len_y += scale_y;
+                ray_iy += step_y;
+                side = 1;
+            } else {
+                local last_len = len_z;
+                len_z += scale_z;
+                ray_iz += step_z;
+                side = 2;
+            }
+        }
+
+        # check if the ray is leaving the canvas
+        if (step_x > 0 and ray_ix > canvas_size_x or step_x < 0 and ray_ix < 0) {
+            hit_index = 0; # no hit
+            stop_this_script;
+        } elif (step_y > 0 and ray_iy > canvas_size_y or step_y < 0 and ray_iy < 0) {
+            hit_index = 0; # no hit
+            stop_this_script;
+        } elif (step_z > 0 and ray_iz > canvas_size_z or step_z < 0 and ray_iz < 0) {
+            hit_index = 0; # no hit
+            stop_this_script;
+        }
+        # TODO project to the cuboid canvas boundary and continue from there (or implement it before the loop starts)
+    
+        # get the voxel
+        hit_index = INDEX_FROM_3D_CANVAS(ray_ix, ray_iy, ray_iz, canvas_size_x, canvas_size_y);
+        local alpha = canvas[hit_index].opacity;
+        
+        if alpha > 0 {
+            # hit! 
+            # calculate its intersection point and return it.
+            # non-local return variables
+            XYZ hit_position = XYZ {x:$x+$dx*(last_len/vec_len), y:$y+$dy*(last_len/vec_len), z:$z+$dz*(last_len/vec_len)};
+            #XYZ hit_normal = XYZ {x:0, y:0, z:0}
+            stop_this_script;
+        }
     }
 }
