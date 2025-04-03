@@ -344,7 +344,7 @@ proc raytrace {
             local total_g = 0;
             local total_b = 0;
             repeat samples {
-                raycast_DDA ix+RANDOM_0_1(), iy+RANDOM_0_1(), canvas_size_z+1, 0, 0, -1;
+                raycast_wrapped_canvas ix+RANDOM_0_1(), iy+RANDOM_0_1(), canvas_size_z+1, 0, 0, -1;
 
                 total_r += canvas[hit_index].r;
                 total_g += canvas[hit_index].g;
@@ -378,7 +378,7 @@ proc make_brightness_LUT start, end {
 }
 
 
-# Special implementation of 3D DDA, returns ray_light for 2D composited AO. Optimised.
+# Special implementation of 3D DDA, returns ray_light for 2D composited AO. Optimised for downwards rays only.
 proc raycast_AO x, y, z, dx, dy, dz {
     local vec_len = sqrt((($dx*$dx)+(($dy*$dy)+($dz*$dz))));
     local scale_x = abs(vec_len/$dx);
@@ -442,8 +442,8 @@ proc raycast_AO x, y, z, dx, dy, dz {
 }
 
 
-# general-purpose DDA
-proc raycast_DDA x, y, z, dx, dy, dz {
+# 3D DDA raycast with wrapped canvas
+proc raycast_wrapped_canvas x, y, z, dx, dy, dz {
     local vec_len = sqrt((($dx*$dx)+(($dy*$dy)+($dz*$dz))));
     local scale_x = abs(vec_len/$dx);
     local scale_y = abs(vec_len/$dy);
@@ -475,7 +475,7 @@ proc raycast_DDA x, y, z, dx, dy, dz {
 
     hit_index = 0; # no hit
 
-    forever {
+    repeat canvas_size_x+canvas_size_y {
         # find the shortest len variable and increase it:
         if (len_x < len_z) {
             if (len_x < len_y) {
@@ -504,19 +504,12 @@ proc raycast_DDA x, y, z, dx, dy, dz {
         }
 
         # check if the ray is leaving the canvas
-        if (step_x > 0 and ray_ix > canvas_size_x or step_x < 0 and ray_ix < 0) {
-            hit_index = 0; # no hit
-            stop_this_script;
-        } elif (step_y > 0 and ray_iy > canvas_size_y or step_y < 0 and ray_iy < 0) {
-            hit_index = 0; # no hit
-            stop_this_script;
-        } elif (step_z > 0 and ray_iz > canvas_size_z or step_z < 0 and ray_iz < 0) {
+        if (step_z > 0 and ray_iz > canvas_size_z) {
             hit_index = 0; # no hit
             stop_this_script;
         }
-        # TODO project to the cuboid canvas boundary and continue from there (or implement it before the loop starts)
-    
-        # get the voxel
+        
+        # get the voxel, wrapped along x and y axis
         hit_index = INDEX_FROM_3D_CANVAS(ray_ix, ray_iy, ray_iz, canvas_size_x, canvas_size_y);
         local alpha = canvas[hit_index].opacity;
         
@@ -529,4 +522,8 @@ proc raycast_DDA x, y, z, dx, dy, dz {
             stop_this_script;
         }
     }
+
+    hit_index = 0;
 }
+
+
