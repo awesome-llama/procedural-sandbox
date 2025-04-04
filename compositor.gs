@@ -81,7 +81,7 @@ proc composite {
         composite_shaded_color;
 
     } elif (compositor_mode == CompositorMode.RAYTRACED) {
-        raytrace;
+        composite_raytrace;
 
     } elif (compositor_mode == CompositorMode.HEIGHT) {
         generate_pass_topmost;
@@ -355,7 +355,7 @@ proc random_vector nx, ny, nz {
 
 
 
-proc raytrace {
+proc composite_raytrace {
     i = 1;
     iy = 0;
     local samples = 12;
@@ -367,10 +367,30 @@ proc raytrace {
             local total_b = 0;
             repeat samples {
 
+                local acc_col_r = 0;
+                local acc_col_g = 0;
+                local acc_col_b = 0;
+                local att_r = 1;
+                local att_g = 1;
+                local att_b = 1;
+
+                rand_x = 0;
+                rand_y = 0;
+                rand_z = -1;
+
                 raycast_wrapped_canvas ix+RANDOM_0_1(), iy+RANDOM_0_1(), canvas_size_z+1, 0, 0, -1;
                 
-                repeat 1 {
+                local bounces_left = 10;
+                until bounces_left < 1 {
                     if (hit_index > 0) {
+                        acc_col_r += att_r * canvas[hit_index].r * canvas[hit_index].emission;
+                        acc_col_g += att_g * canvas[hit_index].g * canvas[hit_index].emission;
+                        acc_col_b += att_b * canvas[hit_index].b * canvas[hit_index].emission;
+
+                        att_r *= canvas[hit_index].r;
+                        att_g *= canvas[hit_index].g;
+                        att_b *= canvas[hit_index].b;
+
                         if (side == 0) {
                             if (step_x > 0) { 
                                 # normal -X
@@ -403,24 +423,32 @@ proc raytrace {
                             }
                         }
 
-                        # 
-
+                        bounces_left -= 1;
                     } else {
-                        # pass
+                        bounces_left = 0;
                     }
                     
                 }
 
+                # this final check is because the above loop stops before its own check
                 if hit_index > 0 {
-                    total_r += canvas[hit_index].r;
-                    total_g += canvas[hit_index].g;
-                    total_b += canvas[hit_index].b;
+                    acc_col_r += att_r * canvas[hit_index].r * canvas[hit_index].emission;
+                    acc_col_g += att_g * canvas[hit_index].g * canvas[hit_index].emission;
+                    acc_col_b += att_b * canvas[hit_index].b * canvas[hit_index].emission;
                 } else {
                     # sky
-                    total_r += 1;
-                    total_g += 1;
-                    total_b += 1;
+                    acc_col_r += att_r * 1 * (0.5*rand_y/2);
+                    acc_col_g += att_g * 1 * (0.5*rand_y/2); 
+                    acc_col_b += att_b * 1 * (0.5*rand_y/2);
                 }
+
+                if acc_col_r > 1 {acc_col_r = 1;}
+                if acc_col_g > 1 {acc_col_g = 1;}
+                if acc_col_b > 1 {acc_col_b = 1;}
+
+                total_r += acc_col_r;
+                total_g += acc_col_g;
+                total_b += acc_col_b;
             }
 
             render_cache_1_r[i] = total_r / samples;
