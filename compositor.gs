@@ -358,7 +358,7 @@ proc random_vector nx, ny, nz {
 proc composite_raytrace {
     i = 1;
     iy = 0;
-    local samples = 12;
+    local samples = 16;
     repeat canvas_size_y {
         ix = 0;
         repeat canvas_size_x {
@@ -374,22 +374,26 @@ proc composite_raytrace {
                 local att_g = 1;
                 local att_b = 1;
 
-                rand_x = 0;
+                rand_x = 0; # set initially just in case the first ray doesn't hit anything, it's used for sky color
                 rand_y = 0;
                 rand_z = -1;
 
                 raycast_wrapped_canvas ix+RANDOM_0_1(), iy+RANDOM_0_1(), canvas_size_z+1, 0, 0, -1;
                 
-                local bounces_left = 10;
+                local bounces_left = 4; # 4 is perceptually sufficient it seems
                 until bounces_left < 1 {
                     if (hit_index > 0) {
-                        acc_col_r += att_r * canvas[hit_index].r * canvas[hit_index].emission;
-                        acc_col_g += att_g * canvas[hit_index].g * canvas[hit_index].emission;
-                        acc_col_b += att_b * canvas[hit_index].b * canvas[hit_index].emission;
+                        linear_col_r = TO_LINEAR(canvas[hit_index].r);
+                        linear_col_g = TO_LINEAR(canvas[hit_index].g);
+                        linear_col_b = TO_LINEAR(canvas[hit_index].b);
 
-                        att_r *= canvas[hit_index].r;
-                        att_g *= canvas[hit_index].g;
-                        att_b *= canvas[hit_index].b;
+                        acc_col_r += att_r * linear_col_r * canvas[hit_index].emission;
+                        acc_col_g += att_g * linear_col_g * canvas[hit_index].emission;
+                        acc_col_b += att_b * linear_col_b * canvas[hit_index].emission;
+
+                        att_r *= linear_col_r;
+                        att_g *= linear_col_g;
+                        att_b *= linear_col_b;
 
                         if (side == 0) {
                             if (step_x > 0) { 
@@ -425,21 +429,21 @@ proc composite_raytrace {
 
                         bounces_left -= 1;
                     } else {
-                        bounces_left = 0;
+                        bounces_left = 0; # break out ot the loop
                     }
                     
                 }
 
                 # this final check is because the above loop stops before its own check
                 if hit_index > 0 {
-                    acc_col_r += att_r * canvas[hit_index].r * canvas[hit_index].emission;
-                    acc_col_g += att_g * canvas[hit_index].g * canvas[hit_index].emission;
-                    acc_col_b += att_b * canvas[hit_index].b * canvas[hit_index].emission;
+                    acc_col_r += att_r * TO_LINEAR(canvas[hit_index].r) * canvas[hit_index].emission;
+                    acc_col_g += att_g * TO_LINEAR(canvas[hit_index].g) * canvas[hit_index].emission;
+                    acc_col_b += att_b * TO_LINEAR(canvas[hit_index].b) * canvas[hit_index].emission;
                 } else {
                     # sky
-                    acc_col_r += att_r * 1 * (0.5*rand_y/2);
-                    acc_col_g += att_g * 1 * (0.5*rand_y/2); 
-                    acc_col_b += att_b * 1 * (0.5*rand_y/2);
+                    acc_col_r += att_r * (1 * TO_LINEAR(0.5+(rand_y/2)));
+                    acc_col_g += att_g * (1 * TO_LINEAR(0.5+(rand_y/2))); 
+                    acc_col_b += att_b * (1 * TO_LINEAR(0.5+(rand_y/2)));
                 }
 
                 if acc_col_r > 1 {acc_col_r = 1;}
@@ -451,9 +455,9 @@ proc composite_raytrace {
                 total_b += acc_col_b;
             }
 
-            render_cache_1_r[i] = total_r / samples;
-            render_cache_2_g[i] = total_g / samples;
-            render_cache_3_b[i] = total_b / samples;
+            render_cache_1_r[i] = FROM_LINEAR(total_r / samples);
+            render_cache_2_g[i] = FROM_LINEAR(total_g / samples);
+            render_cache_3_b[i] = FROM_LINEAR(total_b / samples);
             ix++;
             i++;
         }
