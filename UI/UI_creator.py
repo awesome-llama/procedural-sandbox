@@ -315,6 +315,7 @@ panels['gen.eca'] = Container([
     Expander('Canvas', '', True, [
         Value.canvas_size('Size X', 'gen.eca.size_x', 64),
         Value.canvas_size('Size Y', 'gen.eca.size_y', 64),
+        Value('Extrude Z', 'gen.eca.extrude_z', 0, 0, 4, 0, 4096, 1)
     ]),
     Expander('Variant', '', True, [
         Label('Suggested rules:'),
@@ -367,8 +368,9 @@ panels['gen.extruded_grid'] = Container([ # "I call them cities"
         Value('Jitter', 'gen.extruded_grid.jitter_fac', 0, 0, 1, snap_frac=1000),
     ]),
     Expander('Color', '', True, [
-        Color('Color 1', 'gen.extruded_grid.col1', '000000'),
-        Color('Color 2', 'gen.extruded_grid.col2', 'ffffff'),
+        Color('Color 1', 'gen.extruded_grid.col1', '007F7F'), # green
+        Color('Color 2', 'gen.extruded_grid.col2', 'FDFE7F'), # yellow
+        Value('Glow', 'gen.extruded_grid.glow', 0, 0, 1, 0, 1),
     ]),
     Button('Generate', 'gen.extruded_grid.run'),
 ])

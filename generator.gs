@@ -53,17 +53,18 @@ on "gen.eca.run" {
     delete UI_return;
     setting_from_id "gen.eca.size_x";
     setting_from_id "gen.eca.size_y";
+    setting_from_id "gen.eca.extrude_z";
     setting_from_id "gen.eca.rule";
     setting_from_id "gen.eca.random_initial_condition";
     setting_from_id "gen.eca.state_0_col";
     setting_from_id "gen.eca.state_1_col";
-    generate_elementary_cellular_automata UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6];
+    generate_elementary_cellular_automata UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6], UI_return[7];
 }
-proc generate_elementary_cellular_automata size_x, size_y, rule, random_start, state_0_col, state_1_col {
+proc generate_elementary_cellular_automata size_x, size_y, extrude_z, rule, random_start, state_0_col, state_1_col {
     # generate the canvas
     canvas_size_x = $size_x;
     canvas_size_y = $size_y;
-    canvas_size_z = 1;
+    canvas_size_z = 1 + $extrude_z;
     clear_canvas;
     reset_depositor;
     set_depositor_from_number $state_0_col;
@@ -110,7 +111,8 @@ proc generate_elementary_cellular_automata size_x, size_y, rule, random_start, s
             custom_grid[iy*canvas_size_x + ix + 1]*2 + \
             custom_grid[iy*canvas_size_x + (ix+1)%canvas_size_x + 1]] {
                 add 1 to custom_grid;
-                set_voxel ix, (canvas_size_y-2)-iy, 0;
+                #set_voxel ix, (canvas_size_y-2)-iy, 0;
+                draw_column ix, (canvas_size_y-2)-iy, 0, canvas_size_z;
             } else {
                 add 0 to custom_grid;
             }
@@ -134,9 +136,10 @@ on "gen.extruded_grid.run" {
     setting_from_id "gen.extruded_grid.jitter_fac";
     setting_from_id "gen.extruded_grid.col1";
     setting_from_id "gen.extruded_grid.col2";
-    generate_extruded_grid UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6], UI_return[7];
+    setting_from_id "gen.extruded_grid.glow";
+    generate_extruded_grid UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6], UI_return[7], UI_return[8];
 }
-proc generate_extruded_grid cell_count, cell_size, cell_spacing, max_height, jitter_fac, col1, col2 {
+proc generate_extruded_grid cell_count, cell_size, cell_spacing, max_height, jitter_fac, col1, col2, glow {
     local total_cell_size = ($cell_size+$cell_spacing);
     
     canvas_size_x = $cell_count*total_cell_size;
@@ -152,6 +155,9 @@ proc generate_extruded_grid cell_count, cell_size, cell_spacing, max_height, jit
         ix = 0;
         repeat $cell_count {
             set_depositor_from_sRGB_value RANDOM_0_1();
+            if (random("0.0", "0.5") < $glow) {
+                depositor_voxel.emission = random("0.0", random($glow, "1.0")); # shouldn't be linear
+            }
             draw_cuboid_corner_size ix+($jitter_fac*total_cell_size*RANDOM_0_1()), iy+($jitter_fac*total_cell_size*RANDOM_0_1()), 0, $cell_size, $cell_size, random(1,$max_height);
             ix += total_cell_size;
         }
@@ -308,17 +314,25 @@ on "gen.refinery.run" {
 }
 
 
-on "gen.city.run" { generate_city; }
-proc generate_city {
-    canvas_size_x = 128;
-    canvas_size_y = 128;
-    canvas_size_z = 16;
+on "gen.city.run" {
+    delete UI_return;
+    setting_from_id "gen.city.size_x";
+    setting_from_id "gen.city.size_y";
+    setting_from_id "gen.city.size_z";
+    generate_city UI_return[1], UI_return[2], UI_return[3]; 
+}
+proc generate_city size_x, size_y, size_z {
+    canvas_size_x = $size_x;
+    canvas_size_y = $size_y;
+    canvas_size_z = $size_z;
     clear_canvas;
     reset_depositor;
     set_depositor_from_sRGB 0.7, 0.7, 0.6;
     draw_base_layer;
 
-    repeat 300 { # cuboids and low pipes
+    local placement_fac = 1 * (canvas_size_x * canvas_size_y / 16384);
+
+    repeat (300*placement_fac) { # cuboids and low pipes
         brightness = random(0.5, 0.9);
         set_depositor_from_sRGB brightness, brightness, brightness;
 
@@ -331,22 +345,18 @@ proc generate_city {
         draw_cuboid_corner_size c1x, c1y, 0, cube_x, cube_y, cube_z-1;
         draw_cuboid_corner_size c1x+1, c1y+1, 0, cube_x-2, cube_y-2, cube_z;
     }
-    repeat 90 { # pipes, grey
+    repeat (90*placement_fac) { # pipes, grey
         brightness = random(0.5, 0.7);
         set_depositor_from_sRGB brightness+random(-0.1, 0.1), brightness+random(-0.1, 0.1), brightness+random(-0.1, 0.1);
         random_walk_taxicab RANDOM_X, RANDOM_Y, random(1, 12), 16, 20;
     }
-    repeat 10 { # pipes multicolor
+    repeat (10*placement_fac) { # pipes multicolor
         set_depositor_from_sRGB random(0.4, 0.9), random(0.4, 0.9), random(0.4, 0.9);
         random_walk_taxicab RANDOM_X, RANDOM_Y, random(1, 16), 16, 20;
     }
-    repeat 10 { # high pipes
+    repeat (10*placement_fac) { # high pipes
         set_depositor_from_sRGB random(0.4, 0.8), random(0.4, 0.8), random(0.4, 0.8);
         random_walk_taxicab RANDOM_X, RANDOM_Y, random(1, 16), 16, 20;
-    }
-    set_depositor_from_sRGB 0.65, 0.65, 0.75;
-    repeat 30 {
-        draw_sphere floor(RANDOM_X * 16)/16, floor(RANDOM_Y * 16)/16, random(1, 6), random(1, 6);
     }
     
     require_composite = true;

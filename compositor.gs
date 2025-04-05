@@ -3,14 +3,12 @@
 costumes "costumes/compositor/compositor.svg" as "compositor";
 hide;
 
-list brightness; # LUT
-
 on "initalise" {
     hide;
 }
 
 on "hard reset" {
-    delete brightness;
+
 }
 
 onkey "1" {
@@ -94,10 +92,6 @@ proc composite {
 
     } elif (compositor_mode == CompositorMode.DENSITY) {
         composite_density;
-
-    } elif (compositor_mode == CompositorMode.PENETRATION) {
-        generate_pass_topmost;
-        composite_penetration;
 
     } elif (compositor_mode == CompositorMode.NORMAL) {
         generate_pass_topmost;
@@ -189,26 +183,23 @@ proc composite_topmost_color {
 
 # a semi-realistic shaded style, accounting for translucency and AO.
 proc composite_shaded_color {
-    make_brightness_LUT 0.8, 1;
     layer_size = (canvas_size_x * canvas_size_y);
     i = 1;
     repeat layer_size {
         iz = 0;
-        local brightness_index = 1; # brightness is slightly altered by depth
         local r = TO_LINEAR(0.5); # the background color
         local g = TO_LINEAR(0.5);
         local b = TO_LINEAR(0.5);
 
         repeat canvas_size_z {
             if (canvas[i+iz].opacity > 0) {
-                r += (canvas[i+iz].opacity * (TO_LINEAR(brightness[brightness_index]*canvas[i+iz].r)-r));
-                g += (canvas[i+iz].opacity * (TO_LINEAR(brightness[brightness_index]*canvas[i+iz].g)-g));
-                b += (canvas[i+iz].opacity * (TO_LINEAR(brightness[brightness_index]*canvas[i+iz].b)-b));
+                r += (canvas[i+iz].opacity * (TO_LINEAR(canvas[i+iz].r)-r));
+                g += (canvas[i+iz].opacity * (TO_LINEAR(canvas[i+iz].g)-g));
+                b += (canvas[i+iz].opacity * (TO_LINEAR(canvas[i+iz].b)-b));
             }
             iz += layer_size;
-            brightness_index += 1;
         }
-        local ao_fac = 0.7 + (0.3 * render_cache_ao[i]);
+        local ao_fac = 0.5 + (0.5 * render_cache_ao[i]);
         render_cache_1_r[i] = FROM_LINEAR(r * ao_fac);
         render_cache_2_g[i] = FROM_LINEAR(g * ao_fac);
         render_cache_3_b[i] = FROM_LINEAR(b * ao_fac);
@@ -256,19 +247,6 @@ proc composite_density {
         render_cache_1_r[i] = density / canvas_size_z;
         render_cache_2_g[i] = density / canvas_size_z;
         render_cache_3_b[i] = density / canvas_size_z;
-        i++;
-    }
-}
-
-# raycast down, for visualising transparency, normalised to greyscale 0-1
-proc composite_penetration {
-    layer_size = (canvas_size_x * canvas_size_y);
-    i = 1;
-    repeat layer_size {
-        local penetration_val = canvas[i+(layer_size*render_cache_topmost[i])].opacity;
-        render_cache_1_r[i] = penetration_val;
-        render_cache_2_g[i] = penetration_val;
-        render_cache_3_b[i] = penetration_val;
         i++;
     }
 }
@@ -469,17 +447,6 @@ proc composite_raytrace {
 ################################
 #            Utils             #
 ################################
-
-# A list of brightnesses for each Z value.
-# It should be quicker to find index than interpolate... probably (remember we need control of both start and end, it's not normalised)
-proc make_brightness_LUT start, end {
-    delete brightness;
-    t = 0;
-    repeat canvas_size_z {
-        add ($start+(($end-$start)*t)) to brightness;
-        t += (1/(canvas_size_z-1));
-    }
-}
 
 
 # Special implementation of 3D DDA, returns ray_light for 2D composited AO. Optimised for downwards rays only.

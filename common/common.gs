@@ -58,7 +58,6 @@ enum CompositorMode {
     HEIGHT = "HEIGHT", # heightmap, topmost voxel elevation
     AO = "AO", # ambient occlusion
     DENSITY = "DENSITY", # number of voxels in the column, weighted by opacity
-    PENETRATION = "PENETRATION", # opacity of topmost non-empty voxel
     NORMAL = "NORMAL" # heightmap converted to normal map
 }
 
