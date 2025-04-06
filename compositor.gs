@@ -52,13 +52,14 @@ onkey "6" {
 #             Main             #
 ################################
 
+
 on "composite" {
     # run different custom blocks depending on mode
     if (compositor_mode == CompositorMode.COLOR) {
         composite_topmost_color;
 
     } elif (compositor_mode == CompositorMode.SHADED) {
-        composite_shaded_color;
+        init_ao_pass;
 
     } elif (compositor_mode == CompositorMode.RAYTRACED) {
         init_raytracer;
@@ -67,50 +68,41 @@ on "composite" {
         composite_heightmap;
 
     } elif (compositor_mode == CompositorMode.AO) {
-        composite_ao;
+        init_ao_pass;
 
     } elif (compositor_mode == CompositorMode.DENSITY) {
         composite_density;
 
     } elif (compositor_mode == CompositorMode.NORMAL) {
         composite_normal 1;
-    
-    } else {}
+
+    }
 
     require_composite = false;
 }
 
 
 on "iterative compositor" {
-    if (compositor_mode == CompositorMode.RAYTRACED) {
-        iterate_raytracer 64, 0.3;
-        if (counted_samples > 64) {
-            require_iterative_compositor = false;
-        }
-        require_screen_refresh = true;
+    max_samples = 64;
+    max_iteration_time = 0.3;
+
+    if (compositor_mode == CompositorMode.SHADED) {
+        iterate_ao max_samples, max_iteration_time;
+        composite_shaded_color;
+
+    } elif (compositor_mode == CompositorMode.RAYTRACED) {
+        iterate_raytracer max_samples, max_iteration_time;
+
+    } elif (compositor_mode == CompositorMode.AO) {
+        iterate_ao max_samples, max_iteration_time;
+        composite_ao;
     }
-}
 
-
-proc resize_render_cache {
-    if ((length render_cache_final_col) != (canvas_size_x * canvas_size_y)) {
-        delete render_cache_final_col;
-        repeat (canvas_size_x * canvas_size_y) {
-            add 0 to render_cache_final_col;
-        }
+    if (counted_samples > max_samples) {
+        require_iterative_compositor = false;
     }
+    require_screen_refresh = true;
 }
-
-
-proc combine_render_cache {
-    # make combined values
-    i = 1;
-    repeat (canvas_size_x * canvas_size_y) {
-        render_cache_final_col[i] = COMBINE_RGB_CHANNELS((render_cache_1_r[i]), (render_cache_2_g[i]), (render_cache_3_b[i]));
-        i++;
-    }
-}
-
 
 
 ################################
@@ -145,41 +137,7 @@ proc generate_pass_topmost {
             i++;
         }
     }
-    
-    
 }
-
-
-# ambient occlusion in 2D on the topmost non-air voxel. Requires topmost voxel data.
-proc generate_pass_ao {
-    layer_size = (canvas_size_x * canvas_size_y);
-    if ((length render_cache_ao) != layer_size) {
-        delete render_cache_ao;
-        repeat layer_size {
-            add 0 to render_cache_ao;
-        }
-    }
-
-    i = 1;
-    iy = 0.5; # center of voxel
-    local samples = 64;
-    repeat canvas_size_y {
-        ix = 0.5; # center of voxel
-        repeat canvas_size_x {
-            local cumulative_light = 0;
-            repeat samples {
-                local bearing = random("0", "360.0"); # needs to be a float. This is not deterministic
-                raycast_AO ix, iy, render_cache_topmost[i]+1, sin(bearing), cos(bearing), tan(random("18.43", "90.0"));
-                cumulative_light += ray_light;
-            }
-            render_cache_ao[i] = cumulative_light / samples;
-            ix++;
-            i++;
-        }
-        iy++;
-    }
-}
-
 
 
 ################################
@@ -207,38 +165,6 @@ proc composite_topmost_color {
 }
 
 
-# a semi-realistic shaded style, accounting for translucency and AO.
-proc composite_shaded_color {
-    resize_render_cache;
-    generate_pass_topmost;
-    generate_pass_ao;
-    layer_size = (canvas_size_x * canvas_size_y);
-    i = 1;
-    repeat layer_size {
-        iz = 0;
-        local r = TO_LINEAR(0.5); # the background color
-        local g = TO_LINEAR(0.5);
-        local b = TO_LINEAR(0.5);
-
-        repeat canvas_size_z {
-            if (canvas[i+iz].opacity > 0) {
-                r += (canvas[i+iz].opacity * (TO_LINEAR(canvas[i+iz].r)-r));
-                g += (canvas[i+iz].opacity * (TO_LINEAR(canvas[i+iz].g)-g));
-                b += (canvas[i+iz].opacity * (TO_LINEAR(canvas[i+iz].b)-b));
-            }
-            iz += layer_size;
-        }
-        local ao_fac = 0.5 + (0.5 * render_cache_ao[i]);
-        local r = FROM_LINEAR(r * ao_fac);
-        local g = FROM_LINEAR(g * ao_fac);
-        local b = FROM_LINEAR(b * ao_fac);
-        render_cache_final_col[i] = COMBINE_RGB_CHANNELS(r, g, b);
-        i++;
-    }
-    require_screen_refresh = true;
-}
-
-
 # heightmap of the topmost non-transparent voxel, normalised to greyscale 0-1
 proc composite_heightmap {
     resize_render_cache;
@@ -247,21 +173,6 @@ proc composite_heightmap {
     repeat (canvas_size_x * canvas_size_y) {
         local height = (render_cache_topmost[i]+1) / canvas_size_z;
         render_cache_final_col[i] = COMBINE_RGB_CHANNELS(height, height, height);
-        i++;
-    }
-    require_screen_refresh = true;
-}
-
-
-# ambient occlusion, normalised to greyscale 0-1
-proc composite_ao {
-    resize_render_cache;
-    generate_pass_topmost;
-    generate_pass_ao;
-    i = 1;
-    repeat (canvas_size_x * canvas_size_y) {
-        local ao_fac = (1 * render_cache_ao[i]);
-        render_cache_final_col[i] = COMBINE_RGB_CHANNELS(ao_fac, ao_fac, ao_fac);
         i++;
     }
     require_screen_refresh = true;
@@ -347,27 +258,97 @@ proc composite_normal intensity {
 }
 
 
-proc random_vector nx, ny, nz {
-    forever {
-        rand_x = random("-1.0", "1.0");
-        rand_y = random("-1.0", "1.0");
-        rand_z = random("-1.0", "1.0");
-        local vec_len = VEC3_LEN(rand_x, rand_y, rand_z);
-        if (vec_len < 1.001 and vec_len > 0.001) {
-            rand_x /= vec_len;
-            rand_y /= vec_len;
-            rand_z /= vec_len;
+################################
+#       Iterative modes        #
+################################
 
-            if DOT_PRODUCT_3D(rand_x, rand_y, rand_z, $nx, $ny, $nz) < 0 {
-                rand_x *= -1;
-                rand_y *= -1;
-                rand_z *= -1;
+
+# used by both ao and shaded modes
+proc init_ao_pass {
+    generate_pass_topmost;
+    counted_samples = 1;
+    delete render_cache_ao;
+    delete render_cache_final_col;
+    repeat layer_size {
+        add 0 to render_cache_ao;
+        add 0 to render_cache_final_col;
+    }
+    require_iterative_compositor = true;
+}
+
+
+# ambient occlusion in 2D on the topmost non-air voxel. Requires topmost voxel data.
+proc iterate_ao max_samples, max_time {
+    start_time = days_since_2000();
+
+    layer_size = (canvas_size_x * canvas_size_y);
+
+    repeat $max_samples {
+        i = 1;
+        iy = 0;
+        repeat canvas_size_y {
+            ix = 0;
+            repeat canvas_size_x {
+                local bearing = random("0", "360.0");
+                raycast_AO ix+RANDOM_0_1(), iy+RANDOM_0_1(), render_cache_topmost[i]+1, sin(bearing), cos(bearing), tan(random("18.43", "90.0"));
+                render_cache_ao[i] += ray_light;
+                ix++;
+                i++;
             }
+            iy++;
+        }
+        
+        counted_samples += 1;
 
-            stop_this_script;
+        if ((days_since_2000()-start_time)*86400 > $max_time) {
+            stop_this_script; # out of time
         }
     }
 }
+
+
+# a semi-realistic shaded style, accounting for translucency and AO.
+proc composite_shaded_color {
+    layer_size = (canvas_size_x * canvas_size_y);
+    i = 1;
+    repeat layer_size {
+        iz = 0;
+        local r = TO_LINEAR(0.5); # the background color
+        local g = TO_LINEAR(0.5);
+        local b = TO_LINEAR(0.5);
+
+        repeat canvas_size_z {
+            if (canvas[i+iz].opacity > 0) {
+                r += (canvas[i+iz].opacity * (TO_LINEAR(canvas[i+iz].r)-r));
+                g += (canvas[i+iz].opacity * (TO_LINEAR(canvas[i+iz].g)-g));
+                b += (canvas[i+iz].opacity * (TO_LINEAR(canvas[i+iz].b)-b));
+            }
+            iz += layer_size;
+        }
+        local ao_fac = 0.5 + (0.5 * (render_cache_ao[i] / counted_samples));
+        if (ao_fac > 1) { ao_fac = 1; }
+        
+        local r = FROM_LINEAR(r * ao_fac);
+        local g = FROM_LINEAR(g * ao_fac);
+        local b = FROM_LINEAR(b * ao_fac);
+        render_cache_final_col[i] = COMBINE_RGB_CHANNELS(r, g, b);
+        i++;
+    }
+}
+
+
+# ambient occlusion, normalised to greyscale 0-1
+proc composite_ao {
+    i = 1;
+    repeat (canvas_size_x * canvas_size_y) {
+        local ao_fac = FROM_LINEAR((1 * render_cache_ao[i]) / counted_samples);
+        if (ao_fac > 1) { ao_fac = 1; }
+        
+        render_cache_final_col[i] = COMBINE_RGB_CHANNELS(ao_fac, ao_fac, ao_fac);
+        i++;
+    }
+}
+
 
 
 proc init_raytracer {
@@ -381,7 +362,6 @@ proc init_raytracer {
         add 0 to render_cache_2_g;
         add 0 to render_cache_3_b;
         add 0 to render_cache_final_col;
-        i++;
     }
     require_iterative_compositor = true;
 }
@@ -658,5 +638,41 @@ proc raycast_wrapped_canvas x, y, z, dx, dy, dz {
 
     hit_index = 0;
 }
+
+
+# generate a random normalised hemisphere vector
+proc random_vector nx, ny, nz {
+    forever {
+        rand_x = random("-1.0", "1.0");
+        rand_y = random("-1.0", "1.0");
+        rand_z = random("-1.0", "1.0");
+        local vec_len = VEC3_LEN(rand_x, rand_y, rand_z);
+        if (vec_len < 1.001 and vec_len > 0.001) {
+            rand_x /= vec_len;
+            rand_y /= vec_len;
+            rand_z /= vec_len;
+
+            if DOT_PRODUCT_3D(rand_x, rand_y, rand_z, $nx, $ny, $nz) < 0 {
+                rand_x *= -1;
+                rand_y *= -1;
+                rand_z *= -1;
+            }
+
+            stop_this_script;
+        }
+    }
+}
+
+
+# resize the render cache (final col only)
+proc resize_render_cache {
+    if ((length render_cache_final_col) != (canvas_size_x * canvas_size_y)) {
+        delete render_cache_final_col;
+        repeat (canvas_size_x * canvas_size_y) {
+            add 0 to render_cache_final_col;
+        }
+    }
+}
+
 
 
