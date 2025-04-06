@@ -39,8 +39,10 @@ on "start main loop" {
         }
 
         if (require_composite == true) {
-            broadcast "composite";
-            require_composite = false;
+            broadcast_and_wait "composite";
+        }
+        if (require_iterative_compositor == true) {
+            broadcast_and_wait "iterative compositor";
         }
         if (require_screen_refresh == true) {
             erase_all;
