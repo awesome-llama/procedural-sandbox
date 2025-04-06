@@ -389,13 +389,16 @@ proc render_modular_element index, x, y, width, panel_id {
         if (UI_data[$index+10] == "full") {
             UI_check_touching_mouse $x, $y, $width, LINEHIGHT, $panel_id, $index;
             if (IS_HOVERED_MODULAR_PANEL()) {
-                draw_UI_rect $x, ($y-1), $width, LINEHIGHT-2, 2, THEME_COL_OUTLINE_HIGHLIGHT, THEME_COL_FILL_HIGHLIGHT;
+                # darkens to better show fill indicator
+                draw_UI_rect $x, ($y-1), $width, LINEHIGHT-2, 2, THEME_COL_OUTLINE_HIGHLIGHT, "#151515";
             } else {
                 draw_UI_rect $x, ($y-1), $width, LINEHIGHT-2, 2, THEME_COL_OUTLINE, THEME_COL_FILL;
             }
 
             # draw the fill indicator
-            draw_rect $x+1, $y-(LINEHIGHT-2), round(($width-3)*UNLERP(UI_data[$index+5],UI_data[$index+6],UI_data[$index+3])), LINEHIGHT-5, 0, "#505050"; 
+            if (UI_data[$index+3] != UI_data[$index+5]) {
+                draw_rect $x+1, $y-(LINEHIGHT-2), round(($width-3)*UNLERP(UI_data[$index+5],UI_data[$index+6],UI_data[$index+3])), LINEHIGHT-5, 0, "#505050"; 
+            }
 
             # text
             set_pen_color THEME_COL_TEXT;
@@ -451,7 +454,7 @@ proc render_modular_element index, x, y, width, panel_id {
             UI_y -= (LINEHIGHT+2);
             render_modular_element $index+5, $x+5, UI_y, $width-10, $panel_id; # first child
             
-            UI_y -= 3; # line (from bottom of rect) then margin
+            UI_y -= 4; # line (from bottom of rect) then margin
 
             set_pen_color THEME_COL_OUTLINE;
             set_pen_size 1;
