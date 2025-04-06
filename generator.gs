@@ -49,6 +49,103 @@ on "io.new_canvas.run"{
 }
 
 
+on "gen.ballpit.run" {
+    delete UI_return;
+    setting_from_id "gen.ballpit.size_x";
+    setting_from_id "gen.ballpit.size_y";
+    setting_from_id "gen.ballpit.size_z";
+    setting_from_id "gen.ballpit.ground_col";
+
+    setting_from_id "gen.ballpit.radius_min";
+    setting_from_id "gen.ballpit.radius_max";
+    setting_from_id "gen.ballpit.density";
+    setting_from_id "gen.ballpit.ball_target_col";
+    setting_from_id "gen.ballpit.variance_hue";
+    setting_from_id "gen.ballpit.variance_sat";
+    setting_from_id "gen.ballpit.variance_val";
+    setting_from_id "gen.ballpit.variance_opacity";
+    setting_from_id "gen.ballpit.variance_emission";
+    generate_ballpit UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6], UI_return[7], UI_return[8], UI_return[9], UI_return[10], UI_return[11], UI_return[12], UI_return[13]; 
+}
+%define AVG_VOL_OF_SPHERE(RAD1,RAD2) (1.04719755 * (((RAD2*RAD2*RAD2*RAD2)-(RAD1*RAD1*RAD1*RAD1))/(RAD2*RAD1)))
+proc generate_ballpit size_x, size_y, size_z, ground_col, rad_min, rad_max, density, ball_col, var_hue, var_sat, var_val, var_opacity, var_emission {
+    canvas_size_x = $size_x;
+    canvas_size_y = $size_y;
+    canvas_size_z = $size_z;
+    clear_canvas;
+    reset_depositor;
+    set_depositor_from_number $ground_col;
+    draw_base_layer;
+
+    # TODO get HSV of ball_col
+    repeat ($density * ((canvas_size_x * canvas_size_y * canvas_size_z)/AVG_VOL_OF_SPHERE($rad_min, $rad_max))) {
+        set_depositor_from_HSV $var_hue*random("-0.5","0.5"), 1, 1;
+        depositor_voxel.opacity = 1-random("0.0", $var_opacity);
+        if (random("0.0", "0.5") < $var_emission) {
+            depositor_voxel.emission = random("0.0", random($var_emission, "1.0")); # "glow"
+        }
+
+        local radius = round(random($rad_min, $rad_max)*2)/2;
+        if (canvas_size_z-1-radius < 0) {
+            draw_sphere random(1, canvas_size_x), random(1, canvas_size_y), random(1, canvas_size_z)-1, radius;
+        } else {
+            draw_sphere random(1, canvas_size_x), random(1, canvas_size_y), 0, radius;
+        }
+        
+    }
+}
+
+
+on "gen.city.run" {
+    delete UI_return;
+    setting_from_id "gen.city.size_x";
+    setting_from_id "gen.city.size_y";
+    setting_from_id "gen.city.size_z";
+    setting_from_id "gen.city.ground_col";
+    generate_city UI_return[1], UI_return[2], UI_return[3], UI_return[4]; 
+}
+proc generate_city size_x, size_y, size_z, ground_col {
+    canvas_size_x = $size_x;
+    canvas_size_y = $size_y;
+    canvas_size_z = $size_z;
+    clear_canvas;
+    reset_depositor;
+    set_depositor_from_number $ground_col;
+    draw_base_layer;
+
+    local placement_fac = 1 * (canvas_size_x * canvas_size_y / 16384);
+
+    repeat (300*placement_fac) { # cuboids and low pipes
+        brightness = random(0.5, 0.9);
+        set_depositor_from_sRGB brightness, brightness, brightness;
+
+        local c1x = RANDOM_X;
+        local c1y = RANDOM_Y;
+        local cube_x = random(2,16);
+        local cube_y = random(2,16);
+        local cube_z = random(1, 15);
+
+        draw_cuboid_corner_size c1x, c1y, 0, cube_x, cube_y, cube_z-1;
+        draw_cuboid_corner_size c1x+1, c1y+1, 0, cube_x-2, cube_y-2, cube_z;
+    }
+    repeat (90*placement_fac) { # pipes, grey
+        brightness = random(0.5, 0.7);
+        set_depositor_from_sRGB brightness+random(-0.1, 0.1), brightness+random(-0.1, 0.1), brightness+random(-0.1, 0.1);
+        random_walk_taxicab RANDOM_X, RANDOM_Y, random(1, 12), 16, 20;
+    }
+    repeat (10*placement_fac) { # pipes multicolor
+        set_depositor_from_sRGB random(0.4, 0.9), random(0.4, 0.9), random(0.4, 0.9);
+        random_walk_taxicab RANDOM_X, RANDOM_Y, random(1, 16), 16, 20;
+    }
+    repeat (10*placement_fac) { # high pipes
+        set_depositor_from_sRGB random(0.4, 0.8), random(0.4, 0.8), random(0.4, 0.8);
+        random_walk_taxicab RANDOM_X, RANDOM_Y, random(1, 16), 16, 20;
+    }
+    
+    require_composite = true;
+}
+
+
 on "gen.eca.run" {
     delete UI_return;
     setting_from_id "gen.eca.size_x";
@@ -314,57 +411,6 @@ on "gen.refinery.run" {
 }
 
 
-on "gen.city.run" {
-    delete UI_return;
-    setting_from_id "gen.city.size_x";
-    setting_from_id "gen.city.size_y";
-    setting_from_id "gen.city.size_z";
-    generate_city UI_return[1], UI_return[2], UI_return[3]; 
-}
-proc generate_city size_x, size_y, size_z {
-    canvas_size_x = $size_x;
-    canvas_size_y = $size_y;
-    canvas_size_z = $size_z;
-    clear_canvas;
-    reset_depositor;
-    set_depositor_from_sRGB 0.7, 0.7, 0.6;
-    draw_base_layer;
-
-    local placement_fac = 1 * (canvas_size_x * canvas_size_y / 16384);
-
-    repeat (300*placement_fac) { # cuboids and low pipes
-        brightness = random(0.5, 0.9);
-        set_depositor_from_sRGB brightness, brightness, brightness;
-
-        local c1x = RANDOM_X;
-        local c1y = RANDOM_Y;
-        local cube_x = random(2,16);
-        local cube_y = random(2,16);
-        local cube_z = random(1, 15);
-
-        draw_cuboid_corner_size c1x, c1y, 0, cube_x, cube_y, cube_z-1;
-        draw_cuboid_corner_size c1x+1, c1y+1, 0, cube_x-2, cube_y-2, cube_z;
-    }
-    repeat (90*placement_fac) { # pipes, grey
-        brightness = random(0.5, 0.7);
-        set_depositor_from_sRGB brightness+random(-0.1, 0.1), brightness+random(-0.1, 0.1), brightness+random(-0.1, 0.1);
-        random_walk_taxicab RANDOM_X, RANDOM_Y, random(1, 12), 16, 20;
-    }
-    repeat (10*placement_fac) { # pipes multicolor
-        set_depositor_from_sRGB random(0.4, 0.9), random(0.4, 0.9), random(0.4, 0.9);
-        random_walk_taxicab RANDOM_X, RANDOM_Y, random(1, 16), 16, 20;
-    }
-    repeat (10*placement_fac) { # high pipes
-        set_depositor_from_sRGB random(0.4, 0.8), random(0.4, 0.8), random(0.4, 0.8);
-        random_walk_taxicab RANDOM_X, RANDOM_Y, random(1, 16), 16, 20;
-    }
-    
-    require_composite = true;
-}
-
-
-
-
 on "gen.wheel.run" { 
     delete UI_return;
     #setting_from_id "gen.wheel.rim_radius";
@@ -469,87 +515,6 @@ proc generate_grad {
     
     require_composite = true;
 }
-
-
-on "fx.recolor.run" {
-    delete UI_return;
-    setting_from_id "fx.recolor.weight_r";
-    setting_from_id "fx.recolor.weight_g";
-    setting_from_id "fx.recolor.weight_b";
-    setting_from_id "fx.recolor.map_0";
-    setting_from_id "fx.recolor.map_1";
-    setting_from_id "fx.recolor.col_0";
-    setting_from_id "fx.recolor.col_1";
-    setting_from_id "fx.recolor.use_sRGB";
-    glbfx_recolor UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6], UI_return[7], UI_return[8];
-}
-# remaps colors
-proc glbfx_recolor weight_r, weight_g, weight_b, map_0, map_1, col_0, col_1, use_sRGB {
-    if $use_sRGB {
-        # interpolate in sRGB. Assumes the map values are also sRGB values.
-        local c0r = ((($col_0//65536)%256)/255);
-        local c0g = ((($col_0//256)%256)/255);
-        local c0b = (($col_0%256)/255);
-        local c1r = ((($col_1//65536)%256)/255);
-        local c1g = ((($col_1//256)%256)/255);
-        local c1b = (($col_1%256)/255);
-        
-        i = 1;
-        repeat (canvas_size_x * canvas_size_y * canvas_size_z) {
-            # get RGB converted to value
-
-            t = canvas[i].r*$weight_r + canvas[i].g*$weight_g + canvas[i].b*$weight_b;
-            t = UNLERP($map_0, $map_1, t);
-            
-            # clamp
-            if t < 0 {
-                t = 0;
-            } elif t > 1 {
-                t = 1;
-            }
-
-            # use fac to interpolate colours
-            canvas[i].r = (LERP(c0r,c1r,t));
-            canvas[i].g = (LERP(c0g,c1g,t));
-            canvas[i].b = (LERP(c0b,c1b,t));
-            i++;
-        }
-    } else {
-        # interpolate in linear space. This probably isn't very useful.
-
-        local c0r = TO_LINEAR((($col_0//65536)%256)/255);
-        local c0g = TO_LINEAR((($col_0//256)%256)/255);
-        local c0b = TO_LINEAR(($col_0%256)/255);
-        local c1r = TO_LINEAR((($col_1//65536)%256)/255);
-        local c1g = TO_LINEAR((($col_1//256)%256)/255);
-        local c1b = TO_LINEAR(($col_1%256)/255);
-        
-        i = 1;
-        repeat (canvas_size_x * canvas_size_y * canvas_size_z) {
-            # get RGB converted to value
-
-            t = canvas[i].r*$weight_r + canvas[i].g*$weight_g + canvas[i].b*$weight_b;
-            t = UNLERP($map_0, $map_1, t);
-            
-            # clamp
-            if t < 0 {
-                t = 0;
-            } elif t > 1 {
-                t = 1;
-            }
-
-            # use fac to interpolate colours
-            canvas[i].r = FROM_LINEAR(LERP(c0r,c1r,t));
-            canvas[i].g = FROM_LINEAR(LERP(c0g,c1g,t));
-            canvas[i].b = FROM_LINEAR(LERP(c0b,c1b,t));
-            i++;
-        }
-    }
-    
-    require_composite = true;
-}
-
-
 
 
 ################################
@@ -1199,4 +1164,85 @@ proc glbfx_mirror_y keep_lower {
     # no rewrite or temp list required
     require_composite = true;
 }
+
+
+on "fx.recolor.run" {
+    delete UI_return;
+    setting_from_id "fx.recolor.weight_r";
+    setting_from_id "fx.recolor.weight_g";
+    setting_from_id "fx.recolor.weight_b";
+    setting_from_id "fx.recolor.map_0";
+    setting_from_id "fx.recolor.map_1";
+    setting_from_id "fx.recolor.col_0";
+    setting_from_id "fx.recolor.col_1";
+    setting_from_id "fx.recolor.use_sRGB";
+    glbfx_recolor UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6], UI_return[7], UI_return[8];
+}
+# remaps colors
+proc glbfx_recolor weight_r, weight_g, weight_b, map_0, map_1, col_0, col_1, use_sRGB {
+    if $use_sRGB {
+        # interpolate in sRGB. Assumes the map values are also sRGB values.
+        local c0r = ((($col_0//65536)%256)/255);
+        local c0g = ((($col_0//256)%256)/255);
+        local c0b = (($col_0%256)/255);
+        local c1r = ((($col_1//65536)%256)/255);
+        local c1g = ((($col_1//256)%256)/255);
+        local c1b = (($col_1%256)/255);
+        
+        i = 1;
+        repeat (canvas_size_x * canvas_size_y * canvas_size_z) {
+            # get RGB converted to value
+
+            t = canvas[i].r*$weight_r + canvas[i].g*$weight_g + canvas[i].b*$weight_b;
+            t = UNLERP($map_0, $map_1, t);
+            
+            # clamp
+            if t < 0 {
+                t = 0;
+            } elif t > 1 {
+                t = 1;
+            }
+
+            # use fac to interpolate colours
+            canvas[i].r = (LERP(c0r,c1r,t));
+            canvas[i].g = (LERP(c0g,c1g,t));
+            canvas[i].b = (LERP(c0b,c1b,t));
+            i++;
+        }
+    } else {
+        # interpolate in linear space. This probably isn't very useful.
+
+        local c0r = TO_LINEAR((($col_0//65536)%256)/255);
+        local c0g = TO_LINEAR((($col_0//256)%256)/255);
+        local c0b = TO_LINEAR(($col_0%256)/255);
+        local c1r = TO_LINEAR((($col_1//65536)%256)/255);
+        local c1g = TO_LINEAR((($col_1//256)%256)/255);
+        local c1b = TO_LINEAR(($col_1%256)/255);
+        
+        i = 1;
+        repeat (canvas_size_x * canvas_size_y * canvas_size_z) {
+            # get RGB converted to value
+
+            t = canvas[i].r*$weight_r + canvas[i].g*$weight_g + canvas[i].b*$weight_b;
+            t = UNLERP($map_0, $map_1, t);
+            
+            # clamp
+            if t < 0 {
+                t = 0;
+            } elif t > 1 {
+                t = 1;
+            }
+
+            # use fac to interpolate colours
+            canvas[i].r = FROM_LINEAR(LERP(c0r,c1r,t));
+            canvas[i].g = FROM_LINEAR(LERP(c0g,c1g,t));
+            canvas[i].b = FROM_LINEAR(LERP(c0b,c1b,t));
+            i++;
+        }
+    }
+    
+    require_composite = true;
+}
+
+
 

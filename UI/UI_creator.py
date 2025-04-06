@@ -189,6 +189,7 @@ panels['menu.gen'] = Container([
     Label.title('Generate'),
     Separator(),
     btn_menu_set_page('City', 'gen.city'),
+    btn_menu_set_page('Ballpit', 'gen.ballpit'),
     btn_menu_set_page('Elem. cellular automata', 'gen.eca'),
     btn_menu_set_page('Extruded grid', 'gen.extruded_grid'),
     btn_menu_set_page('Erosion', 'gen.erosion'),
@@ -295,6 +296,32 @@ panels['io.export_height_map'] = Container([
 #             Gen              #
 ################################
 
+panels['gen.ballpit'] = Container([
+    Label.title('Generate ballpit'),
+    Separator(),
+    Expander('Canvas', '', True, [
+        Value.canvas_size('Size X', 'gen.ballpit.size_x', 64),
+        Value.canvas_size('Size Y', 'gen.ballpit.size_y', 64),
+        Value.canvas_size('Size Z', 'gen.ballpit.size_z', 16),
+        Color('Ground color', 'gen.ballpit.ground_col', '48433e'),
+    ]),
+    Expander('Balls', '', True, [
+        Value('Min. radius', 'gen.ballpit.radius_min', 1, 0.5, 16, 0, 256, 2),
+        Value('Max. radius', 'gen.ballpit.radius_max', 4, 0.5, 16, 0, 256, 2),
+        Value('Density', 'gen.ballpit.density', 0.5, 0, 1, 0, 10),
+        Separator(0),
+        Expander('Ball color', '', False, [
+            Color('Target color', 'gen.ballpit.ball_target_col', 'ff3000'),
+            Value.fraction('Hue variance', 'gen.ballpit.variance_hue', 0.2),
+            Value.fraction('Sat variance', 'gen.ballpit.variance_sat', 0.4),
+            Value.fraction('Val variance', 'gen.ballpit.variance_val', 0.4),
+            Value.fraction('Opacity variance', 'gen.ballpit.variance_opacity', 1),
+            Value.fraction('Glow', 'gen.ballpit.variance_emission', 0.5),
+        ]),
+    ]),
+    Button('Generate', 'gen.ballpit.run'),
+])
+
 panels['gen.city'] = Container([
     Label.title('Generate city'),
     Separator(),
@@ -370,7 +397,7 @@ panels['gen.extruded_grid'] = Container([ # "I call them cities"
     Expander('Color', '', True, [
         Color('Color 1', 'gen.extruded_grid.col1', '007F7F'), # green
         Color('Color 2', 'gen.extruded_grid.col2', 'FDFE7F'), # yellow
-        Value('Glow', 'gen.extruded_grid.glow', 0, 0, 1, 0, 1),
+        Value.fraction('Glow', 'gen.extruded_grid.glow', 0),
     ]),
     Button('Generate', 'gen.extruded_grid.run'),
 ])
@@ -383,7 +410,7 @@ panels['gen.maze'] = Container([
         Value('Cell size', 'gen.maze.cell_size', 2, 1, 8, 1, 256, snap_frac=1),
         Value('Wall thickness', 'gen.maze.wall_thickness', 1, 1, 8, 1, 256, snap_frac=1),
         Value('Wall height', 'gen.maze.wall_height', 2, 0, 8, 0, 256, snap_frac=1),
-        Value('Pertubation', 'gen.maze.pertubation', 0.5, 0, 1, snap_frac=100),
+        Value.fraction('Pertubation', 'gen.maze.pertubation', 0.5),
     ]),
     Expander('Color', '', True, [
         Color('Ground color', 'gen.maze.ground_col', 'ffffff'),
