@@ -566,7 +566,7 @@ on "stage clicked" {
 
         } elif (UI_data[clicked_element] == "COLOR") {
             # open the picker
-            create_popup "color picker", round(mouse_x()), round(mouse_y()), 110, 120;
+            create_popup "color picker", round(mouse_x()+10), round(mouse_y()-10), 110, 120;
             add clicked_element to UI_popup; # 7. index
             
             set_setting_from_id "popup.color_picker.color", UI_data[clicked_element+3];

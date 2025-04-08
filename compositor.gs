@@ -54,6 +54,8 @@ onkey "6" {
 
 
 on "composite" {
+    require_iterative_compositor = false; # default off
+
     # run different custom blocks depending on mode
     if (compositor_mode == CompositorMode.COLOR) {
         composite_topmost_color;
@@ -83,7 +85,7 @@ on "composite" {
 
 
 on "iterative compositor" {
-    max_samples = 64;
+    max_samples = 256;
     max_iteration_time = 0.3;
 
     if (compositor_mode == CompositorMode.SHADED) {
@@ -327,7 +329,7 @@ proc composite_shaded_color {
         }
         local ao_fac = 0.5 + (0.5 * (render_cache_ao[i] / counted_samples));
         if (ao_fac > 1) { ao_fac = 1; }
-        
+
         local r = FROM_LINEAR(r * ao_fac);
         local g = FROM_LINEAR(g * ao_fac);
         local b = FROM_LINEAR(b * ao_fac);

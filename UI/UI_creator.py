@@ -74,9 +74,10 @@ class Value(Element):
         return Value(label, id, value, 0, 1, hard_min=0, hard_max=1, snap_frac=1000, shape='full')
     
     @staticmethod
-    def canvas_size(label, id, value=64):
+    def canvas_size(label, id, value=64, soft_max=None):
         # create a value representing a canvas dimension. Always >= 0.
-        return Value(label, id, value, 1, 512, hard_min=0, hard_max=4096, snap_frac=1)
+        if soft_max is None: soft_max = 512
+        return Value(label, id, value, 1, soft_max, hard_min=0, hard_max=4096, snap_frac=1)
 
 class Color(Element):
     def __init__(self, label='Color', id='', color="808080"):
@@ -189,13 +190,16 @@ panels['menu.gen'] = Container([
     Label.title('Generate'),
     Separator(),
     btn_menu_set_page('City', 'gen.city'),
-    btn_menu_set_page('Ballpit', 'gen.ballpit'),
-    btn_menu_set_page('Elem. cellular automata', 'gen.eca'),
-    btn_menu_set_page('Extruded grid', 'gen.extruded_grid'),
-    btn_menu_set_page('Erosion', 'gen.erosion'),
-    btn_menu_set_page('Maze', 'gen.maze'),
     btn_menu_set_page('Pipelines', 'gen.pipelines'),
     btn_menu_set_page('Wheel', 'gen.wheel'),
+    Separator(0, 5),
+    btn_menu_set_page('Erosion', 'gen.erosion'),
+    btn_menu_set_page('Fibres', 'gen.fibres'),
+    Separator(0, 5),
+    btn_menu_set_page('Ballpit', 'gen.ballpit'),
+    btn_menu_set_page('Maze', 'gen.maze'),
+    btn_menu_set_page('Elem. cellular automata', 'gen.eca'),
+    btn_menu_set_page('Extruded grid', 'gen.extruded_grid'),
 ])
 
 panels['menu.fx'] = Container([
@@ -228,7 +232,7 @@ panels['io.new_canvas'] = Container([
     Expander('Dimensions', '', True, [
         Value.canvas_size('Size X', 'io.new_canvas.size_x', 64),
         Value.canvas_size('Size Y', 'io.new_canvas.size_y', 64),
-        Value.canvas_size('Size Z', 'io.new_canvas.size_z', 16),
+        Value.canvas_size('Size Z', 'io.new_canvas.size_z', 16, 64),
     ]),
     Expander('Base layer', '', True, [
         Checkbox('Include base layer', 'io.new_canvas.include_base', False),
@@ -253,7 +257,7 @@ panels['io.import_height_map'] = Container([
     Separator(),
     Expander('Canvas', '', True, [
         Checkbox('Erase canvas', 'io.import_height_map.erase_canvas', True),
-        Value.canvas_size('New size Z', 'io.import_height_map.size_z', 16),
+        Value.canvas_size('New size Z', 'io.import_height_map.size_z', 16, 64),
         Color('New voxel color', 'io.import_height_map.new_color', 'aaaaaa'),
     ]),
     Expander('Channel weights', '', False, [
@@ -296,13 +300,37 @@ panels['io.export_height_map'] = Container([
 #             Gen              #
 ################################
 
+panels['gen.fibres'] = Container([
+    Label.title('Generate fibres'),
+    Separator(),
+    Expander('Canvas', '', True, [
+        Value.canvas_size('Size X', 'gen.fibres.size_x', 64),
+        Value.canvas_size('Size Y', 'gen.fibres.size_y', 64),
+        Value.canvas_size('Size Z', 'gen.fibres.size_z', 4, 64),
+    ]),
+    Expander('Fibre', '', True, [
+        Value('Density', 'gen.fibres.density', 0.05, 0, 0.5, 0, 10, 1000),
+        Value('Cluster count', 'gen.fibres.cluster_count', 4, 1, 16, 0, 512, 1),
+        Value('Cluster radius', 'gen.fibres.cluster_radius', 2, 0, 16, 0, 512, 10),
+        Value('Segment length', 'gen.fibres.segment_length', 2, 1, 16, 0, 512, 10),
+        Value('Segment count', 'gen.fibres.segment_count', 4, 1, 16, 0, 512, 1),
+        Value('Segment angle', 'gen.fibres.segment_angle', 30, 0, 90, 0, 360, 1),
+    ]),
+    Expander('Color', '', True, [
+        Color('Color 1', 'gen.fibres.col1', '48433e'),
+        Color('Color 2', 'gen.fibres.col2', 'a8a39e'),
+        Color('Color 3', 'gen.fibres.col3', '745b43'),
+    ]),
+    Button('Generate', 'gen.fibres.run'),
+])
+
 panels['gen.ballpit'] = Container([
     Label.title('Generate ballpit'),
     Separator(),
     Expander('Canvas', '', True, [
         Value.canvas_size('Size X', 'gen.ballpit.size_x', 64),
         Value.canvas_size('Size Y', 'gen.ballpit.size_y', 64),
-        Value.canvas_size('Size Z', 'gen.ballpit.size_z', 16),
+        Value.canvas_size('Size Z', 'gen.ballpit.size_z', 16, 64),
         Color('Ground color', 'gen.ballpit.ground_col', '48433e'),
     ]),
     Expander('Balls', '', True, [
@@ -328,7 +356,7 @@ panels['gen.city'] = Container([
     Expander('Canvas', '', True, [
         Value.canvas_size('Size X', 'gen.city.size_x', 64),
         Value.canvas_size('Size Y', 'gen.city.size_y', 64),
-        Value.canvas_size('Size Z', 'gen.city.size_z', 16),
+        Value.canvas_size('Size Z', 'gen.city.size_z', 16, 64),
     ]),
     Expander('Color', '', True, [
         Color('Ground color', 'gen.city.ground_col', 'aaaaaa'),
@@ -364,7 +392,7 @@ panels['gen.erosion'] = Container([
     Expander('Initial terrain', '', True, [
         Value.canvas_size('Size X', 'gen.erosion.size_x', 64),
         Value.canvas_size('Size Y', 'gen.erosion.size_y', 64),
-        Value.canvas_size('Size Z', 'gen.erosion.size_z', 16),
+        Value.canvas_size('Size Z', 'gen.erosion.size_z', 16, 64),
         #Checkbox('Perlin', 'perlin'),
         Button('Generate', 'gen.erosion.run.generate'),
     ]),
@@ -425,7 +453,7 @@ panels['gen.pipelines'] = Container([
     Expander('Canvas', '', True, [
         Value.canvas_size('Size X', 'gen.pipelines.size_x', 64),
         Value.canvas_size('Size Y', 'gen.pipelines.size_y', 64),
-        Value.canvas_size('Size Z', 'gen.pipelines.size_z', 16),
+        Value.canvas_size('Size Z', 'gen.pipelines.size_z', 16, 64),
     ]),
     Expander('Color', '', True, [
         Color('Ground color', 'gen.pipelines.ground_col', 'aaaaaa'),

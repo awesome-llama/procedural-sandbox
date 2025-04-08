@@ -72,7 +72,7 @@ onkey "any" {
 
 
 onkey "p" {
-    broadcast "gen.carpet.run"; # debug
+    broadcast "gen.fibre.run"; # debug
     broadcast "zoom extents";
 }
 
@@ -106,7 +106,6 @@ onkey "up arrow" { broadcast "zoom in"; }
 on "zoom in" {
     #cam_scale = (cam_scale*2);
     change_zoom 1;
-    
     limit_scroll;
     require_screen_refresh = true;
 }

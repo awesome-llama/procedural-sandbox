@@ -360,6 +360,57 @@ proc generate_maze cell_count, cell_size, wall_thickness, wall_height, pertubati
 }
 
 
+on "gen.fibres.run" {
+    delete UI_return;
+    setting_from_id "gen.fibres.size_x";
+    setting_from_id "gen.fibres.size_y";
+    setting_from_id "gen.fibres.size_z";
+
+    setting_from_id "gen.fibres.density";
+    setting_from_id "gen.fibres.cluster_count";
+    setting_from_id "gen.fibres.cluster_radius";
+    setting_from_id "gen.fibres.segment_length";
+    setting_from_id "gen.fibres.segment_count";
+    setting_from_id "gen.fibres.segment_angle";
+
+    setting_from_id "gen.fibres.col1";
+    setting_from_id "gen.fibres.col2";
+    setting_from_id "gen.fibres.col3";
+
+    generate_fibres UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6], UI_return[7], UI_return[8], UI_return[9], UI_return[10], UI_return[11], UI_return[12];
+}
+proc generate_fibres size_x, size_y, size_z, density, cl_count, cl_rad, seg_len, seg_count, seg_angle, col1, col2, col3 {
+    canvas_size_x = $size_x;
+    canvas_size_y = $size_y;
+    canvas_size_z = $size_z;
+    clear_canvas;
+    reset_depositor;
+    if RANDOM_0_1() < 0.5 {
+        set_depositor_from_number_lerp $col1, $col2, RANDOM_0_1();
+    } else {
+        set_depositor_from_number_lerp $col2, $col3, RANDOM_0_1();
+    }
+    draw_base_layer;
+
+    repeat ($density) * (canvas_size_x*canvas_size_y) {
+        if RANDOM_0_1() < 0.5 {
+            set_depositor_from_number_lerp $col1, $col2, RANDOM_0_1();
+        } else {
+            set_depositor_from_number_lerp $col2, $col3, RANDOM_0_1();
+        }
+
+        px_x = random(1, canvas_size_x);
+        px_y = random(1, canvas_size_y);
+        px_z = random(0, canvas_size_z-1);
+        repeat $cl_count {
+            random_walk_any px_x+($cl_rad*random("-1.0","1.0")), px_y+($cl_rad*random("-1.0","1.0")), px_z, random("0.0","360.0"), $seg_count, $seg_len, $seg_angle;
+        }
+    }
+    
+    require_composite = true;
+}
+
+
 on "gen.pipes.run" {
     canvas_size_x = 64;
     canvas_size_y = 64;
@@ -438,56 +489,6 @@ proc generate_wheel rim_radius, sidewall_height, tire_width {
 
     glbfx_revolve 0;
 
-    require_composite = true;
-}
-
-
-
-on "gen.carpet.run" { generate_carpet; }
-proc generate_carpet {
-    canvas_size_x = 64;
-    canvas_size_y = 64;
-    canvas_size_z = 12;
-    clear_canvas;
-    reset_depositor;
-    set_depositor_from_sRGB 0.9, 0.9, 0.9;
-    draw_base_layer;
-
-    glbfx_color_noise "0.9", "1.1";
-
-    repeat 100 {
-        set_depositor_from_sRGB random(0, "0.2"), random(0.2, 0.9), random(0.2, 0.9);
-        repeat 10 {
-            draw_line_DDA RANDOM_X, RANDOM_Y, RANDOM_Z, random("-1.0","1.0"), random("-1.0","1.0"), 0, random(1, 20);
-        }
-        glbfx_jitter 0.003;
-    }
-    
-    require_composite = true;
-}
-
-
-on "gen.weave.run" { generate_gw; }
-proc generate_gw {
-    canvas_size_x = 128;
-    canvas_size_y = 128;
-    canvas_size_z = 12;
-    clear_canvas;
-    reset_depositor;
-    set_depositor_from_sRGB 0.3, 0.6, 0.3;
-    draw_base_layer;
-    glbfx_color_noise 0.5, 1;
-
-    repeat 600 {
-        set_depositor_from_sRGB 0.2, random(0.2, 0.5), 0.2;
-        random_walk_any RANDOM_X, RANDOM_Y, RANDOM_Z, 0, 20, 5, 45;
-    }
-    
-    repeat 15 {
-    set_depositor_from_sRGB 0.7, random(0.9, 1.0), 0.7;
-        random_walk_any RANDOM_X, RANDOM_Y, RANDOM_Z, 0, 20, 5, 45;
-    }
-    
     require_composite = true;
 }
 
@@ -615,7 +616,19 @@ proc set_depositor_to_air {
 proc set_depositor_from_number number {
     # number assumed to be 0-16777215
     depositor_mode = DepositorMode.DRAW;
-    depositor_voxel = VOXEL_SOLID((($number//65536)%256/255), (($number//256)%256/255), ($number%256/255));
+    depositor_voxel = VOXEL_SOLID((($number//65536)%256/255), (($number//256)%256/255), (($number%256)/255));
+}
+
+# random blend between 2 colors
+proc set_depositor_from_number_lerp number1, number2, t {
+    # number assumed to be 0-16777215
+    depositor_mode = DepositorMode.DRAW;
+    depositor_voxel = VOXEL_SOLID((($number1//65536)%256/255), (($number1//256)%256/255), (($number1%256)/255));
+    
+    depositor_voxel.r = LERP(depositor_voxel.r, (($number2//65536)%256/255), $t);
+    depositor_voxel.g = LERP(depositor_voxel.g, (($number2//256)%256/255), $t);
+    depositor_voxel.b = LERP(depositor_voxel.b, (($number2%256)/255), $t);
+
 }
 
 proc set_depositor_from_sRGB r, g, b {
@@ -790,14 +803,6 @@ proc draw_cuboid_corner_size x, y, z, size_x, size_y, size_z {
 # rectangular prism centered at x,y,z
 proc draw_cuboid_centered x, y, z, size_x, size_y, size_z {
     draw_cuboid_corner_size 0.5-(round($size_x)/2), 0.5-(round($size_y)/2), 0.5-(round($size_z)/2), round($size_x), round($size_y), round($size_z);
-}
-
-
-
-# randomly deposit molecules through breadth-first search
-proc crystal_growth x, y, z, size_x, size_y, size_z {
-    # TODO
-    # store list of voxels to explore
 }
 
 
