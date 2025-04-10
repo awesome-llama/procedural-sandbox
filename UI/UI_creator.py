@@ -190,6 +190,7 @@ panels['menu.gen'] = Container([
     Label.title('Generate'),
     Separator(),
     btn_menu_set_page('City', 'gen.city'),
+    btn_menu_set_page('Nucleus', 'gen.nucleus'),
     btn_menu_set_page('Pipelines', 'gen.pipelines'),
     btn_menu_set_page('Wheel', 'gen.wheel'),
     Separator(0, 5),
@@ -447,6 +448,19 @@ panels['gen.maze'] = Container([
     Button('Generate', 'gen.maze.run'),
 ])
 
+panels['gen.nucleus'] = Container([
+    Label.title('Generate "Nucleus"'),
+    Separator(),
+    Expander('Canvas', '', True, [
+        Value('Radius', 'gen.nucleus.radius', 64, 1, 256, 0, 4096, snap_frac=1),
+        Value.canvas_size('Size Z', 'gen.nucleus.size_z', 16, 64),
+    ]),
+    Expander('Color', '', True, [
+        #Color('Ground color', 'gen.nucleus.ground_col', 'aaaaaa'),
+    ]),
+    Button('Generate', 'gen.nucleus.run'),
+])
+
 panels['gen.pipelines'] = Container([
     Label.title('Generate pipelines'),
     Separator(),
@@ -464,7 +478,7 @@ panels['gen.pipelines'] = Container([
 panels['gen.wheel'] = Container([
     Label.title('Generate wheel'),
     Separator(),
-    Value('Rim radius', 'gen.wheel.rim_radius', 25, 1, 512, 0, 4096, snap_frac=1),
+    Value('Rim radius', 'gen.wheel.rim_radius', 25, 1, 256, 0, 4096, snap_frac=1),
     Value('Sidewall height', 'gen.wheel.sidewall_height', 9, 1, 512, 0, 4096, snap_frac=1),
     Value('Tire width', 'gen.wheel.tire_width', 8, 1, 512, 0, 4096, snap_frac=1),
     Separator(0),

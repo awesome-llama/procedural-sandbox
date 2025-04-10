@@ -6,6 +6,7 @@ hide;
 list maze_graph;
 list custom_grid;
 list eca_lut;
+list RGB palette;
 
 list voxel temp_canvas; # list used to store the canvas temporarily
 
@@ -17,6 +18,8 @@ on "hard reset" {
     delete maze_graph;
     delete custom_grid;
     delete eca_lut;
+    delete palette;
+
     delete temp_canvas;
 }
 
@@ -360,6 +363,87 @@ proc generate_maze cell_count, cell_size, wall_thickness, wall_height, pertubati
 }
 
 
+on "gen.nucleus.run" {
+    delete UI_return;
+    setting_from_id "gen.nucleus.radius";
+    setting_from_id "gen.nucleus.size_z";
+    setting_from_id "gen.nucleus.ground_col";
+
+    generate_nucleus UI_return[1], UI_return[2], UI_return[3];
+}
+proc generate_nucleus radius, size_z, ground_col {
+    # first create a section on the XZ plane
+    canvas_size_x = $radius;
+    canvas_size_y = 1;
+    canvas_size_z = $size_z;
+    clear_canvas;
+    reset_depositor;
+    set_depositor_from_number $ground_col;
+
+    # TODO probability distributions
+    local radius = $radius * random("0.4", "0.8");
+    repeat (0.2 * canvas_size_x) { # cuboids
+        set_depositor_from_HSV RANDOM_0_1(), random("0.0", "0.1"), RANDOM_0_1();
+
+        local c1x = random(0, radius);
+        local cube_x = random(2, canvas_size_x*0.2);
+        local cube_z = random(0, (canvas_size_z*0.8));
+        draw_cuboid_corner_size c1x, 0, 0, cube_x, 1, cube_z-1;
+        draw_cuboid_corner_size c1x+1, 0, 0, cube_x-2, 1, cube_z;
+    }
+    repeat (0.1 * canvas_size_x) { # pipes, grey
+        set_depositor_from_HSV RANDOM_0_1(), random("0.0", "0.1"), random("0.5", "0.7");
+        set_voxel random(0, canvas_size_x*0.8), 0, random(1, canvas_size_z-2);
+    }
+    repeat (0.05 * canvas_size_x) { # pipes multicolor
+        set_depositor_from_HSV RANDOM_0_1(), random("0.1", "0.8"), random("0.4", "1.0");
+        set_voxel random(0, canvas_size_x*0.8), 0, random(1, canvas_size_z-1);
+    }
+    repeat (0.05 * canvas_size_x) { # pipes
+        set_depositor_from_HSV RANDOM_0_1(), random("0.4", "0.6"), random("0.4", "0.8");
+        set_voxel random(0, canvas_size_x*0.8), 0, random(1, canvas_size_z-1);
+    }
+
+    # perform global effects including revolve to make a square canvas
+    glbfx_color_noise 0.95, 1.05;
+    glbfx_jitter 0.01;
+    glbfx_revolve 0;
+
+    # draw the base layer to fill the void
+    set_depositor_from_HSV RANDOM_0_1(), random("0.0", "0.1"), RANDOM_0_1();
+    draw_base_layer;
+
+    # radial pipes low
+    local turn = random(0,2)*45; # turn angle for random walk
+    local steps = random(1,12);
+    set_depositor_from_HSV RANDOM_0_1(), random("0.0", "0.1"), RANDOM_0_1();
+    repeat (random("0.0", "0.02") * canvas_size_x * canvas_size_y) {
+        local dist = random(0, canvas_size_x*1.3); # random walk start distance from center
+        local rot = RANDOM_ANGLE;
+        random_walk_any (canvas_size_x/2)+dist*cos(rot), (canvas_size_y/2)+dist*sin(rot), random(0, canvas_size_z*0.2), rot, steps, canvas_size_x*random("0.05", "0.1"), turn;
+    }
+
+    # add radial pipes
+    local turn = random(0,2)*45; # turn angle for random walk
+    local steps = random(1,5);
+    local dist = random(0, canvas_size_x*0.5); # random walk start distance from center
+    local elev_min = random(0, canvas_size_z-2);
+    local elev_max = random(0, canvas_size_z-2);
+    
+    if (random(0,1)) { # set colour
+        set_depositor_from_HSV RANDOM_0_1(), random("0.0", "0.8"), RANDOM_0_1();
+    } else {
+        set_depositor_from_sRGB RANDOM_0_1(), RANDOM_0_1(), RANDOM_0_1();
+    }
+    repeat (random("0.0", "6.0")*dist) {
+        local rot = RANDOM_ANGLE;
+        random_walk_any (canvas_size_x/2)+dist*cos(rot), (canvas_size_y/2)+dist*sin(rot), random(elev_min, elev_max), rot, steps, canvas_size_x*random("0.05", "0.1"), turn;
+    }
+    
+    require_composite = true;
+}
+
+
 on "gen.fibres.run" {
     delete UI_return;
     setting_from_id "gen.fibres.size_x";
@@ -399,9 +483,9 @@ proc generate_fibres size_x, size_y, size_z, density, cl_count, cl_rad, seg_len,
             set_depositor_from_number_lerp $col2, $col3, RANDOM_0_1();
         }
 
-        px_x = random(1, canvas_size_x);
-        px_y = random(1, canvas_size_y);
-        px_z = random(0, canvas_size_z-1);
+        px_x = RANDOM_X;
+        px_y = RANDOM_Y;
+        px_z = RANDOM_Z;
         repeat $cl_count {
             random_walk_any px_x+($cl_rad*random("-1.0","1.0")), px_y+($cl_rad*random("-1.0","1.0")), px_z, random("0.0","360.0"), $seg_count, $seg_len, $seg_angle;
         }
@@ -431,7 +515,8 @@ on "gen.pipes.run" {
 }
 
 
-on "gen.refinery.run" {
+on "gen.refinery.run" { generate_refinery; }
+proc generate_refinery {
     canvas_size_x = 64;
     canvas_size_y = 64;
     canvas_size_z = 16;
@@ -440,13 +525,13 @@ on "gen.refinery.run" {
     set_depositor_from_sRGB 0.7, 0.7, 0.6;
     draw_base_layer;
 
-    tank_rad = 8;
+    local tank_rad = 8;
     # spherical tanks
     repeat 3 {
         set_depositor_from_sRGB_value random(0.9, 1);
         
-        tank_x = floor(RANDOM_X * 16)/16;
-        tank_y = floor(RANDOM_Y * 16)/16;
+        local tank_x = floor(RANDOM_X * 16)/16;
+        local tank_y = floor(RANDOM_Y * 16)/16;
 
         draw_sphere tank_x, tank_y, tank_rad/2, tank_rad;
 

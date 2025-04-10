@@ -72,7 +72,7 @@ onkey "any" {
 
 
 onkey "p" {
-    broadcast "gen.fibre.run"; # debug
+    broadcast "gen.nucleus.run"; # debug
     broadcast "zoom extents";
 }
 

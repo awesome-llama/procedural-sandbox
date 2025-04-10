@@ -79,13 +79,18 @@ struct template_metadata {
 }
 
 
-# random positions
+# random numbers
+# TODO add brackets
 
 %define RANDOM_X random(0, canvas_size_x-1)
 
 %define RANDOM_Y random(0, canvas_size_y-1)
 
 %define RANDOM_Z random(0, canvas_size_z-1)
+
+%define RANDOM_0_1() random("0.0", "1.0")
+
+%define RANDOM_ANGLE random("0.0", "360.0")
 
 
 ################################
@@ -128,9 +133,6 @@ struct template_metadata {
 
 # Clamp between 0 and 1
 %define CLAMP_0_1(VAL) (1 - (((VAL)<1) * (1-POSITIVE_CLAMP(VAL))) )
-
-# random float
-%define RANDOM_0_1() random("0.0", "1.0")
 
 %define AVERAGE(A,B) (((A)+(B))/2)
 

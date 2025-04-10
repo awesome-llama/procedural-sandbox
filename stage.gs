@@ -68,7 +68,6 @@ on "initalise" {
     UI_last_hovered_group = "";
     UI_last_hovered_element = "";
 
-    UI_current_panel = "menu.io";
     UI_sidebar_width = 160; # set to 0 to hide
 
     UI_clipboard_source = 0;
@@ -102,6 +101,8 @@ on "hard reset" {
 
     delete UI_return;
     delete UI_popup;
+    
+    UI_current_panel = "menu.io";
     
     cmd_string = "";
 }
