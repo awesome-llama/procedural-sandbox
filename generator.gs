@@ -406,7 +406,7 @@ proc generate_nucleus radius, size_z, ground_col {
 
     # perform global effects including revolve to make a square canvas
     glbfx_color_noise 0.95, 1.05;
-    glbfx_jitter 0.01;
+    glbfx_jitter 0.01, 0;
     glbfx_revolve 0;
 
     # draw the base layer to fill the void
@@ -1013,11 +1013,11 @@ proc draw_line_DDA x, y, z, dx, dy, dz, r {
 
 
 # replace exposed surfaces randomly
-proc glbfx_surface_replace probability {
-    repeat ((canvas_size_x * canvas_size_y * canvas_size_z) * $probability) {
-        local px_x = random(0, canvas_size_x-1);
-        local px_y = random(0, canvas_size_y-1);
-        local px_z = random(0, canvas_size_z-1);
+proc glbfx_surface_replace coverage {
+    repeat ((canvas_size_x * canvas_size_y * canvas_size_z) * $coverage) {
+        local px_x = RANDOM_X;
+        local px_y = RANDOM_Y;
+        local px_z = RANDOM_Z;
 
         if (canvas[INDEX_FROM_3D_NOWRAP_INTS(px_x, px_y, px_z, canvas_size_x, canvas_size_y)].opacity > 0) {
             
@@ -1036,15 +1036,16 @@ proc glbfx_surface_replace probability {
             }
         }
     }
+    require_composite = true;
 }
 
 
 # deposit voxels adjacent to any non-air surface randomly
-proc glbfx_spatter probability {
-    repeat ((canvas_size_x * canvas_size_y * canvas_size_z) * $probability) {
-        local px_x = random(0, canvas_size_x-1);
-        local px_y = random(0, canvas_size_y-1);
-        local px_z = random(0, canvas_size_z-1);
+proc glbfx_spatter coverage {
+    repeat ((canvas_size_x * canvas_size_y * canvas_size_z) * $coverage) {
+        local px_x = RANDOM_X;
+        local px_y = RANDOM_Y;
+        local px_z = RANDOM_Z;
 
         if (canvas[INDEX_FROM_3D_NOWRAP_INTS(px_x, px_y, px_z, canvas_size_x, canvas_size_y)].opacity == 0) {
             if (canvas[INDEX_FROM_3D_CANVAS_INTS(px_x+1, px_y, px_z, canvas_size_x, canvas_size_y)].opacity > 0) {
@@ -1062,46 +1063,63 @@ proc glbfx_spatter probability {
             }
         }
     }
+    require_composite = true;
 }
 
 
+on "fx.jitter.run" {
+    delete UI_return;
+    setting_from_id "fx.jitter.coverage";
+    setting_from_id "fx.jitter.probability_z";
+    glbfx_jitter UI_return[1], UI_return[2];
+}
 # randomly shift voxels, swapping with neighbours
-proc glbfx_jitter probability {
-    repeat ((canvas_size_x * canvas_size_y * canvas_size_z) * $probability) {
-        local jitter_x = random(0, canvas_size_x-1);
-        local jitter_y = random(0, canvas_size_y-1);
-        local jitter_z = random(0, canvas_size_z-2); # do not cross upper boundary
+proc glbfx_jitter coverage, probability_z {
+    local max_index = (canvas_size_x * canvas_size_y * canvas_size_z)+1;
+    repeat ((canvas_size_x * canvas_size_y * canvas_size_z) * $coverage) {
+        local jitter_x = RANDOM_X;
+        local jitter_y = RANDOM_Y;
+        local jitter_z = random(0, canvas_size_z-2); # Do not cross upper boundary
 
         local jitter_i1 = INDEX_FROM_3D_CANVAS_INTS(jitter_x, jitter_y, jitter_z, canvas_size_x, canvas_size_y);
-        if RANDOM_0_1() < 0.333 {
-            local jitter_i2 = INDEX_FROM_3D_CANVAS_INTS(jitter_x+1, jitter_y, jitter_z, canvas_size_x, canvas_size_y); # x
-        } elif random(0,1) == 0 {
-            local jitter_i2 = INDEX_FROM_3D_CANVAS_INTS(jitter_x, jitter_y+1, jitter_z, canvas_size_x, canvas_size_y); # y
-        } else {
+        if RANDOM_0_1() < $probability_z {
             local jitter_i2 = jitter_i1 + (canvas_size_x * canvas_size_y); # z
+        } elif random(0,1) == 0 {
+            local jitter_i2 = INDEX_FROM_3D_CANVAS_INTS(jitter_x+1, jitter_y, jitter_z, canvas_size_x, canvas_size_y); # x
+        } else {
+            local jitter_i2 = INDEX_FROM_3D_CANVAS_INTS(jitter_x, jitter_y+1, jitter_z, canvas_size_x, canvas_size_y); # y
         }
 
-        local voxel temp_voxel = canvas[jitter_i1];
-        canvas[jitter_i1] = canvas[jitter_i2];
-        canvas[jitter_i2] = temp_voxel;
+        if (jitter_i1 > 0 and jitter_i2 < max_index) {
+            local voxel temp_voxel = canvas[jitter_i1];
+            canvas[jitter_i1] = canvas[jitter_i2];
+            canvas[jitter_i2] = temp_voxel;
+        }
     }
+    require_composite = true;
 }
 
 
+on "fx.melt.run" {
+    delete UI_return;
+    setting_from_id "fx.melt.coverage";
+    setting_from_id "fx.melt.probability_z";
+    glbfx_melt UI_return[1], UI_return[2];
+}
 # randomly average pairs of non-air voxels
-proc glbfx_melt probability {
-    repeat ((canvas_size_x * canvas_size_y * canvas_size_z) * $probability) {
-        local jitter_x = random(0, canvas_size_x-1);
-        local jitter_y = random(0, canvas_size_y-1);
-        local jitter_z = random(0, canvas_size_z-2); # do not cross upper boundary
+proc glbfx_melt coverage, probability_z {
+    repeat ((canvas_size_x * canvas_size_y * canvas_size_z) * $coverage) {
+        local jitter_x = RANDOM_X;
+        local jitter_y = RANDOM_Y;
+        local jitter_z = random(0, canvas_size_z-2); # Do not cross upper boundary
 
         local jitter_i1 = INDEX_FROM_3D_CANVAS_INTS(jitter_x, jitter_y, jitter_z, canvas_size_x, canvas_size_y);
-        if RANDOM_0_1() < 0.333 {
-            local jitter_i2 = INDEX_FROM_3D_CANVAS_INTS(jitter_x+1, jitter_y, jitter_z, canvas_size_x, canvas_size_y); # x
-        } elif random(0,1) == 0 {
-            local jitter_i2 = INDEX_FROM_3D_CANVAS_INTS(jitter_x, jitter_y+1, jitter_z, canvas_size_x, canvas_size_y); # y
-        } else {
+        if RANDOM_0_1() < $probability_z {
             local jitter_i2 = jitter_i1 + (canvas_size_x * canvas_size_y); # z
+        } elif random(0,1) == 0 {
+            local jitter_i2 = INDEX_FROM_3D_CANVAS_INTS(jitter_x+1, jitter_y, jitter_z, canvas_size_x, canvas_size_y); # x
+        } else {
+            local jitter_i2 = INDEX_FROM_3D_CANVAS_INTS(jitter_x, jitter_y+1, jitter_z, canvas_size_x, canvas_size_y); # y
         }
 
         if (canvas[jitter_i1].opacity > 0 and canvas[jitter_i2].opacity > 0) { # don't melt air
@@ -1113,6 +1131,7 @@ proc glbfx_melt probability {
             canvas[jitter_i2] = canvas[jitter_i1];
         }
     }
+    require_composite = true;
 }
 
 
@@ -1134,6 +1153,7 @@ proc glbfx_color_noise min, max {
         
         i++;
     }
+    require_composite = true;
 }
 
 

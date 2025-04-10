@@ -198,9 +198,9 @@ panels['menu.gen'] = Container([
     btn_menu_set_page('Fibres', 'gen.fibres'),
     Separator(0, 5),
     btn_menu_set_page('Ballpit', 'gen.ballpit'),
-    btn_menu_set_page('Maze', 'gen.maze'),
     btn_menu_set_page('Elem. cellular automata', 'gen.eca'),
     btn_menu_set_page('Extruded grid', 'gen.extruded_grid'),
+    btn_menu_set_page('Maze', 'gen.maze'),
 ])
 
 panels['menu.fx'] = Container([
@@ -212,7 +212,11 @@ panels['menu.fx'] = Container([
     Separator(0, 5),
     btn_menu_set_page('Crop XY', 'fx.crop_xy'),
     btn_menu_set_page('Mirror', 'fx.mirror'),
+    Separator(0, 5),
     btn_menu_set_page('Gradient recolor', 'fx.recolor'),
+    Separator(0, 5),
+    btn_menu_set_page('Jitter', 'fx.jitter'),
+    btn_menu_set_page('Melt', 'fx.melt'),
     Separator(0, 5),
     btn_menu_set_page('Reshape', 'fx.reshape_canvas'),
 ])
@@ -567,6 +571,26 @@ panels['fx.recolor'] = Container([
     Checkbox('Interpolate in sRGB', 'fx.recolor.use_sRGB', True),
     Separator(0),
     Button('Run', 'fx.recolor.run'),
+])
+
+panels['fx.jitter'] = Container([
+    Label.title('Jitter'),
+    Separator(),
+    Expander('', '', True, [
+        Value('Coverage', 'fx.jitter.coverage', 0.1, 0, 0.2, 0, 1, snap_frac=1000),
+        Value.fraction('Probability Z', 'fx.jitter.probability_z', 0.333),
+    ]),
+    Button('Run', 'fx.jitter.run'),
+])
+
+panels['fx.melt'] = Container([
+    Label.title('Melt'),
+    Separator(),
+    Expander('', '', True, [
+        Value('Coverage', 'fx.melt.coverage', 0.1, 0, 0.2, 0, 1, snap_frac=1000),
+        Value.fraction('Probability Z', 'fx.melt.probability_z', 0.333),
+    ]),
+    Button('Run', 'fx.melt.run'),
 ])
 
 panels['fx.reshape_canvas'] = Container([
