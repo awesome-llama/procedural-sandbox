@@ -392,23 +392,29 @@ proc iterate_raytracer max_samples, max_time {
 
                 raycast_wrapped_canvas ix+RANDOM_0_1(), iy+RANDOM_0_1(), canvas_size_z+1, vec_x, vec_y, vec_z;
                 
-                local bounces_left = 4; # 4 is perceptually sufficient it seems
-                until bounces_left < 1 {
+                local bounces_left = 6; # 4 is perceptually sufficient for opaque voxels
+                until bounces_left < 1 { # repeat until allows for breaking out of it
                     if (hit_index > 0) {
+                        # get voxel info
                         linear_col_r = TO_LINEAR(canvas[hit_index].r);
                         linear_col_g = TO_LINEAR(canvas[hit_index].g);
                         linear_col_b = TO_LINEAR(canvas[hit_index].b);
                         opacity = canvas[hit_index].opacity;
+                        emission = canvas[hit_index].emission;
 
-                        acc_col_r += att_r * linear_col_r * canvas[hit_index].emission * opacity;
-                        acc_col_g += att_g * linear_col_g * canvas[hit_index].emission * opacity;
-                        acc_col_b += att_b * linear_col_b * canvas[hit_index].emission * opacity;
+                        # add light from emission
+                        acc_col_r += att_r * (linear_col_r * emission) * opacity;
+                        acc_col_g += att_g * (linear_col_g * emission) * opacity;
+                        acc_col_b += att_b * (linear_col_b * emission) * opacity;
 
+                        # update attenuation (scales towards 0)
                         att_r *= 1-((1-linear_col_r) * opacity);
                         att_g *= 1-((1-linear_col_g) * opacity);
                         att_b *= 1-((1-linear_col_b) * opacity);
 
+                        # shoot a new ray
                         if (RANDOM_0_1() < opacity) {
+                            # bounce
                             if (side == 0) {
                                 if (step_x > 0) { 
                                     # normal -X
@@ -463,6 +469,7 @@ proc iterate_raytracer max_samples, max_time {
 
                 # this final check is because the above loop stops before its own check
                 if hit_index > 0 {
+                    # add light from emission
                     opacity = canvas[hit_index].opacity;
                     acc_col_r += att_r * TO_LINEAR(canvas[hit_index].r) * canvas[hit_index].emission * opacity;
                     acc_col_g += att_g * TO_LINEAR(canvas[hit_index].g) * canvas[hit_index].emission * opacity;

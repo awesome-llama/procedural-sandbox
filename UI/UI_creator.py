@@ -216,7 +216,7 @@ panels['menu.fx'] = Container([
     btn_menu_set_page('Gradient recolor', 'fx.recolor'),
     Separator(0, 5),
     btn_menu_set_page('Jitter', 'fx.jitter'),
-    btn_menu_set_page('Melt', 'fx.melt'),
+    btn_menu_set_page('Smudge', 'fx.smudge'),
     Separator(0, 5),
     btn_menu_set_page('Reshape', 'fx.reshape_canvas'),
 ])
@@ -375,17 +375,17 @@ panels['gen.eca'] = Container([
     Expander('Canvas', '', True, [
         Value.canvas_size('Size X', 'gen.eca.size_x', 64),
         Value.canvas_size('Size Y', 'gen.eca.size_y', 64),
-        Value('Extrude Z', 'gen.eca.extrude_z', 0, 0, 4, 0, 4096, 1)
+        Value('Extrude Z', 'gen.eca.extrude_z', 1, 0, 4, 0, 4096, 1)
     ]),
     Expander('Variant', '', True, [
         Label('Suggested rules:'),
         Label('18, 30, 45, 73, 90, 105, 110, 184'),
         Separator(0),
         Value('Rule', 'gen.eca.rule', 110, 0, 255, 0, 255, snap_frac=1),
-        Checkbox('Random initial condition', 'gen.eca.random_initial_condition'),
+        Checkbox('Random initial condition', 'gen.eca.random_initial_condition', True),
     ]),
     Expander('Color', '', True, [
-        Color('State 0', 'gen.eca.state_0_col', '000000'),
+        Color('State 0', 'gen.eca.state_0_col', '303030'),
         Color('State 1', 'gen.eca.state_1_col', 'ffffff'),
     ]),
     Button('Generate', 'gen.eca.run'),
@@ -578,19 +578,19 @@ panels['fx.jitter'] = Container([
     Separator(),
     Expander('', '', True, [
         Value('Coverage', 'fx.jitter.coverage', 0.1, 0, 0.2, 0, 1, snap_frac=1000),
-        Value.fraction('Probability Z', 'fx.jitter.probability_z', 0.333),
+        Value.fraction('Probability Z', 'fx.jitter.probability_z', 0),
     ]),
     Button('Run', 'fx.jitter.run'),
 ])
 
-panels['fx.melt'] = Container([
-    Label.title('Melt'),
+panels['fx.smudge'] = Container([
+    Label.title('Smudge'),
     Separator(),
     Expander('', '', True, [
-        Value('Coverage', 'fx.melt.coverage', 0.1, 0, 0.2, 0, 1, snap_frac=1000),
-        Value.fraction('Probability Z', 'fx.melt.probability_z', 0.333),
+        Value('Coverage', 'fx.smudge.coverage', 0.1, 0, 0.2, 0, 1, snap_frac=1000),
+        Value.fraction('Probability Z', 'fx.smudge.probability_z', 0.333),
     ]),
-    Button('Run', 'fx.melt.run'),
+    Button('Run', 'fx.smudge.run'),
 ])
 
 panels['fx.reshape_canvas'] = Container([

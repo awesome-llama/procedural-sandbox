@@ -186,7 +186,8 @@ proc generate_elementary_cellular_automata size_x, size_y, extrude_z, rule, rand
         repeat canvas_size_x {
             if random(0,1) {
                 add 1 to custom_grid;
-                set_voxel ix, (canvas_size_y-1), 0;
+                #set_voxel ix, (canvas_size_y-1), 0;
+                draw_column ix, (canvas_size_y-2)-iy, 0, canvas_size_z;
             } else {
                 add 0 to custom_grid;
             }
@@ -1126,6 +1127,7 @@ on "fx.jitter.run" {
 proc glbfx_jitter coverage, probability_z {
     local max_index = (canvas_size_x * canvas_size_y * canvas_size_z)+1;
     repeat ((canvas_size_x * canvas_size_y * canvas_size_z) * $coverage) {
+        # randomly choosing voxels means a column of air is possible. This is intentional. 40 minutes was wasted debugging correct behaviour.
         local jitter_x = RANDOM_X;
         local jitter_y = RANDOM_Y;
         local jitter_z = random(0, canvas_size_z-2); # Do not cross upper boundary
@@ -1149,14 +1151,14 @@ proc glbfx_jitter coverage, probability_z {
 }
 
 
-on "fx.melt.run" {
+on "fx.smudge.run" {
     delete UI_return;
-    setting_from_id "fx.melt.coverage";
-    setting_from_id "fx.melt.probability_z";
-    glbfx_melt UI_return[1], UI_return[2];
+    setting_from_id "fx.smudge.coverage";
+    setting_from_id "fx.smudge.probability_z";
+    glbfx_smudge UI_return[1], UI_return[2];
 }
 # randomly average pairs of non-air voxels
-proc glbfx_melt coverage, probability_z {
+proc glbfx_smudge coverage, probability_z {
     repeat ((canvas_size_x * canvas_size_y * canvas_size_z) * $coverage) {
         local jitter_x = RANDOM_X;
         local jitter_y = RANDOM_Y;
@@ -1171,7 +1173,7 @@ proc glbfx_melt coverage, probability_z {
             local jitter_i2 = INDEX_FROM_3D_CANVAS_INTS(jitter_x, jitter_y+1, jitter_z, canvas_size_x, canvas_size_y); # y
         }
 
-        if (canvas[jitter_i1].opacity > 0 and canvas[jitter_i2].opacity > 0) { # don't melt air
+        if (canvas[jitter_i1].opacity > 0 and canvas[jitter_i2].opacity > 0) { # don't smudge air
             canvas[jitter_i1].opacity = AVERAGE(canvas[jitter_i1].opacity, canvas[jitter_i2].opacity);
             canvas[jitter_i1].r = AVERAGE(canvas[jitter_i1].r, canvas[jitter_i2].r);
             canvas[jitter_i1].g = AVERAGE(canvas[jitter_i1].g, canvas[jitter_i2].g);
