@@ -72,7 +72,7 @@ onkey "any" {
 
 
 onkey "p" {
-    broadcast "gen.nucleus.run"; # debug
+    broadcast "gen.test.run"; # debug
     broadcast "zoom extents";
 }
 

@@ -603,6 +603,56 @@ proc generate_grad {
 }
 
 
+on "gen.test.run" { generate_test; }
+proc generate_test {
+    canvas_size_x = 100;
+    canvas_size_y = 64;
+    canvas_size_z = 10;
+
+    clear_canvas;
+    reset_depositor;
+    set_depositor_from_sRGB 0.8, 0.8, 0.8;
+    draw_base_layer;
+
+    repeat (20) { # pipes multicolor
+        set_depositor_from_sRGB random(0.4, 0.9), random(0.4, 0.9), random(0.4, 0.9);
+        random_walk_taxicab RANDOM_X, RANDOM_Y, random(0, 2), 16, 20;
+    }
+
+
+
+    local sz = 12;
+    # draw various shapes for testing
+    i = 0;
+    repeat 8 {
+        set_depositor_from_sRGB 1, 1, 1;
+        depositor_voxel.opacity = 1-(i/8);
+        draw_cuboid_corner_size i*sz, sz*0, 5, sz, sz, sz;
+        i++;
+    }
+    i = 0;
+    repeat 8 {
+        set_depositor_from_sRGB 1, 0, 0;
+        depositor_voxel.opacity = 1-(i/8);
+        draw_cuboid_corner_size i*sz, sz*1, 5, sz, sz, sz;
+        i++;
+    }
+    i = 0;
+    repeat 8 {
+        set_depositor_from_sRGB 0, 0, 0;
+        depositor_voxel.opacity = 1-(i/8);
+        draw_cuboid_corner_size i*sz, sz*2, 5, sz, sz, sz;
+        i++;
+    }
+    set_depositor_from_sRGB 0.2, 0.9, 0.5;
+    depositor_voxel.opacity = 0.5;
+    draw_sphere 20, 50, 0, 10;
+
+
+    require_composite = true;
+}
+
+
 ################################
 #          Templates           #
 ################################
@@ -713,7 +763,6 @@ proc set_depositor_from_number_lerp number1, number2, t {
     depositor_voxel.r = LERP(depositor_voxel.r, (($number2//65536)%256/255), $t);
     depositor_voxel.g = LERP(depositor_voxel.g, (($number2//256)%256/255), $t);
     depositor_voxel.b = LERP(depositor_voxel.b, (($number2%256)/255), $t);
-
 }
 
 proc set_depositor_from_sRGB r, g, b {

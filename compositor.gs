@@ -386,11 +386,11 @@ proc iterate_raytracer max_samples, max_time {
                 local att_g = 1;
                 local att_b = 1;
 
-                rand_x = 0; # set initially just in case the first ray doesn't hit anything, it's used for sky color
-                rand_y = 0;
-                rand_z = -1;
+                vec_x = 0; # set initially just in case the first ray doesn't hit anything, it's used for sky color
+                vec_y = 0;
+                vec_z = -1;
 
-                raycast_wrapped_canvas ix+RANDOM_0_1(), iy+RANDOM_0_1(), canvas_size_z+1, 0, 0, -1;
+                raycast_wrapped_canvas ix+RANDOM_0_1(), iy+RANDOM_0_1(), canvas_size_z+1, vec_x, vec_y, vec_z;
                 
                 local bounces_left = 4; # 4 is perceptually sufficient it seems
                 until bounces_left < 1 {
@@ -398,45 +398,60 @@ proc iterate_raytracer max_samples, max_time {
                         linear_col_r = TO_LINEAR(canvas[hit_index].r);
                         linear_col_g = TO_LINEAR(canvas[hit_index].g);
                         linear_col_b = TO_LINEAR(canvas[hit_index].b);
+                        opacity = canvas[hit_index].opacity;
 
-                        acc_col_r += att_r * linear_col_r * canvas[hit_index].emission;
-                        acc_col_g += att_g * linear_col_g * canvas[hit_index].emission;
-                        acc_col_b += att_b * linear_col_b * canvas[hit_index].emission;
+                        acc_col_r += att_r * linear_col_r * canvas[hit_index].emission * opacity;
+                        acc_col_g += att_g * linear_col_g * canvas[hit_index].emission * opacity;
+                        acc_col_b += att_b * linear_col_b * canvas[hit_index].emission * opacity;
 
-                        att_r *= linear_col_r;
-                        att_g *= linear_col_g;
-                        att_b *= linear_col_b;
+                        att_r *= 1-((1-linear_col_r) * opacity);
+                        att_g *= 1-((1-linear_col_g) * opacity);
+                        att_b *= 1-((1-linear_col_b) * opacity);
 
-                        if (side == 0) {
-                            if (step_x > 0) { 
-                                # normal -X
-                                random_vector -1, 0, 0;
-                                raycast_wrapped_canvas hit_position.x-0.001, hit_position.y, hit_position.z, rand_x, rand_y, rand_z;
-                            } else { 
-                                # normal +X
-                                random_vector 1, 0, 0;
-                                raycast_wrapped_canvas hit_position.x+0.001, hit_position.y, hit_position.z, rand_x, rand_y, rand_z;
-                            }
-                        } elif (side == 1) {
-                            if (step_y > 0) { 
-                                # normal -Y
-                                random_vector 0, -1, 0;
-                                raycast_wrapped_canvas hit_position.x, hit_position.y-0.001, hit_position.z, rand_x, rand_y, rand_z;
-                            } else { 
-                                # normal +Y
-                                random_vector 0, 1, 0;
-                                raycast_wrapped_canvas hit_position.x, hit_position.y+0.001, hit_position.z, rand_x, rand_y, rand_z;
+                        if (RANDOM_0_1() < opacity) {
+                            if (side == 0) {
+                                if (step_x > 0) { 
+                                    # normal -X
+                                    random_vector -1, 0, 0;
+                                    raycast_wrapped_canvas hit_position.x-0.001, hit_position.y, hit_position.z, vec_x, vec_y, vec_z;
+                                } else { 
+                                    # normal +X
+                                    random_vector 1, 0, 0;
+                                    raycast_wrapped_canvas hit_position.x+0.001, hit_position.y, hit_position.z, vec_x, vec_y, vec_z;
+                                }
+                            } elif (side == 1) {
+                                if (step_y > 0) { 
+                                    # normal -Y
+                                    random_vector 0, -1, 0;
+                                    raycast_wrapped_canvas hit_position.x, hit_position.y-0.001, hit_position.z, vec_x, vec_y, vec_z;
+                                } else { 
+                                    # normal +Y
+                                    random_vector 0, 1, 0;
+                                    raycast_wrapped_canvas hit_position.x, hit_position.y+0.001, hit_position.z, vec_x, vec_y, vec_z;
+                                }
+                            } else {
+                                if (step_z > 0) { 
+                                    # normal -Z
+                                    random_vector 0, 0, -1;
+                                    raycast_wrapped_canvas hit_position.x, hit_position.y, hit_position.z-0.001, vec_x, vec_y, vec_z;
+                                } else { 
+                                    # normal +Z
+                                    random_vector 0, 0, 1;
+                                    raycast_wrapped_canvas hit_position.x, hit_position.y, hit_position.z+0.001, vec_x, vec_y, vec_z;
+                                }
                             }
                         } else {
-                            if (step_z > 0) { 
-                                # normal -Z
-                                random_vector 0, 0, -1;
-                                raycast_wrapped_canvas hit_position.x, hit_position.y, hit_position.z-0.001, rand_x, rand_y, rand_z;
-                            } else { 
-                                # normal +Z
-                                random_vector 0, 0, 1;
-                                raycast_wrapped_canvas hit_position.x, hit_position.y, hit_position.z+0.001, rand_x, rand_y, rand_z;
-                            }
+                            # transparency
+                            #vec_x = hit_position.x - vec_x;
+                            #vec_y = hit_position.y - vec_y;
+                            #vec_z = hit_position.z - vec_z;
+                            #local vec_len = VEC3_LEN(vec_x, vec_y, vec_z);
+                            #vec_x /= vec_len;
+                            #vec_y /= vec_len;
+                            #vec_z /= vec_len;
+                            random_vector 0, 0, random(0,1)*2-1;
+                            raycast_wrapped_canvas hit_position.x + vec_x*0.001, hit_position.y + vec_y*0.001, hit_position.z + vec_z*0.001, vec_x, vec_y, vec_z;
+                            #raycast_wrapped_canvas hit_position.x + step_x*0.001, hit_position.y + step_y*0.001, hit_position.z + step_z*0.001, vec_x, vec_y, vec_z;
                         }
 
                         bounces_left -= 1;
@@ -448,14 +463,15 @@ proc iterate_raytracer max_samples, max_time {
 
                 # this final check is because the above loop stops before its own check
                 if hit_index > 0 {
-                    acc_col_r += att_r * TO_LINEAR(canvas[hit_index].r) * canvas[hit_index].emission;
-                    acc_col_g += att_g * TO_LINEAR(canvas[hit_index].g) * canvas[hit_index].emission;
-                    acc_col_b += att_b * TO_LINEAR(canvas[hit_index].b) * canvas[hit_index].emission;
+                    opacity = canvas[hit_index].opacity;
+                    acc_col_r += att_r * TO_LINEAR(canvas[hit_index].r) * canvas[hit_index].emission * opacity;
+                    acc_col_g += att_g * TO_LINEAR(canvas[hit_index].g) * canvas[hit_index].emission * opacity;
+                    acc_col_b += att_b * TO_LINEAR(canvas[hit_index].b) * canvas[hit_index].emission * opacity;
                 } else {
                     # sky
-                    acc_col_r += att_r * (1 * TO_LINEAR(0.5+(rand_y/2)));
-                    acc_col_g += att_g * (1 * TO_LINEAR(0.5+(rand_y/2))); 
-                    acc_col_b += att_b * (1 * TO_LINEAR(0.5+(rand_y/2)));
+                    acc_col_r += att_r * (1 * TO_LINEAR(0.5+(vec_y/2)));
+                    acc_col_g += att_g * (1 * TO_LINEAR(0.5+(vec_y/2))); 
+                    acc_col_b += att_b * (1 * TO_LINEAR(0.5+(vec_y/2)));
                 }
 
                 render_cache_1_r[i] += acc_col_r;
@@ -642,22 +658,30 @@ proc raycast_wrapped_canvas x, y, z, dx, dy, dz {
 }
 
 
+proc normalise_vector nx, ny, nz {
+    local vec_len = VEC3_LEN($nx, $ny, $nz);
+    vec_x /= vec_len;
+    vec_y /= vec_len;
+    vec_z /= vec_len;
+}
+
+
 # generate a random normalised hemisphere vector
 proc random_vector nx, ny, nz {
     forever {
-        rand_x = random("-1.0", "1.0");
-        rand_y = random("-1.0", "1.0");
-        rand_z = random("-1.0", "1.0");
-        local vec_len = VEC3_LEN(rand_x, rand_y, rand_z);
+        vec_x = random("-1.0", "1.0");
+        vec_y = random("-1.0", "1.0");
+        vec_z = random("-1.0", "1.0");
+        local vec_len = VEC3_LEN(vec_x, vec_y, vec_z);
         if (vec_len < 1.001 and vec_len > 0.001) {
-            rand_x /= vec_len;
-            rand_y /= vec_len;
-            rand_z /= vec_len;
+            vec_x /= vec_len;
+            vec_y /= vec_len;
+            vec_z /= vec_len;
 
-            if DOT_PRODUCT_3D(rand_x, rand_y, rand_z, $nx, $ny, $nz) < 0 {
-                rand_x *= -1;
-                rand_y *= -1;
-                rand_z *= -1;
+            if DOT_PRODUCT_3D(vec_x, vec_y, vec_z, $nx, $ny, $nz) < 0 {
+                vec_x *= -1;
+                vec_y *= -1;
+                vec_z *= -1;
             }
 
             stop_this_script;
