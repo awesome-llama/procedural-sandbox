@@ -8,7 +8,7 @@ list voxel canvas;
 
 # The render cache is a 2D projection of the canvas for displaying on screen.
 # final color to render on screen, 24-bit sRGB (8 bits per channel).
-list render_cache_final_col; 
+list render_cache_final_col; # TODO: rename
 
 # TextImage shared lists:
 list TI_1_r;
@@ -45,15 +45,20 @@ on "initalise" {
     
     cam_x = 0;
     cam_y = 0;
-    cam_scale = 1;
+    cam_scale = 1; # shared by both?
 
-    render_resolution = 1;
+    # for orbit rotation in 3D only.
+    cam_azi = -30; # CCW around origin. 0 means face +Y (like top-down)
+    cam_elev = 45; # 0 is vertical (looking down), 90 is horizontal
+
+    render_resolution = 1; # the current resolution for compositing and rendering
+    render_resolution_default_orbit = 4;
 
     require_composite = true;
     require_iterative_compositor = false;
     require_screen_refresh = true;
 
-    viewport_mode = ViewportMode.COMPOSITOR;
+    viewport_mode = ViewportMode.ALIGNED;
     compositor_mode = CompositorMode.COLOR;
 
     # the "depositor" (chose an obscure but relevant name) is a description of what voxel will be placed by the procedural tools. It may be a single voxel or it may be a 3D template.
@@ -84,6 +89,9 @@ on "hard reset" {
     canvas_size_x = 0;
     canvas_size_y = 0;
     canvas_size_z = 0;
+
+    render_size_x = 0;
+    render_size_y = 0;
 
     # TextImage shared variables:
     TextImage_file = "";

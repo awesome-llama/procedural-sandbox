@@ -8,9 +8,11 @@ list render_cache_topmost; # elevation index of topmost voxel (really just a hei
 list render_cache_1_r; # 2D color maps, sRGB 0-1
 list render_cache_2_g;
 list render_cache_3_b;
+list XYZ raytracer_ray_origin;
 
 on "initalise" {
     hide;
+    XYZ raytracer_ray_direction = XYZ {x:0, y:0, z:0}; # this would have to be a list if perspective rendering was done (or create a new script specifically for it)
 }
 
 on "hard reset" {
@@ -57,27 +59,38 @@ on "composite" {
     require_iterative_compositor = false; # default off
 
     # run different custom blocks depending on mode
-    if (compositor_mode == CompositorMode.COLOR) {
-        composite_topmost_color;
+    if (viewport_mode == ViewportMode.ALIGNED) {
+        render_size_x = canvas_size_x;
+        render_size_y = canvas_size_y;
 
-    } elif (compositor_mode == CompositorMode.SHADED) {
-        init_ao_pass;
+        if (compositor_mode == CompositorMode.COLOR) {
+            composite_topmost_color;
 
-    } elif (compositor_mode == CompositorMode.RAYTRACED) {
-        init_raytracer;
+        } elif (compositor_mode == CompositorMode.SHADED) {
+            init_ao_pass;
 
-    } elif (compositor_mode == CompositorMode.HEIGHT) {
-        composite_heightmap;
+        } elif (compositor_mode == CompositorMode.RAYTRACED) {
+            init_raytracer_aligned;
 
-    } elif (compositor_mode == CompositorMode.AO) {
-        init_ao_pass;
+        } elif (compositor_mode == CompositorMode.HEIGHT) {
+            composite_heightmap;
 
-    } elif (compositor_mode == CompositorMode.DENSITY) {
-        composite_density;
+        } elif (compositor_mode == CompositorMode.AO) {
+            init_ao_pass;
 
-    } elif (compositor_mode == CompositorMode.NORMAL) {
-        composite_normal 1;
+        } elif (compositor_mode == CompositorMode.DENSITY) {
+            composite_density;
 
+        } elif (compositor_mode == CompositorMode.NORMAL) {
+            composite_normal 1;
+
+        }
+    } elif (viewport_mode == ViewportMode.ORBIT) {
+        # there is only 1 rendering mode in orbit view, raytraced
+        render_size_x = ceil((480-UI_sidebar_width) / render_resolution);
+        render_size_y = ceil((360-20) / render_resolution);
+
+        init_raytracer_orbit;
     }
 
     require_composite = false;
@@ -86,19 +99,24 @@ on "composite" {
 
 on "iterative compositor" {
     max_samples = 256;
-    max_iteration_time = 0.3;
+    max_iteration_time = 0.1;
 
-    if (compositor_mode == CompositorMode.SHADED) {
-        iterate_ao max_samples, max_iteration_time;
-        composite_shaded_color;
+    if (viewport_mode == ViewportMode.ALIGNED) {
+        if (compositor_mode == CompositorMode.SHADED) {
+            iterate_ao max_samples, max_iteration_time;
+            composite_shaded_color;
 
-    } elif (compositor_mode == CompositorMode.RAYTRACED) {
+        } elif (compositor_mode == CompositorMode.RAYTRACED) {
+            iterate_raytracer max_samples, max_iteration_time;
+
+        } elif (compositor_mode == CompositorMode.AO) {
+            iterate_ao max_samples, max_iteration_time;
+            composite_ao;
+        }
+    } elif (viewport_mode == ViewportMode.ORBIT) {
         iterate_raytracer max_samples, max_iteration_time;
-
-    } elif (compositor_mode == CompositorMode.AO) {
-        iterate_ao max_samples, max_iteration_time;
-        composite_ao;
     }
+
 
     if (counted_samples > max_samples) {
         require_iterative_compositor = false;
@@ -352,8 +370,7 @@ proc composite_ao {
 }
 
 
-
-proc init_raytracer {
+proc init_raytracer_aligned {
     counted_samples = 1;
     delete render_cache_1_r;
     delete render_cache_2_g;
@@ -365,19 +382,90 @@ proc init_raytracer {
         add 0 to render_cache_3_b;
         add 0 to render_cache_final_col;
     }
+
+    # create rays
+    raytracer_ray_direction = XYZ {x:0, y:0, z:-1};
+    delete raytracer_ray_origin;
+    # TODO: this shouldn't need to be regenerated unless the canvas size changed or viewport mode changed
+    iy = 0;
+    repeat (canvas_size_y) {
+        ix = 0;
+        repeat (canvas_size_x) {
+            add XYZ {x:ix, y:iy, z:canvas_size_z+1} to raytracer_ray_origin;
+            ix++;
+        }
+        iy++;
+    }
+    
     require_iterative_compositor = true;
 }
 
 
+func cam_space_to_world_space(x, y, z) XYZ {
+    # rotate point around X
+    local XYZ r1 = XYZ {x:$x, y:$y*cos(cam_elev)-$z*sin(cam_elev), z:$y*sin(cam_elev)+$z*cos(cam_elev)};
+    # rotate point around Z
+    return XYZ {x:r1.x*cos(cam_azi)-r1.y*sin(cam_azi), y:r1.x*sin(cam_azi)+r1.y*cos(cam_azi), z:r1.z};
+}
+
+
+proc init_raytracer_orbit {
+    counted_samples = 1;
+    delete render_cache_1_r;
+    delete render_cache_2_g;
+    delete render_cache_3_b;
+    delete render_cache_final_col;
+    repeat (render_size_x * render_size_y) {
+        add 0 to render_cache_1_r;
+        add 0 to render_cache_2_g;
+        add 0 to render_cache_3_b;
+        add 0 to render_cache_final_col;
+    }
+
+    # rotate (this is correct)
+    #local ray_temp = sin(cam_elev);
+    #raytracer_ray_direction = XYZ {x:ray_temp*-sin(cam_azi), y:ray_temp*cos(cam_azi), z:-cos(cam_elev)};
+    #XYZ raytracer_sensor_x = XYZ {x:cos(cam_azi), y:sin(cam_azi), z:0};
+    #local ray_temp = cos(cam_elev);
+    #XYZ raytracer_sensor_y = XYZ {x:ray_temp*-sin(cam_azi), y:ray_temp*cos(cam_azi), z:sin(cam_elev)};
+
+    raytracer_ray_direction = cam_space_to_world_space(0,0,-1);
+    
+    delete raytracer_ray_origin;
+    local physical_x = render_size_x/cam_scale;
+    local physical_y = render_size_y/cam_scale;
+
+    iy = physical_x / -2;
+    repeat (render_size_y) {
+        ix = physical_y / -2;
+        repeat (render_size_x) {
+            local XYZ origin = cam_space_to_world_space(ix,iy,50);
+            # project the origin point to the top of the canvas, at z=canvas_size_z
+            local steps_from_top = ((canvas_size_z+1)-origin.z) / raytracer_ray_direction.z;
+            
+            add XYZ {x:origin.x+steps_from_top*raytracer_ray_direction.x, y:origin.y+steps_from_top*raytracer_ray_direction.y, z:canvas_size_z+1} to raytracer_ray_origin;
+
+            #add origin to raytracer_ray_origin;
+
+            ix += 1;
+        }
+        iy += 1;
+    }
+    
+    require_iterative_compositor = true;
+}
+
+
+# general-purpose raytracer using raytracer_ray_origin/raytracer_ray_direction as ray source
 proc iterate_raytracer max_samples, max_time {
     start_time = days_since_2000();
     
     repeat $max_samples {
         i = 1;
-        iy = 0;
-        repeat canvas_size_y {
-            ix = 0;
-            repeat canvas_size_x {
+        #iy = 0;
+        repeat render_size_y {
+            #ix = 0;
+            repeat render_size_x {
 
                 local acc_col_r = 0;
                 local acc_col_g = 0;
@@ -390,7 +478,9 @@ proc iterate_raytracer max_samples, max_time {
                 vec_y = 0;
                 vec_z = -1;
 
-                raycast_wrapped_canvas ix+RANDOM_0_1(), iy+RANDOM_0_1(), canvas_size_z+1, vec_x, vec_y, vec_z;
+                #raycast_wrapped_canvas ix+RANDOM_0_1(), iy+RANDOM_0_1(), canvas_size_z+1, vec_x, vec_y, vec_z;
+                # the randomness can be generated some other way like a whole-screen shift for each sample
+                raycast_wrapped_canvas raytracer_ray_origin[i].x, raytracer_ray_origin[i].y, raytracer_ray_origin[i].z, raytracer_ray_direction.x, raytracer_ray_direction.y, raytracer_ray_direction.z;
                 
                 local bounces_left = 6; # 4 is perceptually sufficient for opaque voxels
                 until bounces_left < 1 { # repeat until allows for breaking out of it
@@ -495,10 +585,10 @@ proc iterate_raytracer max_samples, max_time {
 
                 render_cache_final_col[i] = COMBINE_RGB_CHANNELS(r, g, b);
 
-                ix++;
+                #ix++;
                 i++;
             }
-            iy++;
+            #iy++;
         }
 
         counted_samples += 1;

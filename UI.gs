@@ -262,8 +262,8 @@ proc render_top_bar x, y {
     }
 
     # viewport buttons
-    top_bar_button "viewport 2D", "viewport 2D", TOP_BAR_OFFSET(3), $y-10, (viewport_mode == ViewportMode.COMPOSITOR);
-    top_bar_button "viewport 3D", "viewport 3D", TOP_BAR_OFFSET(4), $y-10, (viewport_mode == ViewportMode._3D);
+    top_bar_button "viewport 2D", "viewport 2D", TOP_BAR_OFFSET(3), $y-10, (viewport_mode == ViewportMode.ALIGNED);
+    top_bar_button "viewport 3D", "viewport 3D", TOP_BAR_OFFSET(4), $y-10, (viewport_mode == ViewportMode.ORBIT);
     top_bar_button "section", "section", TOP_BAR_OFFSET(6), $y-10, false; # TODO section dropdown
     top_bar_button "compositor mode", "texture", TOP_BAR_OFFSET(7), $y-10, false;
     
@@ -593,9 +593,13 @@ on "stage clicked" {
             UI_sidebar_width = 160;
             require_screen_refresh = true;
         } elif (clicked_element == "viewport 2D") {
-            viewport_mode = ViewportMode.COMPOSITOR;
+            viewport_mode = ViewportMode.ALIGNED;
+            render_resolution = 1;
+            require_composite = true;
         } elif (clicked_element == "viewport 3D") {
-            viewport_mode = ViewportMode._3D;
+            viewport_mode = ViewportMode.ORBIT;
+            render_resolution = render_resolution_default_orbit;
+            require_composite = true;
         } elif (clicked_element == "section") {
             
         } elif (clicked_element == "compositor mode") {

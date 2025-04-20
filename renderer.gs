@@ -8,22 +8,25 @@ on "initalise" {
 }
 
 on "render viewport" {
-    if (viewport_mode == ViewportMode.COMPOSITOR) {
+    if (viewport_mode == ViewportMode.ALIGNED) {
         render_edge_lines 240, 180;
-        render_canvas;
+        render_canvas_2D;
+    } elif (viewport_mode == ViewportMode.ORBIT) {
+        render_image -240+UI_sidebar_width, -180, render_size_x, render_size_y, render_resolution;
     }
 }
 
-proc render_canvas {
-    # optimised
+
+# Render the canvas. Optimised for 2D rendering, will clip to the edges of the screen.
+proc render_canvas_2D {
     switch_costume "blank";
     set_size "Infinity";
     switch_costume "large";
 
     local min_x = 0;
     local min_y = 0;
-    local repeat_x = canvas_size_x//render_resolution;
-    local repeat_y = canvas_size_y//render_resolution;
+    local repeat_x = render_size_x//render_resolution;
+    local repeat_y = render_size_y//render_resolution;
 
     # clip to the available screen
     local border = (((((UI_sidebar_width/2)-240)/cam_scale)+cam_x)//render_resolution)*render_resolution;
@@ -61,7 +64,7 @@ proc render_canvas {
     iy = min_y;
     repeat (repeat_y) {
         goto ss_origin_x + min_x*cam_scale + (UI_sidebar_width/2), ss_origin_y + iy*cam_scale;
-        i = (iy*canvas_size_x) + min_x + 1;
+        i = (iy*render_size_x) + min_x + 1;
         repeat (repeat_x) {
             set_pen_color render_cache_final_col[i];
             #set_pen_transparency 0;
@@ -72,7 +75,42 @@ proc render_canvas {
         }
         iy += render_resolution;
     }
+}
 
+
+# Render a full-screen image (for 3D orbit view). Assumes solid pixels.
+proc render_image origin_x, origin_y, size_x, size_y, scale {
+    switch_costume "blank";
+    set_size "Infinity";
+    switch_costume "large";
+
+    local origin_x = $origin_x;
+    local origin_y = $origin_y;
+
+    if ($scale > 1) {
+        set_pen_size ((1.45-(0.33/($scale-0.26)))*$scale);
+        origin_x += (0.5*$scale);
+        origin_y += (0.5*$scale);
+    } else {
+        set_pen_size $scale;
+    }
+
+    iy = 0;
+    set_y origin_y;
+    repeat ($size_y) {
+        set_x origin_x;
+        i = (iy * $size_x) + 1;
+        repeat ($size_x) {
+            set_pen_color render_cache_final_col[i];
+            #set_pen_transparency 0;
+            pen_down;
+            pen_up;
+            change_x $scale;
+            i += 1;
+        }
+        change_y $scale;
+        iy += 1;
+    }
 }
 
 

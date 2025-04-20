@@ -76,21 +76,45 @@ onkey "p" {
     broadcast "zoom extents";
 }
 
+
+%define UPDATE_MOUSE() prev_mouse_x = mouse_x(); prev_mouse_y = mouse_y();
+
 # click and drag to pan
 on "stage clicked" {
     if (UI_last_hovered_group == "viewport") {
-        prev_mouse_x = mouse_x();
-        prev_mouse_y = mouse_y();
-        until (not mouse_down()) {
-            if (viewport_mode == ViewportMode.COMPOSITOR) {
+        if (viewport_mode == ViewportMode.ALIGNED) {
+            render_resolution = 2;
+
+            UPDATE_MOUSE()
+            until (not mouse_down()) {
                 cam_x += ((prev_mouse_x-mouse_x())/cam_scale);
                 cam_y += ((prev_mouse_y-mouse_y())/cam_scale);
-            } else {
-                # 3D
+                UPDATE_MOUSE()
+                require_screen_refresh = true;
             }
-            prev_mouse_x = mouse_x();
-            prev_mouse_y = mouse_y();
+            render_resolution = 1;
             require_screen_refresh = true;
+        
+        } elif (viewport_mode == ViewportMode.ORBIT) {
+
+            render_resolution = render_resolution_default_orbit * 2;
+
+            UPDATE_MOUSE()
+            until (not mouse_down()) {
+                render_resolution = render_resolution_default_orbit * 2;
+                cam_azi = (cam_azi + ((prev_mouse_x-mouse_x()) * 0.2)) % 360;
+                cam_elev += ((mouse_y()-prev_mouse_y) * 0.2);
+                if (cam_elev > 80) {
+                    cam_elev = 80;
+                } elif (cam_elev < 10) {
+                    cam_elev = 10;
+                }
+                UPDATE_MOUSE()
+                require_composite = true;
+            }
+            render_resolution = render_resolution_default_orbit;
+            require_composite = true;
+
         }
     }
 }
@@ -107,6 +131,9 @@ on "zoom in" {
     #cam_scale = (cam_scale*2);
     change_zoom 1;
     limit_scroll;
+    if (viewport_mode == ViewportMode.ORBIT) {
+        require_composite = true;
+    }
     require_screen_refresh = true;
 }
 
@@ -115,22 +142,27 @@ on "zoom out" {
     #cam_scale = (cam_scale/2);
     change_zoom -1;
     limit_scroll;
+    if (viewport_mode == ViewportMode.ORBIT) {
+        require_composite = true;
+    }
     require_screen_refresh = true;
 }
 
 
 # limit camera position to within the canvas
 proc limit_scroll  {
-    if (cam_x > canvas_size_x) {
-        cam_x = canvas_size_x;
-    } elif (cam_x < 0) {
-        cam_x = 0;
-    }
-    
-    if (cam_y > canvas_size_y) {
-        cam_y = canvas_size_y;
-    } elif (cam_y < 0) {
-        cam_y = 0;
+    if (viewport_mode == ViewportMode.ALIGNED) {
+        if (cam_x > canvas_size_x) {
+            cam_x = canvas_size_x;
+        } elif (cam_x < 0) {
+            cam_x = 0;
+        }
+        
+        if (cam_y > canvas_size_y) {
+            cam_y = canvas_size_y;
+        } elif (cam_y < 0) {
+            cam_y = 0;
+        }
     }
 }
 
@@ -157,9 +189,16 @@ proc zoom_extents {
 }
 
 
+# triggered by UI button
 on "center camera" {
-    cam_x = (canvas_size_x/2);
-    cam_y = (canvas_size_y/2);
+    if (viewport_mode == ViewportMode.ALIGNED) {
+        cam_x = (canvas_size_x/2);
+        cam_y = (canvas_size_y/2);
+    } elif (viewport_mode == ViewportMode.ORBIT) {
+        cam_azi = 0;
+        cam_elev = 45;
+    }
+    
 }
 
 

@@ -217,8 +217,8 @@ on "io.export_rendered_canvas.run" {
 proc copy_render_buffer_to_TI_px_buffer {
     # The render buffer is 2D and opaque
     
-    TI_image_size_x = canvas_size_x;
-    TI_image_size_y = canvas_size_y;
+    TI_image_size_x = render_size_x;
+    TI_image_size_y = render_size_y;
     delete TI_1_r;
     delete TI_2_g;
     delete TI_3_b;

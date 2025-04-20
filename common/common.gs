@@ -62,8 +62,8 @@ enum CompositorMode {
 }
 
 enum ViewportMode {
-    COMPOSITOR = "COMPOSITOR", # compositor based
-    _3D = "3D" # 3D renderer
+    ALIGNED = "ALIGNED", # axis-aligned top-down view
+    ORBIT = "ORBIT" # 3D renderer
 }
 
 enum DepositorMode {
@@ -157,7 +157,11 @@ struct template_metadata {
 # Convert 2D coordinates into index, assumes ints that do not wrap
 %define INDEX_FROM_2D_NOWRAP_INTS(X,Y,SIZE_X) (1 + (((SIZE_X)*(Y)) + (X)))
 
+# Convert 2D coordinates into index, assumes ints, wrapped
 %define INDEX_FROM_2D_INTS(X,Y,SIZE_X,SIZE_Y) (1 + (((SIZE_X)*((Y)%(SIZE_Y))) + ((X)%(SIZE_X))))
+
+# Convert 2D coordinates into index, floored and wrapped
+%define INDEX_FROM_2D(X,Y,SIZE_X,SIZE_Y) (1 + (((SIZE_X)*(floor(Y)%(SIZE_Y))) + (floor(X)%(SIZE_X))))
 
 # Convert 3D coordinates into index, wrapping along all axes. Remember that lists are 1-indexed.
 %define INDEX_FROM_3D(X,Y,Z,SIZE_X,SIZE_Y,SIZE_Z) (1 + ((((SIZE_X)*(SIZE_Y)) * (floor(Z) % (SIZE_Z))) + (((SIZE_X)*(floor(Y) % (SIZE_Y))) + (floor(X) % (SIZE_X)))))
