@@ -20,7 +20,11 @@ on "start main loop" {
     
     require_composite = true;
     require_screen_refresh = true; # TODO rename to viewport
+    last_time = days_since_2000();
     forever {
+        dt = 86400*(days_since_2000()-last_time);
+        if dt > 0.1 { dt = 0.1; } # limit to 10 FPS
+        last_time = days_since_2000();
         hide; # does this affect yielding?
         
         # reset hover detection
@@ -62,13 +66,13 @@ on "start main loop" {
 %define PRESSED_MOVE_Y() (key_pressed("w")-key_pressed("s"))
 
 onkey "any" {
-    # TODO account for FPS
     if (PRESSED_WASD()) {
         if (viewport_mode == ViewportMode.ALIGNED) {
             render_resolution = 2;
             until (not PRESSED_WASD()) {
-                cam_x += (PRESSED_MOVE_X() * (4/cam_scale));
-                cam_y += (PRESSED_MOVE_Y() * (4/cam_scale));
+                movement_speed = 200+(key_pressed("shift")*200);
+                cam_x += (PRESSED_MOVE_X() * ((dt*movement_speed)/cam_scale));
+                cam_y += (PRESSED_MOVE_Y() * ((dt*movement_speed)/cam_scale));
                 require_screen_refresh = true;
             }
             render_resolution = 1;
@@ -77,8 +81,9 @@ onkey "any" {
         } elif (viewport_mode == ViewportMode.ORBIT) {
             # move the camera forwards or sideways horizontally, using current azimuth
             until (not PRESSED_WASD()) {
-                cam_x += ((PRESSED_MOVE_X()*cos(cam_azi)) - (PRESSED_MOVE_Y()*sin(cam_azi))) * (4/cam_scale);
-                cam_y += ((PRESSED_MOVE_X()*sin(cam_azi)) + (PRESSED_MOVE_Y()*cos(cam_azi))) * (4/cam_scale);
+                movement_speed = 200+(key_pressed("shift")*200);
+                cam_x += ((PRESSED_MOVE_X()*cos(cam_azi)) - (PRESSED_MOVE_Y()*sin(cam_azi))) * ((dt*movement_speed)/cam_scale);
+                cam_y += ((PRESSED_MOVE_X()*sin(cam_azi)) + (PRESSED_MOVE_Y()*cos(cam_azi))) * ((dt*movement_speed)/cam_scale);
 
                 cam_x = cam_x % canvas_size_x;
                 cam_y = cam_y % canvas_size_x;

@@ -212,15 +212,21 @@ proc render_project_messages {
     # update list of messages, not for rendering them
     local msg_i = 1;
     repeat ((length project_messages) / 2) {
-        project_messages[msg_i+1] -= 0.033; # replace this with delta time
+        project_messages[msg_i+1] -= dt; # replace this with delta time
         if project_messages[msg_i+1] < 0 {
             # delete message:
             delete project_messages[msg_i];
             delete project_messages[msg_i];
             require_screen_refresh = true;
         } else {
+            local msg_bottom_y = 160-msg_i*10 - 6;
+            draw_rect -230, msg_bottom_y + 1, 460, 18, 3, "#000000"; # background
+            
             set_pen_color "#00ffff";
-            plainText -220, 160-msg_i*10, 1, project_messages[msg_i];
+            plainText -220, msg_bottom_y + 6, 1, project_messages[msg_i];
+
+            UI_check_touching_mouse -230, msg_bottom_y+20, 460, 20, "message", msg_i;
+
             msg_i += 2;
         }
     }
@@ -506,6 +512,17 @@ proc UI_check_touching_mouse x, y, width, height, id1, id2 {
 on "stage clicked" {
     stop_other_scripts; # stop previous ask block
     clicked_element = UI_last_hovered_element; # alias
+
+    if (UI_last_hovered_group == "message") {
+        if (UI_last_hovered_element % 2) == 1 {
+            # delete message
+            delete project_messages[UI_last_hovered_element];
+            delete project_messages[UI_last_hovered_element];
+            require_screen_refresh = true;
+        }
+        
+        stop_this_script;
+    }
 
     if (UI_last_hovered_group == "popup") {
         # pass

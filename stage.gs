@@ -42,6 +42,8 @@ list hex_lookup = file ```hex_lookup.txt```;
 
 on "initalise" {
     #dev = round((username() == "awesome-llama")); # developer mode
+
+    dt = 0; # delta time
     
     cam_x = 0;
     cam_y = 0;
@@ -82,6 +84,8 @@ on "initalise" {
     cmd_string = "";
     
     delete UI_popup;
+
+    delete project_messages;
 }
 
 
