@@ -398,7 +398,7 @@ proc render_modular_element index, x, y, width, panel_id {
 
             # draw the fill indicator
             if (UI_data[$index+3] != UI_data[$index+5]) {
-                draw_rect $x+1, $y-(LINEHIGHT-2), round(($width-3)*UNLERP(UI_data[$index+5],UI_data[$index+6],UI_data[$index+3])), LINEHIGHT-5, 0, "#505050"; 
+                draw_rect $x+1, $y-(LINEHIGHT-2), round(($width-2)*UNLERP(UI_data[$index+5],UI_data[$index+6],UI_data[$index+3])), LINEHIGHT-4, 0, "#505050"; 
             }
 
             # text
@@ -837,9 +837,17 @@ proc draw_rect x, y, width, height, radius, fill_col {
             radius *= 6; # approximate number to ensure enough overlap
         }
     }
+    
+    # final inner fill
+    if (rect_limit < 1) {
+        # special handling for single pixel thick
+        set_pen_size 1;
+        goto $x, $y;
+        pen_down;
+        goto $x+($width-1)*($width>1), $y+($height-1)*($height>1);
+        pen_up;
 
-    # final fill
-    if (radius < $radius or radius/rect_limit)%6 <= 3 {
+    } elif (radius < $radius or radius/rect_limit)%6 <= 3 {
         set_pen_size (rect_limit * 2) - 0.01; # subtract for hq pen fix
         goto ($x+rect_limit), ($y+rect_limit);
         pen_down;
