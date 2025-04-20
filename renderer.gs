@@ -39,12 +39,12 @@ proc render_canvas_2D {
         repeat_x = (border - min_x)/render_resolution+1; # add 1 to extend 1 px offscreen
     }
 
-    local border = (((-180/cam_scale)+cam_y)//render_resolution)*render_resolution;
+    local border = (((-170/cam_scale)+cam_y)//render_resolution)*render_resolution;
     if (border > min_y) {
         min_y = border;
         repeat_y -= border/render_resolution;
     }
-    local border = (((160/cam_scale)+cam_y)//render_resolution)*render_resolution;
+    local border = (((170/cam_scale)+cam_y)//render_resolution)*render_resolution;
     if ((border - min_y)/render_resolution+1 < repeat_y) {
         repeat_y = (border - min_y)/render_resolution+1; # add 1 to extend 1 px offscreen
     }
@@ -63,7 +63,7 @@ proc render_canvas_2D {
 
     iy = min_y;
     repeat (repeat_y) {
-        goto ss_origin_x + min_x*cam_scale + (UI_sidebar_width/2), ss_origin_y + iy*cam_scale;
+        goto ss_origin_x + min_x*cam_scale + (UI_sidebar_width/2), ss_origin_y + iy*cam_scale - 10;
         i = (iy*render_size_x) + min_x + 1;
         repeat (repeat_x) {
             set_pen_color render_cache_final_col[i];
@@ -146,5 +146,5 @@ proc render_edge_lines bound_x, bound_y {
 
 # go to a position in the world
 proc goto_world_space x, y {
-    goto floor(cam_scale*($x-cam_x))+(UI_sidebar_width/2), floor(cam_scale*($y-cam_y));
+    goto floor(cam_scale*($x-cam_x)+(UI_sidebar_width/2)), floor(cam_scale*($y-cam_y) - (20/2));
 }

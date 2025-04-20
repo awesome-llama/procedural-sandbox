@@ -76,6 +76,8 @@ on "initalise" {
     UI_sidebar_width = 160; # set to 0 to hide
 
     UI_clipboard_source = 0;
+
+    if (UI_current_panel == 0) { UI_current_panel = "menu.gen"; } # default panel on startup
     
     cmd_string = "";
     
@@ -110,7 +112,7 @@ on "hard reset" {
     delete UI_return;
     delete UI_popup;
     
-    UI_current_panel = "menu.io";
+    UI_current_panel = "menu.gen";
     
     cmd_string = "";
 }

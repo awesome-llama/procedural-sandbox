@@ -399,7 +399,7 @@ panels['gen.erosion'] = Container([
         Value.canvas_size('Size X', 'gen.erosion.size_x', 64),
         Value.canvas_size('Size Y', 'gen.erosion.size_y', 64),
         Value.canvas_size('Size Z', 'gen.erosion.size_z', 16, 64),
-        #Checkbox('Perlin', 'perlin'),
+        Value('Scale', 'gen.erosion.scale', 16, 1, 256, 0, 4096, snap_frac=1),
         Button('Generate', 'gen.erosion.run.generate'),
     ]),
     Expander('Erode', '', True, [
@@ -499,7 +499,7 @@ panels['gen.value_noise'] = Container([
         Value.canvas_size('Size Y', 'gen.value_noise.size_y', 64),
     ]),
     Expander('Shape', '', True, [
-        Value('Scale', 'gen.value_noise.scale', 16, 1, 256, 0, 4096, snap_frac=1),
+        Value('Scale', 'gen.value_noise.scale', 16, 1, 64, 0, 4096, snap_frac=1),
         Value('Max octaves', 'gen.value_noise.octaves', 5, 1, 8, 0, 64, snap_frac=1),
     ]),
     Button('Generate', 'gen.value_noise.run'),

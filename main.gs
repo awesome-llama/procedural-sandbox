@@ -170,7 +170,7 @@ on "zoom extents" { zoom_extents; }
 proc zoom_extents {
     # first get avail width and height of viewport
     local viewport_width = 480-UI_sidebar_width;
-    local viewport_height = 360;
+    local viewport_height = 340;
 
     cam_x = (canvas_size_x/2);
     cam_y = (canvas_size_y/2);

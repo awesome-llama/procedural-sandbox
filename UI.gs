@@ -62,14 +62,15 @@ on "render ui" {
     render_top_bar -240+UI_sidebar_width, 180;
 
     # SIDE BAR
-    if (UI_current_panel == "menu.io" or UI_current_panel == "menu.gen" or UI_current_panel == "menu.fx" or UI_current_panel == "menu.draw") {
-        draw_rect -240, -180, UI_sidebar_width, 360, 0, "#423C4F";
-    } else {
-        draw_rect -240, -180, UI_sidebar_width, 360, 0, THEME_COL_BG;
-    }
-    
-    UI_check_touching_mouse -240, 180, UI_sidebar_width, 360, "side bar", "";
     if (UI_sidebar_width > 8) {
+        if (UI_current_panel == "menu.io" or UI_current_panel == "menu.gen" or UI_current_panel == "menu.fx" or UI_current_panel == "menu.draw") {
+            draw_rect -240, -180, UI_sidebar_width, 360, 0, "#423C4F";
+        } else {
+            draw_rect -240, -180, UI_sidebar_width, 360, 0, THEME_COL_BG;
+        }
+        
+        UI_check_touching_mouse -240, 180, UI_sidebar_width, 360, "side bar", "";
+
         render_side_bar -236, 180-TOP_BAR_HEIGHT, UI_sidebar_width-8, 360-TOP_BAR_HEIGHT; # scroll bar might be needed
 
         # tabs
@@ -79,7 +80,7 @@ on "render ui" {
         tab_button tab_offset, 34, "I/O", "menu.io";
         tab_button tab_offset, 37, "Gen", "menu.gen";
         tab_button tab_offset, 31, "FX", "menu.fx";
-        tab_button tab_offset, 42, "Draw", "menu.draw";
+        #tab_button tab_offset, 42, "Draw", "menu.draw";
     }
 
     render_popup;
@@ -264,12 +265,12 @@ proc render_top_bar x, y {
     # viewport buttons
     top_bar_button "viewport 2D", "viewport 2D", TOP_BAR_OFFSET(3), $y-10, (viewport_mode == ViewportMode.ALIGNED);
     top_bar_button "viewport 3D", "viewport 3D", TOP_BAR_OFFSET(4), $y-10, (viewport_mode == ViewportMode.ORBIT);
-    top_bar_button "section", "section", TOP_BAR_OFFSET(6), $y-10, false; # TODO section dropdown
-    top_bar_button "compositor mode", "texture", TOP_BAR_OFFSET(7), $y-10, false;
+    #top_bar_button "section", "section", TOP_BAR_OFFSET(6), $y-10, false; # TODO section dropdown
+    top_bar_button "compositor mode", "texture", TOP_BAR_OFFSET(6), $y-10, false;
     
-    top_bar_button "zoom out", "zoom out", TOP_BAR_OFFSET(9), $y-10, false;
-    top_bar_button "zoom fit", "zoom fit", TOP_BAR_OFFSET(10), $y-10, false;
-    top_bar_button "zoom in", "zoom in", TOP_BAR_OFFSET(11), $y-10, false;
+    top_bar_button "zoom out", "zoom out", TOP_BAR_OFFSET(8), $y-10, false;
+    top_bar_button "zoom fit", "zoom fit", TOP_BAR_OFFSET(9), $y-10, false;
+    top_bar_button "zoom in", "zoom in", TOP_BAR_OFFSET(10), $y-10, false;
 
     # right-aligned settings cog
     top_bar_button "settings", "settings", 240-10, $y-10, false;
@@ -588,6 +589,9 @@ on "stage clicked" {
         # top bar
         if (clicked_element == "close side bar") {
             UI_sidebar_width = 0;
+            if (viewport_mode == ViewportMode.ORBIT) {
+                require_composite = true;
+            }
             require_screen_refresh = true;
         } elif (clicked_element == "open side bar") {
             UI_sidebar_width = 160;
@@ -605,10 +609,8 @@ on "stage clicked" {
         } elif (clicked_element == "compositor mode") {
             
         } elif (clicked_element == "zoom in") {
-            broadcast "center camera";
             broadcast "zoom in";
         } elif (clicked_element == "zoom out") {
-            broadcast "center camera";
             broadcast "zoom out";
         } elif (clicked_element == "zoom fit") {
             broadcast "zoom extents";
@@ -801,7 +803,7 @@ proc draw_UI_rect x, y, width, height, radius, outline_col, fill_col {
 }
 
 
-# "natural" rect. for positive width and height only. Radius may be 0.
+# "natural" rect. for positive width and height only. Radius is clamped to 1.
 proc draw_rect x, y, width, height, radius, fill_col {
     
     # find the narrowest axis
@@ -810,8 +812,11 @@ proc draw_rect x, y, width, height, radius, fill_col {
     } else {
         local rect_limit = ($width/2);
     }
-    
-    local radius = POSITIVE_CLAMP($radius);
+    if ($radius > 1) {
+        local radius = $radius;
+    } else {
+        local radius = 1;
+    }
     
     if (rect_limit < 0) { stop_this_script; }
 
