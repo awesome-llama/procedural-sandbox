@@ -196,6 +196,7 @@ panels['menu.gen'] = Container([
     Separator(0, 5),
     btn_menu_set_page('Erosion', 'gen.erosion'),
     btn_menu_set_page('Fibres', 'gen.fibres'),
+    btn_menu_set_page('Value Noise', 'gen.value_noise'),
     Separator(0, 5),
     btn_menu_set_page('Ballpit', 'gen.ballpit'),
     btn_menu_set_page('Elem. cellular automata', 'gen.eca'),
@@ -486,8 +487,24 @@ panels['gen.wheel'] = Container([
     Value('Sidewall height', 'gen.wheel.sidewall_height', 9, 1, 512, 0, 4096, snap_frac=1),
     Value('Tire width', 'gen.wheel.tire_width', 8, 1, 512, 0, 4096, snap_frac=1),
     Separator(0),
-    Button('Run', 'gen.wheel.run'),
+    Button('Generate', 'gen.wheel.run'),
 ])
+
+# https://en.wikipedia.org/wiki/Value_noise
+panels['gen.value_noise'] = Container([
+    Label.title('Value Noise (2D)'),
+    Separator(),
+    Expander('Dimensions', '', True, [
+        Value.canvas_size('Size X', 'gen.value_noise.size_x', 64),
+        Value.canvas_size('Size Y', 'gen.value_noise.size_y', 64),
+    ]),
+    Expander('Shape', '', True, [
+        Value('Scale', 'gen.value_noise.scale', 16, 1, 256, 0, 4096, snap_frac=1),
+        Value('Max octaves', 'gen.value_noise.octaves', 5, 1, 8, 0, 64, snap_frac=1),
+    ]),
+    Button('Generate', 'gen.value_noise.run'),
+])
+
 
 ################################
 #              FX              #

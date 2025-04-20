@@ -3,12 +3,12 @@
 costumes "costumes/blank.svg" as "blank";
 hide;
 
+# The following lists are named by purpose and can be shared by any generator procedure.
 list maze_graph;
 list custom_grid;
 list eca_lut;
-list RGB palette;
-
-list voxel temp_canvas; # list used to store the canvas temporarily
+list temp_canvas_mono; # temporary single channel canvas
+list voxel temp_canvas; # temporary voxel canvas
 
 on "initalise" {
     hide;
@@ -18,8 +18,7 @@ on "hard reset" {
     delete maze_graph;
     delete custom_grid;
     delete eca_lut;
-    delete palette;
-
+    delete temp_canvas_mono;
     delete temp_canvas;
 }
 
@@ -544,6 +543,91 @@ proc generate_refinery {
         random_walk_taxicab tank_x, tank_y-tank_rad, random(1, tank_rad/2), 12, 16;
     }
     
+    require_composite = true;
+}
+
+
+on "gen.value_noise.run" {
+    delete UI_return;
+    setting_from_id "gen.value_noise.size_x";
+    setting_from_id "gen.value_noise.size_y";
+    setting_from_id "gen.value_noise.scale";
+    setting_from_id "gen.value_noise.octaves";
+    generate_value_noise UI_return[1], UI_return[2], UI_return[3], UI_return[4];
+}
+proc generate_value_noise size_x, size_y, scale, octaves {
+    canvas_size_x = $size_x;
+    canvas_size_y = $size_y;
+    canvas_size_z = 1;
+    clear_canvas;
+    reset_depositor;
+    # do not draw a base layer, it will be fully overwritten with the temp_canvas_mono
+
+    delete temp_canvas_mono; # output canvas, single channel
+    repeat (canvas_size_x * canvas_size_y) {
+        add 0.5 to temp_canvas_mono; # use 0.5 as middle value
+    }
+    
+    local range = 0.25;
+    local target_scale = $scale;
+    repeat $octaves {
+        if target_scale > 0.5 { # only add layer if larger than half a pixel
+            local last_range = range;
+
+            # noise "layer"
+            local grid_size_x = round(canvas_size_x/target_scale);
+            local grid_size_y = round(canvas_size_y/target_scale);
+
+            delete custom_grid; # source grid values
+            repeat (grid_size_x * grid_size_y) {
+                add random(-range, range) to custom_grid;
+            }
+            
+            # loop over every voxel and sample the grid
+            local offset_x = RANDOM_0_1() * (grid_size_x != canvas_size_x); # decorrelate the layer
+            i = 1;
+            local px_y = RANDOM_0_1() * (grid_size_y != canvas_size_y);
+            repeat canvas_size_y {
+                local px_x = offset_x;
+                repeat canvas_size_x {
+                    local gx = px_x*(grid_size_x/canvas_size_x);
+                    local gy = px_y*(grid_size_y/canvas_size_y);
+                    local val_BL = custom_grid[INDEX_FROM_2D(gx, gy, grid_size_x, grid_size_y)];
+                    local val_BR = custom_grid[INDEX_FROM_2D(gx+1, gy, grid_size_x, grid_size_y)];
+                    local val_TL = custom_grid[INDEX_FROM_2D(gx, gy+1, grid_size_x, grid_size_y)];
+                    local val_TR = custom_grid[INDEX_FROM_2D(gx+1, gy+1, grid_size_x, grid_size_y)];
+                    
+                    # bilinear interpolation
+                    local val_B = LERP(val_BL,val_BR,(gx%1));
+                    local val_T = LERP(val_TL,val_TR,(gx%1));
+                    temp_canvas_mono[i] += LERP(val_B,val_T,(gy%1));
+
+                    i++;
+                    px_x++;
+                }
+                px_y++;
+            }
+
+            # update for next noise layer
+            range *= 0.5;
+            target_scale /= 2; # lacunarity
+        }
+    }
+    
+    # write the to the real canvas
+    i = 1;
+    repeat (canvas_size_x * canvas_size_y) {
+        # set voxel rgb, opacity
+        local val = (temp_canvas_mono[i]-last_range) / (1-last_range*2); # get value and normalise 0-1
+        local val = CLAMP_0_1(val);
+        canvas[i].r = val;
+        canvas[i].g = val;
+        canvas[i].b = val;
+        canvas[i].opacity = 1;
+        i++;
+    }
+    delete custom_grid;
+    delete temp_canvas_mono;
     require_composite = true;
 }
 
