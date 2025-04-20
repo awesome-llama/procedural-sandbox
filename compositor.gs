@@ -401,7 +401,7 @@ proc init_raytracer_aligned {
 }
 
 
-func cam_space_to_world_space(x, y, z) XYZ {
+func rotate_cam_space_to_world_space(x, y, z) XYZ {
     # rotate point around X
     local XYZ r1 = XYZ {x:$x, y:$y*cos(cam_elev)-$z*sin(cam_elev), z:$y*sin(cam_elev)+$z*cos(cam_elev)};
     # rotate point around Z
@@ -422,14 +422,7 @@ proc init_raytracer_orbit {
         add 0 to render_cache_final_col;
     }
 
-    # rotate (this is correct)
-    #local ray_temp = sin(cam_elev);
-    #raytracer_ray_direction = XYZ {x:ray_temp*-sin(cam_azi), y:ray_temp*cos(cam_azi), z:-cos(cam_elev)};
-    #XYZ raytracer_sensor_x = XYZ {x:cos(cam_azi), y:sin(cam_azi), z:0};
-    #local ray_temp = cos(cam_elev);
-    #XYZ raytracer_sensor_y = XYZ {x:ray_temp*-sin(cam_azi), y:ray_temp*cos(cam_azi), z:sin(cam_elev)};
-
-    raytracer_ray_direction = cam_space_to_world_space(0,0,-1);
+    raytracer_ray_direction = rotate_cam_space_to_world_space(0,0,-1);
     
     delete raytracer_ray_origin;
     local physical_x = render_size_x/cam_scale;
@@ -439,13 +432,10 @@ proc init_raytracer_orbit {
     repeat (render_size_y) {
         ix = physical_y / -2;
         repeat (render_size_x) {
-            local XYZ origin = cam_space_to_world_space(ix,iy,50);
+            local XYZ origin = rotate_cam_space_to_world_space(ix,iy,50);
             # project the origin point to the top of the canvas, at z=canvas_size_z
             local steps_from_top = ((canvas_size_z+1)-origin.z) / raytracer_ray_direction.z;
-            
-            add XYZ {x:origin.x+steps_from_top*raytracer_ray_direction.x, y:origin.y+steps_from_top*raytracer_ray_direction.y, z:canvas_size_z+1} to raytracer_ray_origin;
-
-            #add origin to raytracer_ray_origin;
+            add XYZ {x:origin.x+steps_from_top*raytracer_ray_direction.x+cam_x, y:origin.y+steps_from_top*raytracer_ray_direction.y+cam_y, z:canvas_size_z+1} to raytracer_ray_origin;
 
             ix += 1;
         }
@@ -508,31 +498,31 @@ proc iterate_raytracer max_samples, max_time {
                             if (side == 0) {
                                 if (step_x > 0) { 
                                     # normal -X
-                                    random_vector -1, 0, 0;
+                                    random_lambertian_vector -1, 0, 0;
                                     raycast_wrapped_canvas hit_position.x-0.001, hit_position.y, hit_position.z, vec_x, vec_y, vec_z;
                                 } else { 
                                     # normal +X
-                                    random_vector 1, 0, 0;
+                                    random_lambertian_vector 1, 0, 0;
                                     raycast_wrapped_canvas hit_position.x+0.001, hit_position.y, hit_position.z, vec_x, vec_y, vec_z;
                                 }
                             } elif (side == 1) {
                                 if (step_y > 0) { 
                                     # normal -Y
-                                    random_vector 0, -1, 0;
+                                    random_lambertian_vector 0, -1, 0;
                                     raycast_wrapped_canvas hit_position.x, hit_position.y-0.001, hit_position.z, vec_x, vec_y, vec_z;
                                 } else { 
                                     # normal +Y
-                                    random_vector 0, 1, 0;
+                                    random_lambertian_vector 0, 1, 0;
                                     raycast_wrapped_canvas hit_position.x, hit_position.y+0.001, hit_position.z, vec_x, vec_y, vec_z;
                                 }
                             } else {
                                 if (step_z > 0) { 
                                     # normal -Z
-                                    random_vector 0, 0, -1;
+                                    random_lambertian_vector 0, 0, -1;
                                     raycast_wrapped_canvas hit_position.x, hit_position.y, hit_position.z-0.001, vec_x, vec_y, vec_z;
                                 } else { 
                                     # normal +Z
-                                    random_vector 0, 0, 1;
+                                    random_lambertian_vector 0, 0, 1;
                                     raycast_wrapped_canvas hit_position.x, hit_position.y, hit_position.z+0.001, vec_x, vec_y, vec_z;
                                 }
                             }
@@ -545,7 +535,8 @@ proc iterate_raytracer max_samples, max_time {
                             #vec_x /= vec_len;
                             #vec_y /= vec_len;
                             #vec_z /= vec_len;
-                            random_vector 0, 0, random(0,1)*2-1;
+                            # TODO make ray continue through medium
+                            random_lambertian_vector 0, 0, random(0,1)*2-1;
                             raycast_wrapped_canvas hit_position.x + vec_x*0.001, hit_position.y + vec_y*0.001, hit_position.z + vec_z*0.001, vec_x, vec_y, vec_z;
                             #raycast_wrapped_canvas hit_position.x + step_x*0.001, hit_position.y + step_y*0.001, hit_position.z + step_z*0.001, vec_x, vec_y, vec_z;
                         }
@@ -770,7 +761,7 @@ proc random_vector nx, ny, nz {
         vec_y = random("-1.0", "1.0");
         vec_z = random("-1.0", "1.0");
         local vec_len = VEC3_LEN(vec_x, vec_y, vec_z);
-        if (vec_len < 1.001 and vec_len > 0.001) {
+        if (vec_len < 1 and vec_len > 0.001) {
             vec_x /= vec_len;
             vec_y /= vec_len;
             vec_z /= vec_len;
@@ -782,6 +773,34 @@ proc random_vector nx, ny, nz {
             }
 
             stop_this_script;
+        }
+    }
+}
+
+
+# generate a random normalised hemisphere vector
+# see: https://raytracing.github.io/books/RayTracingInOneWeekend.html#diffusematerials/truelambertianreflection
+proc random_lambertian_vector nx, ny, nz {
+    forever {
+        vec_x = random("-1.0", "1.0");
+        vec_y = random("-1.0", "1.0");
+        vec_z = random("-1.0", "1.0");
+        local vec_len = VEC3_LEN(vec_x, vec_y, vec_z);
+        if (vec_len < 1) {
+            # normalise and add normal
+            vec_x = vec_x/vec_len + $nx;
+            vec_y = vec_y/vec_len + $ny;
+            vec_z = vec_z/vec_len + $nz;
+
+            # renormalise
+            local vec_len = VEC3_LEN(vec_x, vec_y, vec_z);
+            if (vec_len > 0.001) {
+                vec_x /= vec_len;
+                vec_y /= vec_len;
+                vec_z /= vec_len;
+
+                stop_this_script;
+            }
         }
     }
 }
