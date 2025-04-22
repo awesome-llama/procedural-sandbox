@@ -70,7 +70,7 @@ onkey "any" {
         if (viewport_mode == ViewportMode.ALIGNED) {
             render_resolution = 2;
             until (not PRESSED_WASD()) {
-                movement_speed = 200+(key_pressed("shift")*200);
+                movement_speed = 200*(1+key_pressed("shift"));
                 cam_x += (PRESSED_MOVE_X() * ((dt*movement_speed)/cam_scale));
                 cam_y += (PRESSED_MOVE_Y() * ((dt*movement_speed)/cam_scale));
                 require_screen_refresh = true;
@@ -81,7 +81,7 @@ onkey "any" {
         } elif (viewport_mode == ViewportMode.ORBIT) {
             # move the camera forwards or sideways horizontally, using current azimuth
             until (not PRESSED_WASD()) {
-                movement_speed = 200+(key_pressed("shift")*200);
+                movement_speed = (((canvas_size_x+canvas_size_y)/2)/4)*(1+key_pressed("shift"));
                 cam_x += ((PRESSED_MOVE_X()*cos(cam_azi)) - (PRESSED_MOVE_Y()*sin(cam_azi))) * ((dt*movement_speed)/cam_scale);
                 cam_y += ((PRESSED_MOVE_X()*sin(cam_azi)) + (PRESSED_MOVE_Y()*cos(cam_azi))) * ((dt*movement_speed)/cam_scale);
 
@@ -132,10 +132,10 @@ on "stage clicked" {
             UPDATE_MOUSE()
             until (not mouse_down()) {
                 render_resolution = render_resolution_default_orbit * 2;
-                cam_azi = (cam_azi + ((prev_mouse_x-mouse_x()) * 0.2)) % 360;
-                cam_elev += ((mouse_y()-prev_mouse_y) * 0.2);
-                if (cam_elev > 80) {
-                    cam_elev = 80;
+                cam_azi = (cam_azi + ((prev_mouse_x-mouse_x()) * 0.4)) % 360;
+                cam_elev += ((mouse_y()-prev_mouse_y) * 0.4);
+                if (cam_elev > 85) {
+                    cam_elev = 85;
                 } elif (cam_elev < 0) {
                     cam_elev = 0;
                 }
