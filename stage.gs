@@ -63,6 +63,9 @@ on "initalise" {
     viewport_mode = ViewportMode.ALIGNED;
     compositor_mode = CompositorMode.COLOR;
 
+    counted_samples = 1;
+    max_samples = 1;
+
     # the "depositor" (chose an obscure but relevant name) is a description of what voxel will be placed by the procedural tools. It may be a single voxel or it may be a 3D template.
     depositor_mode = DepositorMode.DRAW;
     depositor_replace = true; # bool [false=keep existing (non-air voxel) intact | true=replace (incl. with new air)]

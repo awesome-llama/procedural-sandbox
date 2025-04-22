@@ -136,8 +136,8 @@ on "stage clicked" {
                 cam_elev += ((mouse_y()-prev_mouse_y) * 0.2);
                 if (cam_elev > 80) {
                     cam_elev = 80;
-                } elif (cam_elev < 10) {
-                    cam_elev = 10;
+                } elif (cam_elev < 0) {
+                    cam_elev = 0;
                 }
                 UPDATE_MOUSE()
                 require_composite = true;

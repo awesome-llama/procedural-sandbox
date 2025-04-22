@@ -312,8 +312,9 @@ on "render viewport text" { render_viewport_text; }
 proc render_viewport_text {
     set_pen_color THEME_COL_TEXT;
     plainText UI_sidebar_width-235, 150, 1, ("canvas size: " & ((((canvas_size_x & ", ") & canvas_size_y) & ", ") & canvas_size_z));
-    plainText UI_sidebar_width-235, 140, 1, ("timer: " & floor(( 100 *((86400 * days_since_2000()) % 1))));
-    
+    plainText UI_sidebar_width-235, 140, 1, (compositor_mode);
+    plainText UI_sidebar_width-235, 130, 1, ("cam scale: " & round(cam_scale*100)/100);
+    plainText UI_sidebar_width-235, 120, 1, ("timer: " & floor(( 100 * ((86400 * days_since_2000()) % 1))) & ", " & counted_samples & "/" & max_samples);
 }
 
 # modular panel specific

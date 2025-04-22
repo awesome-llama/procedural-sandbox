@@ -8,11 +8,13 @@ list render_cache_topmost; # elevation index of topmost voxel (really just a hei
 list render_cache_1_r; # 2D color maps, sRGB 0-1
 list render_cache_2_g;
 list render_cache_3_b;
-list XYZ raytracer_ray_origin;
+list XYZ raytracer_ray_origins;
 
 on "initalise" {
     hide;
     XYZ raytracer_ray_direction = XYZ {x:0, y:0, z:0}; # this would have to be a list if perspective rendering was done (or create a new script specifically for it)
+    
+    last_raytracer_config = "undefined"; # keeps track of the state of the raytracer lists so they only get updated when needed.
 }
 
 on "hard reset" {
@@ -370,6 +372,8 @@ proc composite_ao {
 }
 
 
+%define LAST_RAYTRACER_CONFIG_HASH() (canvas_size_x & "," & canvas_size_y & "," & viewport_mode)
+
 proc init_raytracer_aligned {
     counted_samples = 1;
     delete render_cache_1_r;
@@ -383,18 +387,23 @@ proc init_raytracer_aligned {
         add 0 to render_cache_final_col;
     }
 
-    # create rays
-    raytracer_ray_direction = XYZ {x:0, y:0, z:-1};
-    delete raytracer_ray_origin;
-    # TODO: this shouldn't need to be regenerated unless the canvas size changed or viewport mode changed
-    iy = 0;
-    repeat (canvas_size_y) {
-        ix = 0;
-        repeat (canvas_size_x) {
-            add XYZ {x:ix, y:iy, z:canvas_size_z+1} to raytracer_ray_origin;
-            ix++;
+    # this shouldn't need to be regenerated unless the canvas size changed or viewport mode changed
+    local config = LAST_RAYTRACER_CONFIG_HASH();
+    if (last_raytracer_config != config) {
+        # create rays
+        raytracer_ray_direction = XYZ {x:0, y:0, z:-1};
+        delete raytracer_ray_origins;
+
+        iy = 0;
+        repeat (canvas_size_y) {
+            ix = 0;
+            repeat (canvas_size_x) {
+                add XYZ {x:ix, y:iy, z:canvas_size_z+1} to raytracer_ray_origins;
+                ix++;
+            }
+            iy++;
         }
-        iy++;
+        last_raytracer_config = config;
     }
     
     require_iterative_compositor = true;
@@ -410,6 +419,8 @@ func rotate_cam_space_to_world_space(x, y, z) XYZ {
 
 
 proc init_raytracer_orbit {
+    # this has to run every time the camera is updated, there is no way around needing to reset the raytracer
+
     counted_samples = 1;
     delete render_cache_1_r;
     delete render_cache_2_g;
@@ -424,29 +435,29 @@ proc init_raytracer_orbit {
 
     raytracer_ray_direction = rotate_cam_space_to_world_space(0,0,-1);
     
-    delete raytracer_ray_origin;
-    local physical_x = render_size_x/cam_scale;
-    local physical_y = render_size_y/cam_scale;
-
-    iy = physical_x / -2;
+    # create raytracer origins list
+    delete raytracer_ray_origins;
+    local temp_size = ((((canvas_size_x + canvas_size_y)/2) / ((render_size_x + render_size_y)/2)) / cam_scale);
+    iy = render_size_y / -2;
     repeat (render_size_y) {
-        ix = physical_y / -2;
+        ix = render_size_x / -2;
         repeat (render_size_x) {
-            local XYZ origin = rotate_cam_space_to_world_space(ix,iy,50);
+            local XYZ origin = rotate_cam_space_to_world_space(ix*temp_size, iy*temp_size, 50);
             # project the origin point to the top of the canvas, at z=canvas_size_z
             local steps_from_top = ((canvas_size_z+1)-origin.z) / raytracer_ray_direction.z;
-            add XYZ {x:origin.x+steps_from_top*raytracer_ray_direction.x+cam_x, y:origin.y+steps_from_top*raytracer_ray_direction.y+cam_y, z:canvas_size_z+1} to raytracer_ray_origin;
+            add XYZ {x:origin.x+steps_from_top*raytracer_ray_direction.x+cam_x, y:origin.y+steps_from_top*raytracer_ray_direction.y+cam_y, z:canvas_size_z+1} to raytracer_ray_origins;
 
             ix += 1;
         }
         iy += 1;
     }
+    last_raytracer_config = LAST_RAYTRACER_CONFIG_HASH(); # not actually used by orbit raytracer, too much to track and changes too often
     
     require_iterative_compositor = true;
 }
 
 
-# general-purpose raytracer using raytracer_ray_origin/raytracer_ray_direction as ray source
+# general-purpose raytracer using raytracer_ray_origins and raytracer_ray_direction as ray source
 proc iterate_raytracer max_samples, max_time {
     start_time = days_since_2000();
     
@@ -470,7 +481,7 @@ proc iterate_raytracer max_samples, max_time {
 
                 #raycast_wrapped_canvas ix+RANDOM_0_1(), iy+RANDOM_0_1(), canvas_size_z+1, vec_x, vec_y, vec_z;
                 # the randomness can be generated some other way like a whole-screen shift for each sample
-                raycast_wrapped_canvas raytracer_ray_origin[i].x, raytracer_ray_origin[i].y, raytracer_ray_origin[i].z, raytracer_ray_direction.x, raytracer_ray_direction.y, raytracer_ray_direction.z;
+                raycast_wrapped_canvas raytracer_ray_origins[i].x, raytracer_ray_origins[i].y, raytracer_ray_origins[i].z, raytracer_ray_direction.x, raytracer_ray_direction.y, raytracer_ray_direction.z;
                 
                 local bounces_left = 6; # 4 is perceptually sufficient for opaque voxels
                 until bounces_left < 1 { # repeat until allows for breaking out of it

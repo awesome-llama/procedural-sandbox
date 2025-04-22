@@ -18,6 +18,7 @@ on "render viewport" {
 
 
 # Render the canvas. Optimised for 2D rendering, will clip to the edges of the screen.
+# In the future this should be generalised to render an image within bounds of an origin and size.
 proc render_canvas_2D {
     switch_costume "blank";
     set_size "Infinity";
@@ -78,7 +79,7 @@ proc render_canvas_2D {
 }
 
 
-# Render a full-screen image (for 3D orbit view). Assumes solid pixels.
+# Render a full-screen image (for 3D orbit view). Assumes solid pixels. Resolution is not set here.
 proc render_image origin_x, origin_y, size_x, size_y, scale {
     switch_costume "blank";
     set_size "Infinity";
@@ -102,7 +103,6 @@ proc render_image origin_x, origin_y, size_x, size_y, scale {
         i = (iy * $size_x) + 1;
         repeat ($size_x) {
             set_pen_color render_cache_final_col[i];
-            #set_pen_transparency 0;
             pen_down;
             pen_up;
             change_x $scale;
