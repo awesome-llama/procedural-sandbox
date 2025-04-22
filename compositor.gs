@@ -437,12 +437,12 @@ proc init_raytracer_orbit {
     
     # create raytracer origins list
     delete raytracer_ray_origins;
-    local temp_size = ((((canvas_size_x + canvas_size_y)/2) / ((render_size_x + render_size_y)/2)) / cam_scale);
+    pixel_size = ((((canvas_size_x + canvas_size_y)/2) / ((render_size_x + render_size_y)/2)) / cam_scale);
     iy = render_size_y / -2;
     repeat (render_size_y) {
         ix = render_size_x / -2;
         repeat (render_size_x) {
-            local XYZ origin = rotate_cam_space_to_world_space(ix*temp_size, iy*temp_size, 50);
+            local XYZ origin = rotate_cam_space_to_world_space(ix*pixel_size, iy*pixel_size, 50);
             # project the origin point to the top of the canvas, at z=canvas_size_z
             local steps_from_top = ((canvas_size_z+1)-origin.z) / raytracer_ray_direction.z;
             add XYZ {x:origin.x+steps_from_top*raytracer_ray_direction.x+cam_x, y:origin.y+steps_from_top*raytracer_ray_direction.y+cam_y, z:canvas_size_z+1} to raytracer_ray_origins;
@@ -462,135 +462,131 @@ proc iterate_raytracer max_samples, max_time {
     start_time = days_since_2000();
     
     repeat $max_samples {
+
+        local XYZ shift = rotate_cam_space_to_world_space(random(-0.5, 0.5)*pixel_size, random(-0.5, 0.5)*pixel_size, 0);
+
         i = 1;
-        #iy = 0;
-        repeat render_size_y {
-            #ix = 0;
-            repeat render_size_x {
+        repeat (render_size_x * render_size_y) {
+            local acc_col_r = 0;
+            local acc_col_g = 0;
+            local acc_col_b = 0;
+            local att_r = 1;
+            local att_g = 1;
+            local att_b = 1;
 
-                local acc_col_r = 0;
-                local acc_col_g = 0;
-                local acc_col_b = 0;
-                local att_r = 1;
-                local att_g = 1;
-                local att_b = 1;
+            vec_x = 0; # set initially just in case the first ray doesn't hit anything, it's used for sky color
+            vec_y = 0;
+            vec_z = -1;
 
-                vec_x = 0; # set initially just in case the first ray doesn't hit anything, it's used for sky color
-                vec_y = 0;
-                vec_z = -1;
+            #raycast_wrapped_canvas ix+RANDOM_0_1(), iy+RANDOM_0_1(), canvas_size_z+1, vec_x, vec_y, vec_z;
+            # the randomness can be generated some other way like a whole-screen shift for each sample
+            raycast_wrapped_canvas raytracer_ray_origins[i].x+shift.x, raytracer_ray_origins[i].y+shift.y, raytracer_ray_origins[i].z+shift.z, raytracer_ray_direction.x, raytracer_ray_direction.y, raytracer_ray_direction.z;
+            
+            local bounces_left = 6; # 4 is perceptually sufficient for opaque voxels
+            until bounces_left < 1 { # repeat until allows for breaking out of it
+                if (hit_index > 0) {
+                    # get voxel info
+                    linear_col_r = TO_LINEAR(canvas[hit_index].r);
+                    linear_col_g = TO_LINEAR(canvas[hit_index].g);
+                    linear_col_b = TO_LINEAR(canvas[hit_index].b);
+                    opacity = canvas[hit_index].opacity;
+                    emission = canvas[hit_index].emission;
 
-                #raycast_wrapped_canvas ix+RANDOM_0_1(), iy+RANDOM_0_1(), canvas_size_z+1, vec_x, vec_y, vec_z;
-                # the randomness can be generated some other way like a whole-screen shift for each sample
-                raycast_wrapped_canvas raytracer_ray_origins[i].x, raytracer_ray_origins[i].y, raytracer_ray_origins[i].z, raytracer_ray_direction.x, raytracer_ray_direction.y, raytracer_ray_direction.z;
-                
-                local bounces_left = 6; # 4 is perceptually sufficient for opaque voxels
-                until bounces_left < 1 { # repeat until allows for breaking out of it
-                    if (hit_index > 0) {
-                        # get voxel info
-                        linear_col_r = TO_LINEAR(canvas[hit_index].r);
-                        linear_col_g = TO_LINEAR(canvas[hit_index].g);
-                        linear_col_b = TO_LINEAR(canvas[hit_index].b);
-                        opacity = canvas[hit_index].opacity;
-                        emission = canvas[hit_index].emission;
+                    # add light from emission
+                    acc_col_r += att_r * (linear_col_r * emission) * opacity;
+                    acc_col_g += att_g * (linear_col_g * emission) * opacity;
+                    acc_col_b += att_b * (linear_col_b * emission) * opacity;
 
-                        # add light from emission
-                        acc_col_r += att_r * (linear_col_r * emission) * opacity;
-                        acc_col_g += att_g * (linear_col_g * emission) * opacity;
-                        acc_col_b += att_b * (linear_col_b * emission) * opacity;
+                    # update attenuation (scales towards 0)
+                    att_r *= 1-((1-linear_col_r) * opacity);
+                    att_g *= 1-((1-linear_col_g) * opacity);
+                    att_b *= 1-((1-linear_col_b) * opacity);
 
-                        # update attenuation (scales towards 0)
-                        att_r *= 1-((1-linear_col_r) * opacity);
-                        att_g *= 1-((1-linear_col_g) * opacity);
-                        att_b *= 1-((1-linear_col_b) * opacity);
-
-                        # shoot a new ray
-                        if (RANDOM_0_1() < opacity) {
-                            # bounce
-                            if (side == 0) {
-                                if (step_x > 0) { 
-                                    # normal -X
-                                    random_lambertian_vector -1, 0, 0;
-                                    raycast_wrapped_canvas hit_position.x-0.001, hit_position.y, hit_position.z, vec_x, vec_y, vec_z;
-                                } else { 
-                                    # normal +X
-                                    random_lambertian_vector 1, 0, 0;
-                                    raycast_wrapped_canvas hit_position.x+0.001, hit_position.y, hit_position.z, vec_x, vec_y, vec_z;
-                                }
-                            } elif (side == 1) {
-                                if (step_y > 0) { 
-                                    # normal -Y
-                                    random_lambertian_vector 0, -1, 0;
-                                    raycast_wrapped_canvas hit_position.x, hit_position.y-0.001, hit_position.z, vec_x, vec_y, vec_z;
-                                } else { 
-                                    # normal +Y
-                                    random_lambertian_vector 0, 1, 0;
-                                    raycast_wrapped_canvas hit_position.x, hit_position.y+0.001, hit_position.z, vec_x, vec_y, vec_z;
-                                }
-                            } else {
-                                if (step_z > 0) { 
-                                    # normal -Z
-                                    random_lambertian_vector 0, 0, -1;
-                                    raycast_wrapped_canvas hit_position.x, hit_position.y, hit_position.z-0.001, vec_x, vec_y, vec_z;
-                                } else { 
-                                    # normal +Z
-                                    random_lambertian_vector 0, 0, 1;
-                                    raycast_wrapped_canvas hit_position.x, hit_position.y, hit_position.z+0.001, vec_x, vec_y, vec_z;
-                                }
+                    # shoot a new ray
+                    if (RANDOM_0_1() < opacity) {
+                        # bounce
+                        if (side == 0) {
+                            if (step_x > 0) { 
+                                # normal -X
+                                random_lambertian_vector -1, 0, 0;
+                                raycast_wrapped_canvas hit_position.x-0.001, hit_position.y, hit_position.z, vec_x, vec_y, vec_z;
+                            } else { 
+                                # normal +X
+                                random_lambertian_vector 1, 0, 0;
+                                raycast_wrapped_canvas hit_position.x+0.001, hit_position.y, hit_position.z, vec_x, vec_y, vec_z;
+                            }
+                        } elif (side == 1) {
+                            if (step_y > 0) { 
+                                # normal -Y
+                                random_lambertian_vector 0, -1, 0;
+                                raycast_wrapped_canvas hit_position.x, hit_position.y-0.001, hit_position.z, vec_x, vec_y, vec_z;
+                            } else { 
+                                # normal +Y
+                                random_lambertian_vector 0, 1, 0;
+                                raycast_wrapped_canvas hit_position.x, hit_position.y+0.001, hit_position.z, vec_x, vec_y, vec_z;
                             }
                         } else {
-                            # transparency
-                            #vec_x = hit_position.x - vec_x;
-                            #vec_y = hit_position.y - vec_y;
-                            #vec_z = hit_position.z - vec_z;
-                            #local vec_len = VEC3_LEN(vec_x, vec_y, vec_z);
-                            #vec_x /= vec_len;
-                            #vec_y /= vec_len;
-                            #vec_z /= vec_len;
-                            # TODO make ray continue through medium
-                            random_lambertian_vector 0, 0, random(0,1)*2-1;
-                            raycast_wrapped_canvas hit_position.x + vec_x*0.001, hit_position.y + vec_y*0.001, hit_position.z + vec_z*0.001, vec_x, vec_y, vec_z;
-                            #raycast_wrapped_canvas hit_position.x + step_x*0.001, hit_position.y + step_y*0.001, hit_position.z + step_z*0.001, vec_x, vec_y, vec_z;
+                            if (step_z > 0) { 
+                                # normal -Z
+                                random_lambertian_vector 0, 0, -1;
+                                raycast_wrapped_canvas hit_position.x, hit_position.y, hit_position.z-0.001, vec_x, vec_y, vec_z;
+                            } else { 
+                                # normal +Z
+                                random_lambertian_vector 0, 0, 1;
+                                raycast_wrapped_canvas hit_position.x, hit_position.y, hit_position.z+0.001, vec_x, vec_y, vec_z;
+                            }
                         }
-
-                        bounces_left -= 1;
                     } else {
-                        bounces_left = 0; # break out ot the loop
+                        # transparency
+                        #vec_x = hit_position.x - vec_x;
+                        #vec_y = hit_position.y - vec_y;
+                        #vec_z = hit_position.z - vec_z;
+                        #local vec_len = VEC3_LEN(vec_x, vec_y, vec_z);
+                        #vec_x /= vec_len;
+                        #vec_y /= vec_len;
+                        #vec_z /= vec_len;
+                        # TODO make ray continue through medium
+                        random_lambertian_vector 0, 0, random(0,1)*2-1;
+                        raycast_wrapped_canvas hit_position.x + vec_x*0.001, hit_position.y + vec_y*0.001, hit_position.z + vec_z*0.001, vec_x, vec_y, vec_z;
+                        #raycast_wrapped_canvas hit_position.x + step_x*0.001, hit_position.y + step_y*0.001, hit_position.z + step_z*0.001, vec_x, vec_y, vec_z;
                     }
-                    
-                }
 
-                # this final check is because the above loop stops before its own check
-                if hit_index > 0 {
-                    # add light from emission
-                    opacity = canvas[hit_index].opacity;
-                    acc_col_r += att_r * TO_LINEAR(canvas[hit_index].r) * canvas[hit_index].emission * opacity;
-                    acc_col_g += att_g * TO_LINEAR(canvas[hit_index].g) * canvas[hit_index].emission * opacity;
-                    acc_col_b += att_b * TO_LINEAR(canvas[hit_index].b) * canvas[hit_index].emission * opacity;
+                    bounces_left -= 1;
                 } else {
-                    # sky
-                    acc_col_r += att_r * (1 * TO_LINEAR(0.5+(vec_y/2)));
-                    acc_col_g += att_g * (1 * TO_LINEAR(0.5+(vec_y/2))); 
-                    acc_col_b += att_b * (1 * TO_LINEAR(0.5+(vec_y/2)));
+                    bounces_left = 0; # break out ot the loop
                 }
-
-                render_cache_1_r[i] += acc_col_r;
-                render_cache_2_g[i] += acc_col_g;
-                render_cache_3_b[i] += acc_col_b;
-
-                # combine
-                local r = FROM_LINEAR(render_cache_1_r[i] / (counted_samples));
-                local g = FROM_LINEAR(render_cache_2_g[i] / (counted_samples));
-                local b = FROM_LINEAR(render_cache_3_b[i] / (counted_samples));
-                if r > 1 {r = 1;}
-                if g > 1 {g = 1;}
-                if b > 1 {b = 1;}
-
-                render_cache_final_col[i] = COMBINE_RGB_CHANNELS(r, g, b);
-
-                #ix++;
-                i++;
+                
             }
-            #iy++;
+
+            # this final check is because the above loop stops before its own check
+            if hit_index > 0 {
+                # add light from emission
+                opacity = canvas[hit_index].opacity;
+                acc_col_r += att_r * TO_LINEAR(canvas[hit_index].r) * canvas[hit_index].emission * opacity;
+                acc_col_g += att_g * TO_LINEAR(canvas[hit_index].g) * canvas[hit_index].emission * opacity;
+                acc_col_b += att_b * TO_LINEAR(canvas[hit_index].b) * canvas[hit_index].emission * opacity;
+            } else {
+                # sky
+                acc_col_r += att_r * (1 * TO_LINEAR(0.5+(vec_y/2)));
+                acc_col_g += att_g * (1 * TO_LINEAR(0.5+(vec_y/2))); 
+                acc_col_b += att_b * (1 * TO_LINEAR(0.5+(vec_y/2)));
+            }
+
+            render_cache_1_r[i] += acc_col_r;
+            render_cache_2_g[i] += acc_col_g;
+            render_cache_3_b[i] += acc_col_b;
+
+            # combine
+            local r = FROM_LINEAR(render_cache_1_r[i] / (counted_samples));
+            local g = FROM_LINEAR(render_cache_2_g[i] / (counted_samples));
+            local b = FROM_LINEAR(render_cache_3_b[i] / (counted_samples));
+            if r > 1 {r = 1;}
+            if g > 1 {g = 1;}
+            if b > 1 {b = 1;}
+
+            render_cache_final_col[i] = COMBINE_RGB_CHANNELS(r, g, b);
+
+            i++;
         }
 
         counted_samples += 1;
