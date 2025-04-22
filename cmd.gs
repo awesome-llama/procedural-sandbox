@@ -99,8 +99,13 @@ nowarp proc evaluate_command {
     } elif (command_name == "panel" or command_name == "page" or command_name == "p") {
         UI_current_panel = command[1];
     
-    } elif (command_name == "compositor_mode") {
+    } elif (command_name == "compositor") {
         compositor_mode = command[1];
+
+    } elif (command_name == "export") {
+        if (command[1] == "canvas") { broadcast "io.save_canvas.run"; }
+        if (command[1] == "render") { broadcast "io.export_rendered_canvas.run"; }
+        if (command[1] == "height") { broadcast "io.export_height_map.run"; }
 
     } elif (command_name == "element") {
         # set any element in the UI. Arguments: string_id, index_offset, value_to_set
