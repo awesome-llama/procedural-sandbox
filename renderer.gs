@@ -1,6 +1,6 @@
 %include common/common.gs
 
-costumes "costumes/large.svg" as "full", "costumes/blank.svg" as "blank";
+costumes "costumes/large.svg" as "large", "costumes/blank.svg" as "blank";
 hide;
 
 on "initalise" {
@@ -79,7 +79,7 @@ proc render_canvas_2D {
 }
 
 
-# Render a full-screen image (for 3D orbit view). Assumes solid pixels. Resolution is not set here.
+# Render a full-screen image (for 3D orbit view). Assumes solid pixels filling the screen, therefore is drawn with lines. Resolution is not set here.
 proc render_image origin_x, origin_y, size_x, size_y, scale {
     switch_costume "blank";
     set_size "Infinity";
@@ -88,26 +88,26 @@ proc render_image origin_x, origin_y, size_x, size_y, scale {
     local origin_x = $origin_x;
     local origin_y = $origin_y;
 
+    set_pen_size $scale;
     if ($scale > 1) {
-        set_pen_size ((1.45-(0.33/($scale-0.26)))*$scale);
         origin_x += (0.5*$scale);
         origin_y += (0.5*$scale);
-    } else {
-        set_pen_size $scale;
     }
 
     iy = 0;
     set_y origin_y;
     repeat ($size_y) {
-        set_x origin_x;
+        set_x origin_x - $scale;
         i = (iy * $size_x) + 1;
-        repeat ($size_x) {
-            set_pen_color render_cache_final_col[i];
-            pen_down;
-            pen_up;
-            change_x $scale;
+        set_pen_color render_cache_final_col[i];
+        pen_down;
+        change_x $scale * 2;
+        repeat ($size_x - 1) {
             i += 1;
+            set_pen_color render_cache_final_col[i];
+            change_x $scale;
         }
+        pen_up;
         change_y $scale;
         iy += 1;
     }
