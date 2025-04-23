@@ -109,18 +109,18 @@ on "iterative compositor" {
             composite_shaded_color;
 
         } elif (compositor_mode == CompositorMode.RAYTRACED) {
-            iterate_raytracer max_samples, max_iteration_time;
+            iterate_raytracer max_samples, max_iteration_time, 0;
 
         } elif (compositor_mode == CompositorMode.AO) {
             iterate_ao max_samples, max_iteration_time;
             composite_ao;
         }
     } elif (viewport_mode == ViewportMode.ORBIT) {
-        iterate_raytracer max_samples, max_iteration_time;
+        iterate_raytracer max_samples, max_iteration_time, 1;
     }
 
 
-    if (counted_samples > max_samples) {
+    if (counted_samples >= max_samples) {
         require_iterative_compositor = false;
     }
     require_screen_refresh = true;
@@ -458,12 +458,12 @@ proc init_raytracer_orbit {
 
 
 # general-purpose raytracer using raytracer_ray_origins and raytracer_ray_direction as ray source
-proc iterate_raytracer max_samples, max_time {
+proc iterate_raytracer max_samples, max_time, filter_size {
     start_time = days_since_2000();
     
     repeat $max_samples {
 
-        local XYZ shift = rotate_cam_space_to_world_space(random(-0.5, 0.5)*pixel_size, random(-0.5, 0.5)*pixel_size, 0);
+        local XYZ shift = rotate_cam_space_to_world_space(random(-0.5, 0.5)*pixel_size*$filter_size, random(-0.5, 0.5)*pixel_size*$filter_size, 0);
 
         i = 1;
         repeat (render_size_x * render_size_y) {

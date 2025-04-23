@@ -66,11 +66,11 @@ on "gen.ballpit.run" {
     setting_from_id "gen.ballpit.variance_sat";
     setting_from_id "gen.ballpit.variance_val";
     setting_from_id "gen.ballpit.variance_opacity";
-    setting_from_id "gen.ballpit.variance_emission";
+    setting_from_id "gen.ballpit.variance_glow";
     generate_ballpit UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6], UI_return[7], UI_return[8], UI_return[9], UI_return[10], UI_return[11], UI_return[12], UI_return[13]; 
 }
 %define AVG_VOL_OF_SPHERE(RAD1,RAD2) (1.04719755 * (((RAD2*RAD2*RAD2*RAD2)-(RAD1*RAD1*RAD1*RAD1))/(RAD2*RAD1)))
-proc generate_ballpit size_x, size_y, size_z, ground_col, rad_min, rad_max, density, ball_col, var_hue, var_sat, var_val, var_opacity, var_emission {
+proc generate_ballpit size_x, size_y, size_z, ground_col, rad_min, rad_max, density, ball_col, var_hue, var_sat, var_val, var_opacity, var_glow {
     canvas_size_x = $size_x;
     canvas_size_y = $size_y;
     canvas_size_z = $size_z;
@@ -79,21 +79,15 @@ proc generate_ballpit size_x, size_y, size_z, ground_col, rad_min, rad_max, dens
     set_depositor_from_number $ground_col;
     draw_base_layer;
 
-    # TODO get HSV of ball_col
     repeat ($density * ((canvas_size_x * canvas_size_y * canvas_size_z)/AVG_VOL_OF_SPHERE($rad_min, $rad_max))) {
-        set_depositor_from_HSV $var_hue*random("-0.5","0.5"), 1, 1;
+        set_depositor_from_number $ball_col;
+        randomise_depositor_by_HSV $var_hue, $var_sat, $var_val;
         depositor_voxel.opacity = 1-random("0.0", $var_opacity);
-        if (random("0.0", "0.5") < $var_emission) {
-            depositor_voxel.emission = random("0.0", random($var_emission, "1.0")); # "glow"
-        }
+        set_depositor_glow $var_glow;
 
         local radius = round(random($rad_min, $rad_max)*2)/2;
-        if (canvas_size_z-1-radius < 0) {
-            draw_sphere random(1, canvas_size_x), random(1, canvas_size_y), random(1, canvas_size_z)-1, radius;
-        } else {
-            draw_sphere random(1, canvas_size_x), random(1, canvas_size_y), 0, radius;
-        }
-        
+        local height = round(canvas_size_z-1-radius-random(0, canvas_size_z-(2*radius)));
+        draw_sphere random(1, canvas_size_x), random(1, canvas_size_y), POSITIVE_CLAMP(height), radius;
     }
 }
 
@@ -255,9 +249,7 @@ proc generate_extruded_grid cell_count, cell_size, cell_spacing, max_height, jit
         ix = 0;
         repeat $cell_count {
             set_depositor_from_sRGB_value RANDOM_0_1();
-            if (random("0.0", "0.5") < $glow) {
-                depositor_voxel.emission = random("0.0", random($glow, "1.0")); # shouldn't be linear
-            }
+            set_depositor_glow $glow;
             draw_cuboid_corner_size ix+($jitter_fac*total_cell_size*RANDOM_0_1()), iy+($jitter_fac*total_cell_size*RANDOM_0_1()), 0, $cell_size, $cell_size, random(1,$max_height);
             ix += total_cell_size;
         }
@@ -872,6 +864,18 @@ proc set_depositor_to_template slot_index, ox, oy, oz {
     depositor_template_origin = XYZ {x:$ox, y:$oy, z:$oz};
 }
 
+proc randomise_depositor_by_HSV range_h, range_s, range_v {
+    local HSV col = RGB_to_HSV(depositor_voxel.r, depositor_voxel.g, depositor_voxel.b);
+    col.s += (RANDOM_0_1()*$range_s);
+    col.v += (RANDOM_0_1()*$range_v);
+    set_depositor_from_HSV col.h+(RANDOM_0_1()*$range_h), CLAMP_0_1(col.s), CLAMP_0_1(col.v);
+}
+
+proc set_depositor_glow glow_intensity {
+    if (random("0.0", "2.0") < $glow_intensity) {
+        depositor_voxel.emission = random("0.0", random($glow_intensity, "1.0")); # "glow"
+    }
+}
 
 
 
