@@ -8,7 +8,16 @@ costumes
 "costumes/blank.svg" as "",
 "costumes/blank.svg" as "@ascii/",
 "costumes/blank.svg" as "blank",
-"costumes/UI/icons/*.svg",
+"costumes/UI/icons/triangle.svg",
+"costumes/UI/icons/fill.svg",
+"costumes/UI/icons/select.svg",
+"costumes/UI/icons/settings.svg",
+"costumes/UI/icons/texture.svg",
+"costumes/UI/icons/viewport 2D.svg",
+"costumes/UI/icons/viewport 3D.svg",
+"costumes/UI/icons/zoom in.svg",
+"costumes/UI/icons/zoom out.svg",
+"costumes/UI/icons/zoom fit.svg",
 "costumes/UI/mouse detect.svg" as "mouse detect",
 ;
 hide;
@@ -271,7 +280,6 @@ proc render_top_bar x, y {
     # viewport buttons
     top_bar_button "viewport 2D", "viewport 2D", TOP_BAR_OFFSET(3), $y-10, (viewport_mode == ViewportMode.ALIGNED);
     top_bar_button "viewport 3D", "viewport 3D", TOP_BAR_OFFSET(4), $y-10, (viewport_mode == ViewportMode.ORBIT);
-    #top_bar_button "section", "section", TOP_BAR_OFFSET(6), $y-10, false; # TODO section dropdown
     top_bar_button "compositor mode", "texture", TOP_BAR_OFFSET(6), $y-10, false;
     
     top_bar_button "zoom out", "zoom out", TOP_BAR_OFFSET(8), $y-10, false;
