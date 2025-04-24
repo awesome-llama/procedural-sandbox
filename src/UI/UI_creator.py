@@ -680,11 +680,11 @@ def save_list(path, data:list):
     with open(path, 'w', encoding='UTF-8') as f:
         f.writelines([f"{elem}\n" for elem in data])
 
-save_list('UI/UI_data.txt', element_list)
-save_list('UI/UI_data_panels.txt', panel_lookup)
+save_list('src/UI/UI_data.txt', element_list)
+save_list('src/UI/UI_data_panels.txt', panel_lookup)
 
 # split tuples into separate lists:
-save_list('UI/UI_data_element_id.txt', [l[0] for l in element_lookup])
-save_list('UI/UI_data_element_index.txt', [l[1] for l in element_lookup])
+save_list('src/UI/UI_data_element_id.txt', [l[0] for l in element_lookup])
+save_list('src/UI/UI_data_element_index.txt', [l[1] for l in element_lookup])
 
 print(f'saved {len(element_list)} items')
