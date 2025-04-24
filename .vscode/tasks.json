@@ -12,9 +12,31 @@
 			],
 			"group": {
 				"kind": "build",
+				"isDefault": false
+			}
+		},
+		{
+			"label": "create UI data",
+			"type": "shell",
+			"command": "python",
+			"args": [
+				"src/UI/UI_creator.py",
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": false
+			}
+		},
+		{
+			"label": "Build",
+			"dependsOn": [
+				"create UI data",
+				"goboscript: build project"
+			],
+			"group": {
+				"kind": "build",
 				"isDefault": true
-			},
-			"problemMatcher": []
+			}
 		}
 	]
 }

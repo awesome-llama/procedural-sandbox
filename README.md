@@ -3,19 +3,29 @@ A Scratch project designed to procedurally generate textures. You could think of
 
 Written in [goboscript](https://github.com/aspizu/goboscript).
 
-# Project Instructions
-The project uses a 3D voxel "canvas" with each voxel storing red, green, blue, opacity, and emission data, in the inclusive range 0.0-1.0. The canvas wraps on the X and Y axes allowing for seamless texture generation.
+
+## Project Instructions
+The project uses a 3D voxel "canvas" with each voxel storing red, green, blue, opacity, and emission data, in the range 0.0-1.0 (inclusive). The canvas wraps on the X and Y axes allowing for seamless texture generation. The canvas may be of any dimensions larger than 0.
 
 The screen consists of a *viewport*, a *side bar*, and a *top bar*. 
 
 The viewport displays the canvas, which may be navigated by clicking and dragging or pressing the WASD keys. Mouse scroll wheel (or up/down arrow keys) to zoom.
 
-# Dependencies
-- goboscript 3.1.0 or higher
-- Python 3.12 or higher
+The top bar has various easy-to-access buttons.
 
-# Building
+The side bar is a stack of modular UI elements for performing any task such as import/export, texture generation, and special effects.
+
+TextImage is the supported image format for this project. Use the converter tool here: https://awesome-llama.github.io/utils/TextImage
+
+
+## Dependencies
+- goboscript 3.1.0
+- Python 3.12
+
+
+## Building
+If using Visual Studio Code, you may simply run the Build task. An sb3 file will be generated. This can be opened up in Scratch or TurboWarp (recommended).
 1. Run `UI_creator.py` to create the user interface list data.
-2. Run the goboscript build command. If using Visual Studio Code, you may run the build task. An sb3 file will be generated. This may be opened up in Scratch or TurboWarp (recommended).
+2. Run the goboscript build command. `build -i src -o "Procedural Sandbox.sb3"`
 
 

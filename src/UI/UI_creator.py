@@ -1,4 +1,4 @@
-"""Create the option lists for the various generators"""
+"""Create the lists for the various generators"""
 
 import itertools
 
