@@ -400,17 +400,18 @@ panels['gen.erosion'] = Container([
         Value.canvas_size('Size Y', 'gen.erosion.size_y', 64),
         Value.canvas_size('Size Z', 'gen.erosion.size_z', 16, 64),
         Value('Scale', 'gen.erosion.scale', 16, 1, 256, 0, 4096, snap_frac=1),
+        Color('Ground color', 'gen.erosion.ground_col', 'AA997C'),
         Button('Generate', 'gen.erosion.run.generate'),
     ]),
-    Expander('Erode', '', True, [
+    Expander('Erode', '', False, [
         Value('Steps', 'gen.erosion.steps', 1, 0, 1000, 0, snap_frac=10),
         Value('Stream strength', 'gen.erosion.strength', 0.1, 0, 1, 0, snap_frac=100),
         Value('Stream capacity', 'gen.erosion.capacity', 5, 0, 10, 0, snap_frac=10),
         Button('Run', 'gen.erosion.run.erode'),
     ]),
-    Expander('Finalise', '', True, [
+    Expander('Finalise', '', False, [
         Value('Water level', 'gen.erosion.water_level_fac', 0.2, 0, 1, snap_frac=1000),
-        Color('Water color', 'gen.erosion.water_col', '505090'),
+        Color('Water color', 'gen.erosion.water_col', '3e5c90'),
         Value('Grass amount', 'gen.erosion.grass_fac', 0.5, 0, 1, snap_frac=1000),
         Color('Grass color', 'gen.erosion.grass_col', '70aa60'),
         Value('Tree amount', 'gen.erosion.tree_fac', 0.2, 0, 1, snap_frac=1000),

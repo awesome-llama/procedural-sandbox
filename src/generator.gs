@@ -38,7 +38,7 @@ on "io.new_canvas.run"{
     setting_from_id "io.new_canvas.include_base";
     setting_from_id "io.new_canvas.base_col";
     
-    # no custom block needed
+    # no yield - no custom block needed
     canvas_size_x = UI_return[1];
     canvas_size_y = UI_return[2];
     canvas_size_z = UI_return[3];
@@ -217,6 +217,65 @@ proc generate_elementary_cellular_automata size_x, size_y, extrude_z, rule, rand
 
     delete custom_grid;
     delete eca_lut;
+    require_composite = true;
+}
+
+
+on "gen.erosion.run.generate" {
+    delete UI_return;
+    setting_from_id "gen.erosion.size_x";
+    setting_from_id "gen.erosion.size_y";
+    setting_from_id "gen.erosion.size_z";
+    setting_from_id "gen.erosion.scale";
+    setting_from_id "gen.erosion.ground_col";
+    generate_terrain UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5];
+}
+proc generate_terrain size_x, size_y, size_z, scale, color {
+    canvas_size_x = $size_x;
+    canvas_size_y = $size_y;
+    canvas_size_z = $size_z;
+    clear_canvas;
+    reset_depositor;
+    
+    generate_value_noise $size_x, $size_y, $scale, 8, false; # doesn't write to the canvas
+
+    # convert height into rock formation
+    set_depositor_from_number $color;
+    local HSV col = RGB_to_HSV(depositor_voxel.r, depositor_voxel.g, depositor_voxel.b);
+
+    i = 1;
+    iy = 0;
+    repeat canvas_size_y {
+        ix = 0;
+        repeat canvas_size_x {
+            set_depositor_from_HSV col.h+random("-0.05","0.05"), col.s+random("-0.05","0.05"), col.v+random("-0.1","0.1");
+            draw_column ix, iy, 0, (temp_canvas_mono[i] * canvas_size_z);
+            ix++;
+            i++;
+        }
+        iy++;
+    }
+    delete temp_canvas_mono;
+
+    require_composite = true;
+}
+
+
+on "gen.erosion.run.finalise" {
+    delete UI_return;
+    setting_from_id "gen.erosion.water_level_fac";
+    setting_from_id "gen.erosion.water_col";
+    setting_from_id "gen.erosion.grass_fac";
+    setting_from_id "gen.erosion.grass_col";
+    setting_from_id "gen.erosion.tree_fac";
+    finalise_terrain UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5];
+}
+proc finalise_terrain water_level_fac, water_col, grass_fac, grass_col, tree_fac {
+    # search every voxel and add water
+    reset_depositor;
+    set_depositor_from_number $water_col;
+    depositor_replace = false;
+    draw_cuboid_corner_size 0, 0, 0, canvas_size_x, canvas_size_y, canvas_size_z * $water_level_fac;
     require_composite = true;
 }
 
@@ -545,18 +604,13 @@ on "gen.value_noise.run" {
     setting_from_id "gen.value_noise.size_y";
     setting_from_id "gen.value_noise.scale";
     setting_from_id "gen.value_noise.octaves";
-    generate_value_noise UI_return[1], UI_return[2], UI_return[3], UI_return[4];
+    generate_value_noise UI_return[1], UI_return[2], UI_return[3], UI_return[4], true;
 }
-proc generate_value_noise size_x, size_y, scale, octaves {
-    canvas_size_x = $size_x;
-    canvas_size_y = $size_y;
-    canvas_size_z = 1;
-    clear_canvas;
-    reset_depositor;
-    # do not draw a base layer, it will be fully overwritten with the temp_canvas_mono
 
+# 2D value noise
+proc generate_value_noise size_x, size_y, scale, octaves, write_to_canvas {
     delete temp_canvas_mono; # output canvas, single channel
-    repeat (canvas_size_x * canvas_size_y) {
+    repeat ($size_x * $size_y) {
         add 0.5 to temp_canvas_mono; # use 0.5 as middle value
     }
     
@@ -567,8 +621,8 @@ proc generate_value_noise size_x, size_y, scale, octaves {
             local last_range = range;
 
             # noise "layer"
-            local grid_size_x = round(canvas_size_x/target_scale);
-            local grid_size_y = round(canvas_size_y/target_scale);
+            local grid_size_x = round($size_x/target_scale);
+            local grid_size_y = round($size_y/target_scale);
 
             delete custom_grid; # source grid values
             repeat (grid_size_x * grid_size_y) {
@@ -576,14 +630,14 @@ proc generate_value_noise size_x, size_y, scale, octaves {
             }
             
             # loop over every voxel and sample the grid
-            local offset_x = RANDOM_0_1() * (grid_size_x != canvas_size_x); # decorrelate the layer
+            local offset_x = RANDOM_0_1() * ($size_x/grid_size_x) * (grid_size_x != $size_x); # decorrelate the layer
             i = 1;
-            local px_y = RANDOM_0_1() * (grid_size_y != canvas_size_y);
-            repeat canvas_size_y {
+            local px_y = RANDOM_0_1() * ($size_y/grid_size_y) * (grid_size_y != $size_y);
+            repeat $size_y {
                 local px_x = offset_x;
-                repeat canvas_size_x {
-                    local gx = px_x*(grid_size_x/canvas_size_x);
-                    local gy = px_y*(grid_size_y/canvas_size_y);
+                repeat $size_x {
+                    local gx = px_x*(grid_size_x/$size_x);
+                    local gy = px_y*(grid_size_y/$size_y);
                     local val_BL = custom_grid[INDEX_FROM_2D(gx, gy, grid_size_x, grid_size_y)];
                     local val_BR = custom_grid[INDEX_FROM_2D(gx+1, gy, grid_size_x, grid_size_y)];
                     local val_TL = custom_grid[INDEX_FROM_2D(gx, gy+1, grid_size_x, grid_size_y)];
@@ -605,22 +659,35 @@ proc generate_value_noise size_x, size_y, scale, octaves {
             target_scale /= 2; # lacunarity
         }
     }
-    
-    # write the to the real canvas
+    delete custom_grid;
+
+    # get value and normalise 0-1
     i = 1;
     repeat (canvas_size_x * canvas_size_y) {
-        # set voxel rgb, opacity
-        local val = (temp_canvas_mono[i]-last_range) / (1-last_range*2); # get value and normalise 0-1
-        local val = CLAMP_0_1(val);
-        canvas[i].r = val;
-        canvas[i].g = val;
-        canvas[i].b = val;
-        canvas[i].opacity = 1;
+        local val = (temp_canvas_mono[i]-last_range) / (1-last_range*2); 
+        temp_canvas_mono[i] = CLAMP_0_1(val);
         i++;
     }
-    delete custom_grid;
-    delete temp_canvas_mono;
-    require_composite = true;
+
+    # write the to the real canvas
+    if $write_to_canvas {
+        canvas_size_x = $size_x;
+        canvas_size_y = $size_y;
+        canvas_size_z = 1;
+        clear_canvas;
+        reset_depositor;
+
+        i = 1;
+        repeat (canvas_size_x * canvas_size_y) {
+            canvas[i].r = temp_canvas_mono[i];
+            canvas[i].g = temp_canvas_mono[i];
+            canvas[i].b = temp_canvas_mono[i];
+            canvas[i].opacity = 1;
+            i++;
+        }
+        delete temp_canvas_mono; # delete mono list because its data is now in the canvas
+        require_composite = true;
+    }
 }
 
 
@@ -866,9 +933,7 @@ proc set_depositor_to_template slot_index, ox, oy, oz {
 
 proc randomise_depositor_by_HSV range_h, range_s, range_v {
     local HSV col = RGB_to_HSV(depositor_voxel.r, depositor_voxel.g, depositor_voxel.b);
-    col.s += (RANDOM_0_1()*$range_s);
-    col.v += (RANDOM_0_1()*$range_v);
-    set_depositor_from_HSV col.h+(RANDOM_0_1()*$range_h), CLAMP_0_1(col.s), CLAMP_0_1(col.v);
+    set_depositor_from_HSV col.h+(random("-1.0","1.0")*$range_h), col.s+(random("-1.0","1.0")*$range_s), col.v+(random("-1.0","1.0")*$range_v);
 }
 
 proc set_depositor_glow glow_intensity {

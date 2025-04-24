@@ -181,7 +181,7 @@ struct template_metadata {
 func HSV_to_RGB(h, s, v) RGB {
     local hue = ($h % 1)*6; # [0,6)
     local sat = CLAMP_0_1($s); # [0,1]
-    local val = POSITIVE_CLAMP($v); # [0,+Inf)
+    local val = CLAMP_0_1($v); # [0,1]
     if (hue < 3) {
         if (hue < 1) {
             return RGB { r:val, g:val*(1-(sat*(1-(hue%1)))), b:val*(1-sat) };
@@ -205,7 +205,7 @@ func HSV_to_RGB(h, s, v) RGB {
 func HSV_to_number(h, s, v) {
     local hue = ($h % 1)*6; # [0,6)
     local sat = CLAMP_0_1($s); # [0,1]
-    local val = POSITIVE_CLAMP($v); # [0,+Inf)
+    local val = CLAMP_0_1($v); # [0,1]
     if (hue < 3) {
         if (hue < 1) {
             return COMBINE_RGB_CHANNELS(val, val*(1-(sat*(1-(hue%1)))), val*(1-sat));
