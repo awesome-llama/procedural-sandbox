@@ -1,0 +1,20 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "goboscript: build project",
+			"type": "shell",
+			"command": "goboscript",
+			"args": [
+				"build",
+				"-i", "src",
+				"-o", "Procedural Sandbox.sb3"
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"problemMatcher": []
+		}
+	]
+}
