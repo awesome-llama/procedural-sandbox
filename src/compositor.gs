@@ -62,6 +62,7 @@ on "composite" {
     if (viewport_mode == ViewportMode.ALIGNED) {
         render_size_x = canvas_size_x;
         render_size_y = canvas_size_y;
+        resize_render_cache;
 
         if (compositor_mode == CompositorMode.COLOR) {
             cmp_aligned_color;
@@ -89,26 +90,32 @@ on "composite" {
         # there is only 1 rendering mode in orbit view, raytraced
         render_size_x = ceil((480-UI_sidebar_width) / render_resolution);
         render_size_y = ceil((360-20) / render_resolution);
+        resize_render_cache;
         
         if (compositor_mode == CompositorMode.COLOR) {
-            
+            init_orbit_raytracer;
+            cmp_orbit_color;
 
         } elif (compositor_mode == CompositorMode.SHADED) {
             init_orbit_raytracer;
+            cmp_orbit_shaded;
 
         } elif (compositor_mode == CompositorMode.PATHTRACED) {
             init_orbit_raytracer;
 
         } elif (compositor_mode == CompositorMode.HEIGHT) {
-            
+            init_orbit_raytracer;
+            cmp_orbit_height;
 
         } elif (compositor_mode == CompositorMode.AO) {
             init_orbit_raytracer;
 
         } elif (compositor_mode == CompositorMode.DENSITY) {
-            
+            init_orbit_raytracer;
 
         } elif (compositor_mode == CompositorMode.NORMAL) {
+            init_orbit_raytracer;
+            cmp_orbit_normal;
             
         }
     }
@@ -196,7 +203,6 @@ proc generate_pass_topmost {
 
 # simply the color map looking down, no translucency handling
 proc cmp_aligned_color {
-    resize_render_cache;
     generate_pass_topmost;
     layer_size = (canvas_size_x * canvas_size_y);
     i = 1;
@@ -204,7 +210,7 @@ proc cmp_aligned_color {
         local index = render_cache_topmost[i];
         if index < 0 {
             # entire column was air, use background color
-            render_cache_final_col[i] = COMBINE_RGB_CHANNELS(0.5, 0.5, 0.5) + 254*16777215;
+            render_cache_final_col[i] = COL_TRANSPARENT();
         } else {
             render_cache_final_col[i] = COMBINE_RGB_CHANNELS((canvas[i + index*layer_size].r), (canvas[i + index*layer_size].g), (canvas[i + index*layer_size].b));
         }
@@ -215,7 +221,6 @@ proc cmp_aligned_color {
 
 # heightmap of the topmost non-transparent voxel, normalised to greyscale 0-1
 proc cmp_aligned_heightmap {
-    resize_render_cache;
     generate_pass_topmost;
     i = 1;
     repeat (canvas_size_x * canvas_size_y) {
@@ -228,7 +233,6 @@ proc cmp_aligned_heightmap {
 
 # sum of opacity, normalised to greyscale 0-1
 proc cmp_aligned_density {
-    resize_render_cache;
     layer_size = (canvas_size_x * canvas_size_y);
     i = 1;
     repeat layer_size {
@@ -261,7 +265,6 @@ dy += WY*kernel_h;\
 %define W_CORNER 0.125
 
 proc cmp_aligned_normal intensity {
-    resize_render_cache;
     generate_pass_topmost;
     iy = 0;
     repeat (canvas_size_y) {
@@ -304,12 +307,91 @@ proc cmp_aligned_normal intensity {
 }
 
 
+proc cmp_orbit_color {
+    set_sample_pixel_shift 0;
+    i = 1;
+    repeat (render_size_x * render_size_y) {
+        raycast_wrapped_canvas raytracer_ray_origins[i].x+shift.x, raytracer_ray_origins[i].y+shift.y, raytracer_ray_origins[i].z+shift.z, raytracer_ray_direction.x, raytracer_ray_direction.y, raytracer_ray_direction.z;
+        
+        if (hit_index > 0) {
+            render_cache_final_col[i] = COMBINE_RGB_CHANNELS(canvas[hit_index].r, canvas[hit_index].g, canvas[hit_index].b);
+        } else {
+            render_cache_final_col[i] = COL_TRANSPARENT();
+        }
+        i++;
+    }
+
+    require_screen_refresh = true;
+}
+
+
+proc cmp_orbit_shaded {
+    set_sample_pixel_shift 0;
+    i = 1;
+    repeat (render_size_x * render_size_y) {
+        raycast_wrapped_canvas raytracer_ray_origins[i].x+shift.x, raytracer_ray_origins[i].y+shift.y, raytracer_ray_origins[i].z+shift.z, raytracer_ray_direction.x, raytracer_ray_direction.y, raytracer_ray_direction.z;
+        
+        if (hit_index > 0) {
+            if (side == 2) {
+                render_cache_final_col[i] = COMBINE_RGB_CHANNELS(canvas[hit_index].r, canvas[hit_index].g, canvas[hit_index].b);
+            } else {
+                render_cache_final_col[i] = COMBINE_RGB_CHANNELS(canvas[hit_index].r*0.9, canvas[hit_index].g*0.9, canvas[hit_index].b*0.9);
+            }
+        } else {
+            render_cache_final_col[i] = COL_TRANSPARENT();
+        }
+        i++;
+    }
+
+    require_screen_refresh = true;
+}
+
+proc cmp_orbit_height {
+    set_sample_pixel_shift 0;
+    i = 1;
+    repeat (render_size_x * render_size_y) {
+        raycast_wrapped_canvas raytracer_ray_origins[i].x+shift.x, raytracer_ray_origins[i].y+shift.y, raytracer_ray_origins[i].z+shift.z, raytracer_ray_direction.x, raytracer_ray_direction.y, raytracer_ray_direction.z;
+        
+        if (hit_index > 0) {
+            local height = hit_position.z / canvas_size_z;
+            height = CLAMP_0_1(height);
+            render_cache_final_col[i] = COMBINE_RGB_CHANNELS(height, height, height);
+        } else {
+            render_cache_final_col[i] = COL_TRANSPARENT();
+        }
+        i++;
+    }
+
+    require_screen_refresh = true;
+}
+
+proc cmp_orbit_normal {
+    set_sample_pixel_shift 0;
+    i = 1;
+    repeat (render_size_x * render_size_y) {
+        raycast_wrapped_canvas raytracer_ray_origins[i].x+shift.x, raytracer_ray_origins[i].y+shift.y, raytracer_ray_origins[i].z+shift.z, raytracer_ray_direction.x, raytracer_ray_direction.y, raytracer_ray_direction.z;
+        
+        if (hit_index > 0) {
+            render_cache_final_col[i] = COMBINE_RGB_CHANNELS(
+                0.5 + (side==0) * ((step_x < 0) - 0.5), 
+                0.5 + (side==1) * ((step_y < 0) - 0.5), 
+                0.5 + (side==2) * ((step_z < 0) - 0.5) 
+                );
+        } else {
+            render_cache_final_col[i] = COL_TRANSPARENT();
+        }
+        i++;
+    }
+
+    require_screen_refresh = true;
+}
+
 ################################
 #       Iterative modes        #
 ################################
 
 
-# used by both ao and shaded modes
+# used by both ao and shaded modes. TODO: investiagate whether the 3D AO code could replace it
 proc init_aligned_ao_pass {
     generate_pass_topmost;
     counted_samples = 1;
@@ -401,16 +483,7 @@ proc cmp_aligned_ao {
 
 proc init_aligned_raytracer {
     counted_samples = 1;
-    delete render_cache_1_r;
-    delete render_cache_2_g;
-    delete render_cache_3_b;
-    delete render_cache_final_col;
-    repeat (canvas_size_x * canvas_size_y) {
-        add 0 to render_cache_1_r;
-        add 0 to render_cache_2_g;
-        add 0 to render_cache_3_b;
-        add 0 to render_cache_final_col;
-    }
+    reset_render_RGB;
 
     # this shouldn't need to be regenerated unless the canvas size changed or viewport mode changed
     local config = LAST_RAYTRACER_CONFIG_HASH();
@@ -438,16 +511,7 @@ proc init_orbit_raytracer {
     # this has to run every time the camera is updated, there is no way around needing to reset the raytracer
 
     counted_samples = 1;
-    delete render_cache_1_r;
-    delete render_cache_2_g;
-    delete render_cache_3_b;
-    delete render_cache_final_col;
-    repeat (render_size_x * render_size_y) {
-        add 0 to render_cache_1_r;
-        add 0 to render_cache_2_g;
-        add 0 to render_cache_3_b;
-        add 0 to render_cache_final_col;
-    }
+    reset_render_RGB;
 
     raytracer_ray_direction = rotate_cam_space_to_world_space(0,0,-1);
     
@@ -478,7 +542,7 @@ proc iterate_generic_pathtracer max_samples, max_time, filter_size {
     
     repeat $max_samples {
 
-        local XYZ shift = rotate_cam_space_to_world_space(random(-0.5, 0.5)*pixel_size*$filter_size, random(-0.5, 0.5)*pixel_size*$filter_size, 0);
+        set_sample_pixel_shift $filter_size;
 
         i = 1;
         repeat (render_size_x * render_size_y) {
@@ -615,7 +679,7 @@ proc iterate_generic_ao max_samples, max_time, filter_size {
     
     repeat $max_samples {
 
-        local XYZ shift = rotate_cam_space_to_world_space(random(-0.5, 0.5)*pixel_size*$filter_size, random(-0.5, 0.5)*pixel_size*$filter_size, 0);
+        set_sample_pixel_shift $filter_size;
 
         i = 1;
         repeat (render_size_x * render_size_y) {
@@ -934,13 +998,31 @@ proc random_lambertian_vector nx, ny, nz {
 
 # resize the render cache (final col only)
 proc resize_render_cache {
-    if ((length render_cache_final_col) != (canvas_size_x * canvas_size_y)) {
+    if ((length render_cache_final_col) != (render_size_x * render_size_y)) {
         delete render_cache_final_col;
-        repeat (canvas_size_x * canvas_size_y) {
+        repeat (render_size_x * render_size_y) {
             add 0 to render_cache_final_col;
         }
     }
 }
 
+# set the render cache to 0, required by raytracers as these are used additively.
+proc reset_render_RGB {
+    delete render_cache_1_r;
+    delete render_cache_2_g;
+    delete render_cache_3_b;
+    repeat (render_size_x * render_size_y) {
+        add 0 to render_cache_1_r;
+        add 0 to render_cache_2_g;
+        add 0 to render_cache_3_b;
+    }
+}
 
+proc set_sample_pixel_shift filter_size {
+    if (viewport_mode == ViewportMode.ALIGNED) {
+        XYZ shift = XYZ {x:random(-0.5, 0.5)*$filter_size, y:random(-0.5, 0.5)*$filter_size, z:0};
+    } else {
+        XYZ shift = rotate_cam_space_to_world_space(random(-0.5, 0.5)*pixel_size*$filter_size, random(-0.5, 0.5)*pixel_size*$filter_size, 0);
+    }
+}
 

@@ -215,7 +215,11 @@ proc zoom_extents {
         cam_scale = ceil((0.5+(ln((viewport_height/canvas_size_y))/ln(2))));
     }
 
-    require_screen_refresh = true;
+    if (viewport_mode == ViewportMode.ORBIT) {
+        require_composite = true;
+    } else {
+        require_screen_refresh = true;
+    }
 }
 
 

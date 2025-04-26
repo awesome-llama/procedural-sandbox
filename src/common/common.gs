@@ -35,6 +35,8 @@ struct voxel {
 # empty colorless air, no parameters
 %define VOXEL_NONE voxel { opacity:0, r:0, g:0, b:0, emission:0 }
 
+# ARGB(1/255,0,0,0), the most transparent color still able to be drawn with pen
+%define COL_TRANSPARENT() 16777216;
 
 # generic 3D point
 struct XYZ {
