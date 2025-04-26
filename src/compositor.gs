@@ -141,6 +141,7 @@ on "iterative compositor" {
             iterate_generic_pathtracer max_samples, max_iteration_time, 1;
 
         } elif (compositor_mode == CompositorMode.AO) {
+            iterate_generic_ao max_samples, max_iteration_time, 1;
 
         }
     }
@@ -189,7 +190,7 @@ proc generate_pass_topmost {
 
 
 ################################
-#      Final compositing       #
+#  non-iterative compositing   #
 ################################
 
 
@@ -212,7 +213,6 @@ proc cmp_aligned_color {
     require_screen_refresh = true;
 }
 
-
 # heightmap of the topmost non-transparent voxel, normalised to greyscale 0-1
 proc cmp_aligned_heightmap {
     resize_render_cache;
@@ -225,7 +225,6 @@ proc cmp_aligned_heightmap {
     }
     require_screen_refresh = true;
 }
-
 
 # sum of opacity, normalised to greyscale 0-1
 proc cmp_aligned_density {
@@ -245,7 +244,6 @@ proc cmp_aligned_density {
     }
     require_screen_refresh = true;
 }
-
 
 # heightmap of the topmost non-transparent voxel, normalised to greyscale 0-1
 %define NRM_KERNEL_X(DX,DY,WX) \
@@ -474,8 +472,7 @@ proc init_orbit_raytracer {
     require_iterative_compositor = true;
 }
 
-
-# general-purpose raytracer using raytracer_ray_origins and raytracer_ray_direction as ray source
+# general-purpose pathtracer using raytracer_ray_origins and raytracer_ray_direction as ray source
 proc iterate_generic_pathtracer max_samples, max_time, filter_size {
     start_time = days_since_2000();
     
@@ -492,13 +489,11 @@ proc iterate_generic_pathtracer max_samples, max_time, filter_size {
             local att_g = 1;
             local att_b = 1;
 
-            vec_x = 0; # set initially just in case the first ray doesn't hit anything, it's used for sky color
-            vec_y = 0;
-            vec_z = -1;
+            vec_x = raytracer_ray_direction.x; # set initially just in case the first ray doesn't hit anything, it's used for sky color
+            vec_y = raytracer_ray_direction.y;
+            vec_z = raytracer_ray_direction.z;
 
-            #raycast_wrapped_canvas ix+RANDOM_0_1(), iy+RANDOM_0_1(), canvas_size_z+1, vec_x, vec_y, vec_z;
-            # the randomness can be generated some other way like a whole-screen shift for each sample
-            raycast_wrapped_canvas raytracer_ray_origins[i].x+shift.x, raytracer_ray_origins[i].y+shift.y, raytracer_ray_origins[i].z+shift.z, raytracer_ray_direction.x, raytracer_ray_direction.y, raytracer_ray_direction.z;
+            raycast_wrapped_canvas raytracer_ray_origins[i].x+shift.x, raytracer_ray_origins[i].y+shift.y, raytracer_ray_origins[i].z+shift.z, vec_x, vec_y, vec_z;
             
             local bounces_left = 6; # 4 is perceptually sufficient for opaque voxels
             until bounces_left < 1 { # repeat until allows for breaking out of it
@@ -522,7 +517,7 @@ proc iterate_generic_pathtracer max_samples, max_time, filter_size {
 
                     # shoot a new ray
                     if (RANDOM_0_1() < opacity) {
-                        # bounce
+                        # diffuse bounce
                         if (side == 0) {
                             if (step_x > 0) { 
                                 # normal -X
@@ -577,7 +572,7 @@ proc iterate_generic_pathtracer max_samples, max_time, filter_size {
             }
 
             # this final check is because the above loop stops before its own check
-            if hit_index > 0 {
+            if (hit_index > 0) {
                 # add light from emission
                 opacity = canvas[hit_index].opacity;
                 acc_col_r += att_r * TO_LINEAR(canvas[hit_index].r) * canvas[hit_index].emission * opacity;
@@ -615,6 +610,104 @@ proc iterate_generic_pathtracer max_samples, max_time, filter_size {
     }
 }
 
+proc iterate_generic_ao max_samples, max_time, filter_size {
+    start_time = days_since_2000();
+    
+    repeat $max_samples {
+
+        local XYZ shift = rotate_cam_space_to_world_space(random(-0.5, 0.5)*pixel_size*$filter_size, random(-0.5, 0.5)*pixel_size*$filter_size, 0);
+
+        i = 1;
+        repeat (render_size_x * render_size_y) {
+            local attenuation = 1;
+
+            raycast_wrapped_canvas raytracer_ray_origins[i].x+shift.x, raytracer_ray_origins[i].y+shift.y, raytracer_ray_origins[i].z+shift.z, raytracer_ray_direction.x, raytracer_ray_direction.y, raytracer_ray_direction.z;
+            
+            local bounces_left = 6; # 4 is perceptually sufficient for opaque voxels
+            until bounces_left < 1 { # repeat until allows for breaking out of it
+                if (hit_index > 0) {
+                    # get voxel info
+                    opacity = canvas[hit_index].opacity;
+
+                    # shoot a new ray
+                    if (RANDOM_0_1() < opacity) {
+                        # diffuse bounce
+                        if (side == 0) {
+                            if (step_x > 0) { 
+                                # normal -X
+                                random_lambertian_vector -1, 0, 0;
+                                raycast_wrapped_canvas hit_position.x-0.001, hit_position.y, hit_position.z, vec_x, vec_y, vec_z;
+                            } else { 
+                                # normal +X
+                                random_lambertian_vector 1, 0, 0;
+                                raycast_wrapped_canvas hit_position.x+0.001, hit_position.y, hit_position.z, vec_x, vec_y, vec_z;
+                            }
+                        } elif (side == 1) {
+                            if (step_y > 0) { 
+                                # normal -Y
+                                random_lambertian_vector 0, -1, 0;
+                                raycast_wrapped_canvas hit_position.x, hit_position.y-0.001, hit_position.z, vec_x, vec_y, vec_z;
+                            } else { 
+                                # normal +Y
+                                random_lambertian_vector 0, 1, 0;
+                                raycast_wrapped_canvas hit_position.x, hit_position.y+0.001, hit_position.z, vec_x, vec_y, vec_z;
+                            }
+                        } else {
+                            if (step_z > 0) { 
+                                # normal -Z
+                                random_lambertian_vector 0, 0, -1;
+                                raycast_wrapped_canvas hit_position.x, hit_position.y, hit_position.z-0.001, vec_x, vec_y, vec_z;
+                            } else { 
+                                # normal +Z
+                                random_lambertian_vector 0, 0, 1;
+                                raycast_wrapped_canvas hit_position.x, hit_position.y, hit_position.z+0.001, vec_x, vec_y, vec_z;
+                            }
+                        }
+                    } else {
+                        # transparency
+                        
+                        # update attenuation (scales towards 0)
+                        attenuation *= (1-opacity);
+
+                        #vec_x = hit_position.x - vec_x;
+                        #vec_y = hit_position.y - vec_y;
+                        #vec_z = hit_position.z - vec_z;
+                        #local vec_len = VEC3_LEN(vec_x, vec_y, vec_z);
+                        #vec_x /= vec_len;
+                        #vec_y /= vec_len;
+                        #vec_z /= vec_len;
+                        # TODO make ray continue through medium
+                        random_lambertian_vector 0, 0, random(0,1)*2-1;
+                        raycast_wrapped_canvas hit_position.x + vec_x*0.001, hit_position.y + vec_y*0.001, hit_position.z + vec_z*0.001, vec_x, vec_y, vec_z;
+                        #raycast_wrapped_canvas hit_position.x + step_x*0.001, hit_position.y + step_y*0.001, hit_position.z + step_z*0.001, vec_x, vec_y, vec_z;
+                    }
+
+                    bounces_left -= 1;
+                } else {
+                    bounces_left = 0; # break out ot the loop
+                }
+            }
+
+            if (not (hit_index > 0)) {
+                # sky
+                render_cache_1_r[i] += attenuation;
+            }
+
+            # combine
+            local val = FROM_LINEAR(render_cache_1_r[i] / (counted_samples));
+            if val > 1 {val = 1;}
+            render_cache_final_col[i] = COMBINE_RGB_CHANNELS(val, val, val);
+
+            i++;
+        }
+
+        counted_samples += 1;
+
+        if ((days_since_2000()-start_time)*86400 > $max_time) {
+            stop_this_script; # out of time
+        }
+    }
+}
 
 ################################
 #            Utils             #
@@ -811,7 +904,7 @@ proc random_vector nx, ny, nz {
 }
 
 
-# generate a random normalised hemisphere vector
+# generate a random normalised vector, weighted towards normal
 # see: https://raytracing.github.io/books/RayTracingInOneWeekend.html#diffusematerials/truelambertianreflection
 proc random_lambertian_vector nx, ny, nz {
     forever {
