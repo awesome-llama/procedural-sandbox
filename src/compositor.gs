@@ -69,15 +69,18 @@ on "composite" {
 
         } elif (compositor_mode == CompositorMode.SHADED) {
             init_aligned_ao_pass;
+            require_iterative_compositor = true;
 
         } elif (compositor_mode == CompositorMode.PATHTRACED) {
             init_aligned_raytracer;
+            require_iterative_compositor = true;
 
         } elif (compositor_mode == CompositorMode.HEIGHT) {
             cmp_aligned_heightmap;
 
         } elif (compositor_mode == CompositorMode.AO) {
             init_aligned_ao_pass;
+            require_iterative_compositor = true;
 
         } elif (compositor_mode == CompositorMode.DENSITY) {
             cmp_aligned_density;
@@ -102,6 +105,7 @@ on "composite" {
 
         } elif (compositor_mode == CompositorMode.PATHTRACED) {
             init_orbit_raytracer;
+            require_iterative_compositor = true;
 
         } elif (compositor_mode == CompositorMode.HEIGHT) {
             init_orbit_raytracer;
@@ -109,6 +113,7 @@ on "composite" {
 
         } elif (compositor_mode == CompositorMode.AO) {
             init_orbit_raytracer;
+            require_iterative_compositor = true;
 
         } elif (compositor_mode == CompositorMode.DENSITY) {
             init_orbit_raytracer;
@@ -401,7 +406,6 @@ proc init_aligned_ao_pass {
         add 0 to render_cache_ao;
         add 0 to render_cache_final_col;
     }
-    require_iterative_compositor = true;
 }
 
 # ambient occlusion in 2D on the topmost non-air voxel. Requires topmost voxel data.
@@ -503,8 +507,6 @@ proc init_aligned_raytracer {
         }
         last_raytracer_config = config;
     }
-    
-    require_iterative_compositor = true;
 }
 
 proc init_orbit_raytracer {
@@ -532,8 +534,6 @@ proc init_orbit_raytracer {
         iy += 1;
     }
     last_raytracer_config = LAST_RAYTRACER_CONFIG_HASH(); # not actually used by orbit raytracer, too much to track and changes too often
-    
-    require_iterative_compositor = true;
 }
 
 # general-purpose pathtracer using raytracer_ray_origins and raytracer_ray_direction as ray source
