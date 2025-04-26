@@ -17,9 +17,7 @@ on "initalise" {
     last_raytracer_config = "undefined"; # keeps track of the state of the raytracer lists so they only get updated when needed.
 }
 
-on "hard reset" {
-
-}
+#on "hard reset" {}
 
 onkey "1" {
     compositor_mode = CompositorMode.COLOR;
@@ -32,7 +30,7 @@ onkey "2" {
 }
 
 onkey "3" {
-    compositor_mode = CompositorMode.RAYTRACED;
+    compositor_mode = CompositorMode.PATHTRACED;
     require_composite = true;
 }
 
@@ -66,33 +64,53 @@ on "composite" {
         render_size_y = canvas_size_y;
 
         if (compositor_mode == CompositorMode.COLOR) {
-            composite_topmost_color;
+            cmp_aligned_color;
 
         } elif (compositor_mode == CompositorMode.SHADED) {
-            init_ao_pass;
+            init_aligned_ao_pass;
 
-        } elif (compositor_mode == CompositorMode.RAYTRACED) {
-            init_raytracer_aligned;
+        } elif (compositor_mode == CompositorMode.PATHTRACED) {
+            init_aligned_raytracer;
 
         } elif (compositor_mode == CompositorMode.HEIGHT) {
-            composite_heightmap;
+            cmp_aligned_heightmap;
 
         } elif (compositor_mode == CompositorMode.AO) {
-            init_ao_pass;
+            init_aligned_ao_pass;
 
         } elif (compositor_mode == CompositorMode.DENSITY) {
-            composite_density;
+            cmp_aligned_density;
 
         } elif (compositor_mode == CompositorMode.NORMAL) {
-            composite_normal 1;
+            cmp_aligned_normal 1;
 
         }
     } elif (viewport_mode == ViewportMode.ORBIT) {
         # there is only 1 rendering mode in orbit view, raytraced
         render_size_x = ceil((480-UI_sidebar_width) / render_resolution);
         render_size_y = ceil((360-20) / render_resolution);
+        
+        if (compositor_mode == CompositorMode.COLOR) {
+            
 
-        init_raytracer_orbit;
+        } elif (compositor_mode == CompositorMode.SHADED) {
+            init_orbit_raytracer;
+
+        } elif (compositor_mode == CompositorMode.PATHTRACED) {
+            init_orbit_raytracer;
+
+        } elif (compositor_mode == CompositorMode.HEIGHT) {
+            
+
+        } elif (compositor_mode == CompositorMode.AO) {
+            init_orbit_raytracer;
+
+        } elif (compositor_mode == CompositorMode.DENSITY) {
+            
+
+        } elif (compositor_mode == CompositorMode.NORMAL) {
+            
+        }
     }
 
     require_composite = false;
@@ -105,18 +123,26 @@ on "iterative compositor" {
 
     if (viewport_mode == ViewportMode.ALIGNED) {
         if (compositor_mode == CompositorMode.SHADED) {
-            iterate_ao max_samples, max_iteration_time;
-            composite_shaded_color;
+            iterate_aligned_ao max_samples, max_iteration_time;
+            cmp_aligned_shaded_color;
 
-        } elif (compositor_mode == CompositorMode.RAYTRACED) {
-            iterate_raytracer max_samples, max_iteration_time, 0;
+        } elif (compositor_mode == CompositorMode.PATHTRACED) {
+            iterate_generic_pathtracer max_samples, max_iteration_time, 0;
 
         } elif (compositor_mode == CompositorMode.AO) {
-            iterate_ao max_samples, max_iteration_time;
-            composite_ao;
+            iterate_aligned_ao max_samples, max_iteration_time;
+            cmp_aligned_ao;
         }
     } elif (viewport_mode == ViewportMode.ORBIT) {
-        iterate_raytracer max_samples, max_iteration_time, 1;
+        if (compositor_mode == CompositorMode.SHADED) {
+            
+
+        } elif (compositor_mode == CompositorMode.PATHTRACED) {
+            iterate_generic_pathtracer max_samples, max_iteration_time, 1;
+
+        } elif (compositor_mode == CompositorMode.AO) {
+
+        }
     }
 
 
@@ -135,7 +161,7 @@ on "iterative compositor" {
 # the topmost non-0-opacity voxel, found by raycasting downwards. The index of the solid voxel, not the air above it.
 proc generate_pass_topmost {
     layer_size = (canvas_size_x * canvas_size_y);
-    if ((length render_cache_topmost) != layer_size) {
+    if ((length render_cache_topmost) != layer_size) { # optimised
         delete render_cache_topmost;
         
         i = 1;
@@ -168,15 +194,15 @@ proc generate_pass_topmost {
 
 
 # simply the color map looking down, no translucency handling
-proc composite_topmost_color {
+proc cmp_aligned_color {
     resize_render_cache;
     generate_pass_topmost;
     layer_size = (canvas_size_x * canvas_size_y);
     i = 1;
     repeat layer_size {
         local index = render_cache_topmost[i];
-        if index < 0 { 
-            # no topmost, TODO transparency in a different list? does the single value work?
+        if index < 0 {
+            # entire column was air, use background color
             render_cache_final_col[i] = COMBINE_RGB_CHANNELS(0.5, 0.5, 0.5) + 254*16777215;
         } else {
             render_cache_final_col[i] = COMBINE_RGB_CHANNELS((canvas[i + index*layer_size].r), (canvas[i + index*layer_size].g), (canvas[i + index*layer_size].b));
@@ -188,7 +214,7 @@ proc composite_topmost_color {
 
 
 # heightmap of the topmost non-transparent voxel, normalised to greyscale 0-1
-proc composite_heightmap {
+proc cmp_aligned_heightmap {
     resize_render_cache;
     generate_pass_topmost;
     i = 1;
@@ -202,7 +228,7 @@ proc composite_heightmap {
 
 
 # sum of opacity, normalised to greyscale 0-1
-proc composite_density {
+proc cmp_aligned_density {
     resize_render_cache;
     layer_size = (canvas_size_x * canvas_size_y);
     i = 1;
@@ -236,7 +262,7 @@ dy += WY*kernel_h;\
 %define W_EDGE 0.25
 %define W_CORNER 0.125
 
-proc composite_normal intensity {
+proc cmp_aligned_normal intensity {
     resize_render_cache;
     generate_pass_topmost;
     iy = 0;
@@ -286,7 +312,7 @@ proc composite_normal intensity {
 
 
 # used by both ao and shaded modes
-proc init_ao_pass {
+proc init_aligned_ao_pass {
     generate_pass_topmost;
     counted_samples = 1;
     delete render_cache_ao;
@@ -298,9 +324,8 @@ proc init_ao_pass {
     require_iterative_compositor = true;
 }
 
-
 # ambient occlusion in 2D on the topmost non-air voxel. Requires topmost voxel data.
-proc iterate_ao max_samples, max_time {
+proc iterate_aligned_ao max_samples, max_time {
     start_time = days_since_2000();
 
     layer_size = (canvas_size_x * canvas_size_y);
@@ -328,9 +353,8 @@ proc iterate_ao max_samples, max_time {
     }
 }
 
-
 # a semi-realistic shaded style, accounting for translucency and AO.
-proc composite_shaded_color {
+proc cmp_aligned_shaded_color {
     layer_size = (canvas_size_x * canvas_size_y);
     i = 1;
     repeat layer_size {
@@ -358,9 +382,8 @@ proc composite_shaded_color {
     }
 }
 
-
 # ambient occlusion, normalised to greyscale 0-1
-proc composite_ao {
+proc cmp_aligned_ao {
     i = 1;
     repeat (canvas_size_x * canvas_size_y) {
         local ao_fac = FROM_LINEAR((1 * render_cache_ao[i]) / counted_samples);
@@ -372,9 +395,13 @@ proc composite_ao {
 }
 
 
+
+
+
+# any changes that would make the raytracer settings different should be in the hash
 %define LAST_RAYTRACER_CONFIG_HASH() (canvas_size_x & "," & canvas_size_y & "," & viewport_mode)
 
-proc init_raytracer_aligned {
+proc init_aligned_raytracer {
     counted_samples = 1;
     delete render_cache_1_r;
     delete render_cache_2_g;
@@ -409,16 +436,7 @@ proc init_raytracer_aligned {
     require_iterative_compositor = true;
 }
 
-
-func rotate_cam_space_to_world_space(x, y, z) XYZ {
-    # rotate point around X
-    local XYZ r1 = XYZ {x:$x, y:$y*cos(cam_elev)-$z*sin(cam_elev), z:$y*sin(cam_elev)+$z*cos(cam_elev)};
-    # rotate point around Z
-    return XYZ {x:r1.x*cos(cam_azi)-r1.y*sin(cam_azi), y:r1.x*sin(cam_azi)+r1.y*cos(cam_azi), z:r1.z};
-}
-
-
-proc init_raytracer_orbit {
+proc init_orbit_raytracer {
     # this has to run every time the camera is updated, there is no way around needing to reset the raytracer
 
     counted_samples = 1;
@@ -458,7 +476,7 @@ proc init_raytracer_orbit {
 
 
 # general-purpose raytracer using raytracer_ray_origins and raytracer_ray_direction as ray source
-proc iterate_raytracer max_samples, max_time, filter_size {
+proc iterate_generic_pathtracer max_samples, max_time, filter_size {
     start_time = days_since_2000();
     
     repeat $max_samples {
@@ -601,6 +619,14 @@ proc iterate_raytracer max_samples, max_time, filter_size {
 ################################
 #            Utils             #
 ################################
+
+
+func rotate_cam_space_to_world_space(x, y, z) XYZ {
+    # rotate point around X
+    local XYZ r1 = XYZ {x:$x, y:$y*cos(cam_elev)-$z*sin(cam_elev), z:$y*sin(cam_elev)+$z*cos(cam_elev)};
+    # rotate point around Z
+    return XYZ {x:r1.x*cos(cam_azi)-r1.y*sin(cam_azi), y:r1.x*sin(cam_azi)+r1.y*cos(cam_azi), z:r1.z};
+}
 
 
 # Special implementation of 3D DDA, returns ray_light for 2D composited AO. Optimised for downwards rays only.

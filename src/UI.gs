@@ -137,7 +137,7 @@ proc render_popup {
             }
 
             set_pen_color THEME_COL_TEXT;
-            plainText UI_popup[3]+5, UI_popup[4]-26, 1, "#" & rgb_num_to_hex_code(CP_col);
+            plainText UI_popup[3]+5, UI_popup[4]-26, 1, "#" & RGB_num_to_hex_code(CP_col);
 
             render_modular_element UI_DATA_INDEX("popup.color_picker.cancel"), UI_popup[3]+5, UI_popup[4]-98, 48, "popup";
             render_modular_element UI_DATA_INDEX("popup.color_picker.apply"), UI_popup[3]+57, UI_popup[4]-98, 48, "popup";

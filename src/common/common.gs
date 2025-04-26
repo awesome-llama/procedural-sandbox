@@ -54,7 +54,7 @@ enum CompositorMode {
     NONE = "",
     COLOR = "COLOR", # RGB & Alpha only
     SHADED = "SHADED", # fully processed color
-    RAYTRACED = "RAYTRACED",
+    PATHTRACED = "PATHTRACED", # realistic rendering
     HEIGHT = "HEIGHT", # heightmap, topmost voxel elevation
     AO = "AO", # ambient occlusion
     DENSITY = "DENSITY", # number of voxels in the column, weighted by opacity
@@ -97,35 +97,18 @@ struct template_metadata {
 #             Math             #
 ################################
 
-# 1 if positive, -1 if negative
+# Get the sign of a number. 1 if positive, -1 if negative. NaN if 0.
 %define SIGN(VAL) ((VAL)/abs(VAL))
-
-# floored RGB channels to integer
-%define COMBINE_RGB_CHANNELS(R,G,B) (65536*floor(255*(R)) + 256*floor(255*(G)) + floor(255*(B)))
 
 # Power
 %define POW(BASE,EXP) antiln(ln(BASE)*(EXP))
 
-# 
-%define ROOT(BASE,R) antiln(ln(BASE)/(R))
+# nth root
+%define ROOT(BASE,N) antiln(ln(BASE)/(N))
 
 # logarithm of any base
 %define LOG(VAL,BASE) (ln(VAL)/ln(BASE))
 
-# Dot product 2D
-%define DOT_PRODUCT_2D(X1,Y1,X2,Y2) ((X1)*(X2) + (Y1)*(Y2))
-
-# Dot product 3D
-%define DOT_PRODUCT_3D(X1,Y1,Z1,X2,Y2,Z2) ((X1)*(X2) + (Y1)*(Y2) + (Z1)*(Z2))
-
-# Length of a 2D vector
-%define VEC2_LEN(VX,VY) sqrt((VX)*(VX) + (VY)*(VY))
-
-# Length of a 3D vector
-%define VEC3_LEN(VX,VY,VZ) sqrt((VX)*(VX) + (VY)*(VY) + (VZ)*(VZ))
-
-# Vector angle
-%define ATAN2(Y,X) (atan((Y)/((X)+0)) + 180*((X)<0))
 
 
 # Clamp above 0
@@ -134,19 +117,40 @@ struct template_metadata {
 # Clamp between 0 and 1
 %define CLAMP_0_1(VAL) (1 - (((VAL)<1) * (1-POSITIVE_CLAMP(VAL))) )
 
-%define AVERAGE(A,B) (((A)+(B))/2)
+# Arithmetic mean of 2 numbers
+%define MEAN(A,B) (((A)+(B))/2)
 
-# lerp
+# Linear interpolation ("lerp"). Remap a normalised value `t` (between 0 and 1) to a different interval.
 %define LERP(OUT0,OUT1,T) ((OUT0)+(T)*((OUT1)-(OUT0)))
 
 # opposite of lerp. Gets t from a value.
 %define UNLERP(IN0,IN1,VAL) (((VAL)-(IN0))/((IN1)-(IN0)))
 
-# map a value from input range to output range.
+# Remap a value from input range to output range.
 %define REMAP(IN0,IN1,OUT0,OUT1,T) (LERP(OUT0,OUT1,UNLERP(IN0,IN1,T)))
 
 
+# Length of a 2D vector
+%define VEC2_LEN(VX,VY) sqrt((VX)*(VX) + (VY)*(VY))
+
+# Length of a 3D vector
+%define VEC3_LEN(VX,VY,VZ) sqrt((VX)*(VX) + (VY)*(VY) + (VZ)*(VZ))
+
+# Vector angle in the XY plane. Note the addition of 0, used to fix a negative zero bug.
+%define ATAN2(Y,X) (atan((Y)/((X)+0)) + 180*((X)<0))
+
+# Dot product 2D
+%define DOT_PRODUCT_2D(X1,Y1,X2,Y2) ((X1)*(X2) + (Y1)*(Y2))
+
+# Dot product 3D
+%define DOT_PRODUCT_3D(X1,Y1,Z1,X2,Y2,Z2) ((X1)*(X2) + (Y1)*(Y2) + (Z1)*(Z2))
+
+
+
 ### Specific to this project:
+
+# floored RGB channels to integer
+%define COMBINE_RGB_CHANNELS(R,G,B) (65536*floor(255*(R)) + 256*floor(255*(G)) + floor(255*(B)))
 
 # sRGB to linear Rec.709 (not piecewise)
 %define TO_LINEAR(VAL) ROOT(VAL, 2.2)
@@ -315,7 +319,7 @@ proc set_setting_from_id element_id, value {
 }
 
 
-func rgb_num_to_hex_code(col) {
+func RGB_num_to_hex_code(col) {
     return (hex_lookup[($col//65536)%256 + 1] & hex_lookup[($col//256)%256 + 1] & hex_lookup[$col%256 + 1]);
 }
 

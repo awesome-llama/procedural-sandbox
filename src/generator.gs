@@ -1327,11 +1327,11 @@ proc glbfx_smudge coverage, probability_z {
         }
 
         if (canvas[jitter_i1].opacity > 0 and canvas[jitter_i2].opacity > 0) { # don't smudge air
-            canvas[jitter_i1].opacity = AVERAGE(canvas[jitter_i1].opacity, canvas[jitter_i2].opacity);
-            canvas[jitter_i1].r = AVERAGE(canvas[jitter_i1].r, canvas[jitter_i2].r);
-            canvas[jitter_i1].g = AVERAGE(canvas[jitter_i1].g, canvas[jitter_i2].g);
-            canvas[jitter_i1].b = AVERAGE(canvas[jitter_i1].b, canvas[jitter_i2].b);
-            canvas[jitter_i1].emission = AVERAGE(canvas[jitter_i1].emission, canvas[jitter_i2].emission);
+            canvas[jitter_i1].opacity = MEAN(canvas[jitter_i1].opacity, canvas[jitter_i2].opacity);
+            canvas[jitter_i1].r = MEAN(canvas[jitter_i1].r, canvas[jitter_i2].r);
+            canvas[jitter_i1].g = MEAN(canvas[jitter_i1].g, canvas[jitter_i2].g);
+            canvas[jitter_i1].b = MEAN(canvas[jitter_i1].b, canvas[jitter_i2].b);
+            canvas[jitter_i1].emission = MEAN(canvas[jitter_i1].emission, canvas[jitter_i2].emission);
             canvas[jitter_i2] = canvas[jitter_i1];
         }
     }
