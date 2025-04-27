@@ -117,6 +117,7 @@ on "composite" {
 
         } elif (compositor_mode == CompositorMode.DENSITY) {
             init_orbit_raytracer;
+            # not implemented
 
         } elif (compositor_mode == CompositorMode.NORMAL) {
             init_orbit_raytracer;
@@ -147,7 +148,7 @@ on "iterative compositor" {
         }
     } elif (viewport_mode == ViewportMode.ORBIT) {
         if (compositor_mode == CompositorMode.SHADED) {
-            
+            # use AO
 
         } elif (compositor_mode == CompositorMode.PATHTRACED) {
             iterate_generic_pathtracer max_samples, max_iteration_time, 1;
@@ -337,11 +338,18 @@ proc cmp_orbit_shaded {
         raycast_wrapped_canvas raytracer_ray_origins[i].x+shift.x, raytracer_ray_origins[i].y+shift.y, raytracer_ray_origins[i].z+shift.z, raytracer_ray_direction.x, raytracer_ray_direction.y, raytracer_ray_direction.z;
         
         if (hit_index > 0) {
+            local height = hit_position.z / canvas_size_z;
+            height = 0.5+CLAMP_0_1(height)*0.5;
             if (side == 2) {
-                render_cache_final_col[i] = COMBINE_RGB_CHANNELS(canvas[hit_index].r, canvas[hit_index].g, canvas[hit_index].b);
+                local brightness_fac = height;
+            } elif (side == 1) {
+                local brightness_fac = 0.85 * height;
             } else {
-                render_cache_final_col[i] = COMBINE_RGB_CHANNELS(canvas[hit_index].r*0.9, canvas[hit_index].g*0.9, canvas[hit_index].b*0.9);
+                local brightness_fac = 0.9 * height;
             }
+            brightness_fac = 1-((1-brightness_fac) * (1-canvas[hit_index].emission)); # disable shading for emission
+            
+            render_cache_final_col[i] = COMBINE_RGB_CHANNELS(canvas[hit_index].r*brightness_fac, canvas[hit_index].g*brightness_fac, canvas[hit_index].b*brightness_fac);
         } else {
             render_cache_final_col[i] = COL_TRANSPARENT();
         }
@@ -556,6 +564,7 @@ proc iterate_generic_pathtracer max_samples, max_time, filter_size {
             vec_x = raytracer_ray_direction.x; # set initially just in case the first ray doesn't hit anything, it's used for sky color
             vec_y = raytracer_ray_direction.y;
             vec_z = raytracer_ray_direction.z;
+            current_opacity = 0;
 
             raycast_wrapped_canvas raytracer_ray_origins[i].x+shift.x, raytracer_ray_origins[i].y+shift.y, raytracer_ray_origins[i].z+shift.z, vec_x, vec_y, vec_z;
             
@@ -569,19 +578,20 @@ proc iterate_generic_pathtracer max_samples, max_time, filter_size {
                     opacity = canvas[hit_index].opacity;
                     emission = canvas[hit_index].emission;
 
-                    # add light from emission
-                    acc_col_r += att_r * (linear_col_r * emission) * opacity;
-                    acc_col_g += att_g * (linear_col_g * emission) * opacity;
-                    acc_col_b += att_b * (linear_col_b * emission) * opacity;
-
-                    # update attenuation (scales towards 0)
-                    att_r *= 1-((1-linear_col_r) * opacity);
-                    att_g *= 1-((1-linear_col_g) * opacity);
-                    att_b *= 1-((1-linear_col_b) * opacity);
-
                     # shoot a new ray
-                    if (RANDOM_0_1() < opacity) {
+                    if (RANDOM_0_1() < (opacity - current_opacity)) {
                         # diffuse bounce
+
+                        # add light from emission
+                        acc_col_r += att_r * (linear_col_r * emission); # no opacity accounted for, surface reflection only
+                        acc_col_g += att_g * (linear_col_g * emission);
+                        acc_col_b += att_b * (linear_col_b * emission);
+
+                        # update attenuation (scales towards 0)
+                        att_r *= 1-((1-linear_col_r));
+                        att_g *= 1-((1-linear_col_g));
+                        att_b *= 1-((1-linear_col_b));
+
                         if (side == 0) {
                             if (step_x > 0) { 
                                 # normal -X
@@ -613,22 +623,16 @@ proc iterate_generic_pathtracer max_samples, max_time, filter_size {
                                 raycast_wrapped_canvas hit_position.x, hit_position.y, hit_position.z+0.001, vec_x, vec_y, vec_z;
                             }
                         }
+                        current_opacity = 0;
+                        bounces_left -= 1;
                     } else {
-                        # transparency
-                        #vec_x = hit_position.x - vec_x;
-                        #vec_y = hit_position.y - vec_y;
-                        #vec_z = hit_position.z - vec_z;
-                        #local vec_len = VEC3_LEN(vec_x, vec_y, vec_z);
-                        #vec_x /= vec_len;
-                        #vec_y /= vec_len;
-                        #vec_z /= vec_len;
-                        # TODO make ray continue through medium
-                        random_lambertian_vector 0, 0, random(0,1)*2-1;
+                        # transparency - pass through unimpeded
+                        # TODO: optimise with a single raycast
                         raycast_wrapped_canvas hit_position.x + vec_x*0.001, hit_position.y + vec_y*0.001, hit_position.z + vec_z*0.001, vec_x, vec_y, vec_z;
-                        #raycast_wrapped_canvas hit_position.x + step_x*0.001, hit_position.y + step_y*0.001, hit_position.z + step_z*0.001, vec_x, vec_y, vec_z;
+                        current_opacity = opacity;
+                        # does not contribute to bounces
                     }
 
-                    bounces_left -= 1;
                 } else {
                     bounces_left = 0; # break out ot the loop
                 }
@@ -644,9 +648,9 @@ proc iterate_generic_pathtracer max_samples, max_time, filter_size {
                 acc_col_b += att_b * TO_LINEAR(canvas[hit_index].b) * canvas[hit_index].emission * opacity;
             } else {
                 # sky
-                acc_col_r += att_r * (1 * TO_LINEAR(0.5+(vec_y/2)));
-                acc_col_g += att_g * (1 * TO_LINEAR(0.5+(vec_y/2))); 
-                acc_col_b += att_b * (1 * TO_LINEAR(0.5+(vec_y/2)));
+                acc_col_r += att_r * (1.2 * TO_LINEAR(0.5+(vec_y/2)));
+                acc_col_g += att_g * (1.2 * TO_LINEAR(0.5+(vec_y/2))); 
+                acc_col_b += att_b * (1.2 * TO_LINEAR(0.5+(vec_y/2)));
             }
 
             render_cache_1_r[i] += acc_col_r;
@@ -684,6 +688,8 @@ proc iterate_generic_ao max_samples, max_time, filter_size {
         i = 1;
         repeat (render_size_x * render_size_y) {
             local attenuation = 1;
+            
+            current_opacity = 0;
 
             raycast_wrapped_canvas raytracer_ray_origins[i].x+shift.x, raytracer_ray_origins[i].y+shift.y, raytracer_ray_origins[i].z+shift.z, raytracer_ray_direction.x, raytracer_ray_direction.y, raytracer_ray_direction.z;
             
@@ -694,7 +700,7 @@ proc iterate_generic_ao max_samples, max_time, filter_size {
                     opacity = canvas[hit_index].opacity;
 
                     # shoot a new ray
-                    if (RANDOM_0_1() < opacity) {
+                    if (RANDOM_0_1() < (opacity - current_opacity)) {
                         # diffuse bounce
                         if (side == 0) {
                             if (step_x > 0) { 
@@ -727,26 +733,21 @@ proc iterate_generic_ao max_samples, max_time, filter_size {
                                 raycast_wrapped_canvas hit_position.x, hit_position.y, hit_position.z+0.001, vec_x, vec_y, vec_z;
                             }
                         }
+                        current_opacity = 0;
+                        bounces_left -= 1;
                     } else {
                         # transparency
                         
                         # update attenuation (scales towards 0)
                         attenuation *= (1-opacity);
 
-                        #vec_x = hit_position.x - vec_x;
-                        #vec_y = hit_position.y - vec_y;
-                        #vec_z = hit_position.z - vec_z;
-                        #local vec_len = VEC3_LEN(vec_x, vec_y, vec_z);
-                        #vec_x /= vec_len;
-                        #vec_y /= vec_len;
-                        #vec_z /= vec_len;
-                        # TODO make ray continue through medium
-                        random_lambertian_vector 0, 0, random(0,1)*2-1;
+                        # transparency - pass through unimpeded
+                        # TODO: optimise with a single raycast
                         raycast_wrapped_canvas hit_position.x + vec_x*0.001, hit_position.y + vec_y*0.001, hit_position.z + vec_z*0.001, vec_x, vec_y, vec_z;
-                        #raycast_wrapped_canvas hit_position.x + step_x*0.001, hit_position.y + step_y*0.001, hit_position.z + step_z*0.001, vec_x, vec_y, vec_z;
+                        current_opacity = opacity;
+                        # does not contribute to bounces
                     }
 
-                    bounces_left -= 1;
                 } else {
                     bounces_left = 0; # break out ot the loop
                 }
@@ -792,9 +793,9 @@ proc raycast_AO x, y, z, dx, dy, dz {
     local scale_x = abs(vec_len/$dx);
     local scale_y = abs(vec_len/$dy);
     local scale_z = abs(vec_len/$dz);
-    local ray_ix = floor($x);
-    local ray_iy = floor($y);
-    local ray_iz = floor($z);
+    ray_ix = floor($x);
+    ray_iy = floor($y);
+    ray_iz = floor($z);
     if ($dx < 0) {
         step_x = -1;
         local len_x = (($x%1)*scale_x);
@@ -854,12 +855,15 @@ proc raycast_AO x, y, z, dx, dy, dz {
 # some variables are not local because they are used elsewhere
 proc raycast_wrapped_canvas x, y, z, dx, dy, dz {
     local vec_len = sqrt((($dx*$dx)+(($dy*$dy)+($dz*$dz))));
+    #ray_dx = $dx/vec_len;
+    #ray_dy = $dy/vec_len;
+    #ray_dz = $dz/vec_len;
     local scale_x = abs(vec_len/$dx);
     local scale_y = abs(vec_len/$dy);
     local scale_z = abs(vec_len/$dz);
-    local ray_ix = floor($x);
-    local ray_iy = floor($y);
-    local ray_iz = floor($z);
+    ray_ix = floor($x);
+    ray_iy = floor($y);
+    ray_iz = floor($z);
     if ($dx < 0) {
         step_x = -1;
         local len_x = (($x%1)*scale_x);
@@ -1023,6 +1027,12 @@ proc set_sample_pixel_shift filter_size {
         XYZ shift = XYZ {x:random(-0.5, 0.5)*$filter_size, y:random(-0.5, 0.5)*$filter_size, z:0};
     } else {
         XYZ shift = rotate_cam_space_to_world_space(random(-0.5, 0.5)*pixel_size*$filter_size, random(-0.5, 0.5)*pixel_size*$filter_size, 0);
+        
+        # project to the XY plane
+        local steps_from_top = (-shift.z) / raytracer_ray_direction.z;
+        shift.x += steps_from_top*raytracer_ray_direction.x;
+        shift.y += steps_from_top*raytracer_ray_direction.y;
+        shift.z = 0;
     }
 }
 

@@ -86,7 +86,7 @@ onkey "any" {
                 cam_y += ((PRESSED_MOVE_X()*sin(cam_azi)) + (PRESSED_MOVE_Y()*cos(cam_azi))) * ((dt*movement_speed)/cam_scale);
 
                 cam_x = cam_x % canvas_size_x;
-                cam_y = cam_y % canvas_size_x;
+                cam_y = cam_y % canvas_size_y;
 
                 require_composite = true;
             }
@@ -240,8 +240,8 @@ proc change_zoom increment {
     cam_scale = POW(ZOOM_INCREMENT, round(LOG(cam_scale, ZOOM_INCREMENT) + $increment));
     
     # limits
-    if (cam_scale < 0.125) {
-        cam_scale = 0.125;
+    if (cam_scale < 0.25) {
+        cam_scale = 0.25;
     } elif (cam_scale > 32) {
         cam_scale = 32;
     }
