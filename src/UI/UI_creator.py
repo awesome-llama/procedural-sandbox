@@ -190,6 +190,7 @@ panels['menu.gen'] = Container([
     Label.title('Generate'),
     Separator(),
     btn_menu_set_page('City', 'gen.city'),
+    btn_menu_set_page('Control Panel', 'gen.control_panel'),
     btn_menu_set_page('Nucleus', 'gen.nucleus'),
     btn_menu_set_page('Pipelines', 'gen.pipelines'),
     btn_menu_set_page('Wheel', 'gen.wheel'),
@@ -369,6 +370,21 @@ panels['gen.city'] = Container([
     ]),
     Button('Generate', 'gen.city.run'),
 ])
+
+panels['gen.control_panel'] = Container([
+    Label.title('Generate Control Panel'),
+    Separator(),
+    Expander('Dimensions', '', True, [
+        Value('Cell count X', 'gen.control_panel.cell_count_x', 12, 1, 64, 1, 1024, snap_frac=1),
+        Value('Cell count Y', 'gen.control_panel.cell_count_y', 12, 1, 64, 1, 1024, snap_frac=1),
+        Value('Cell size', 'gen.control_panel.cell_size', 10, 2, 24, 1, 256, snap_frac=1),
+    ]),
+    Expander('Color', '', True, [
+        Color('Panel color', 'gen.control_panel.panel_color', '808080'),
+    ]),
+    Button('Generate', 'gen.control_panel.run'),
+])
+
 
 panels['gen.eca'] = Container([
     Label.title('Elementary cellular automata'),

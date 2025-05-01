@@ -81,18 +81,17 @@ struct template_metadata {
 }
 
 
-# random numbers
-# TODO add brackets
+# Random numbers
 
-%define RANDOM_X random(0, canvas_size_x-1)
+%define RANDOM_X() random(0, canvas_size_x-1)
 
-%define RANDOM_Y random(0, canvas_size_y-1)
+%define RANDOM_Y() random(0, canvas_size_y-1)
 
-%define RANDOM_Z random(0, canvas_size_z-1)
+%define RANDOM_Z() random(0, canvas_size_z-1)
 
 %define RANDOM_0_1() random("0.0", "1.0")
 
-%define RANDOM_ANGLE random("0.0", "360.0")
+%define RANDOM_ANGLE() random("0.0", "360.0")
 
 
 ################################
@@ -108,16 +107,23 @@ struct template_metadata {
 # nth root
 %define ROOT(BASE,N) antiln(ln(BASE)/(N))
 
-# logarithm of any base
+# Logarithm of any base
 %define LOG(VAL,BASE) (ln(VAL)/ln(BASE))
 
 
+# Smallest of 2 numbers
+%define MIN(A,B) (A)+(((A)>(B))*((B)-(A)))
 
-# Clamp above 0
+# Largest of 2 numbers
+%define MAX(A,B) (A)+(((A)<(B))*((B)-(A)))
+
+
+# Clamp, keep numbers above 0
 %define POSITIVE_CLAMP(VAL) (((VAL)>0)*(VAL))
 
 # Clamp between 0 and 1
 %define CLAMP_0_1(VAL) (1 - (((VAL)<1) * (1-POSITIVE_CLAMP(VAL))) )
+
 
 # Arithmetic mean of 2 numbers
 %define MEAN(A,B) (((A)+(B))/2)
@@ -151,13 +157,13 @@ struct template_metadata {
 
 ### Specific to this project:
 
-# floored RGB channels to integer
+# Floored RGB channels to integer
 %define COMBINE_RGB_CHANNELS(R,G,B) (65536*floor(255*(R)) + 256*floor(255*(G)) + floor(255*(B)))
 
 # sRGB to linear Rec.709 (not piecewise)
 %define TO_LINEAR(VAL) ROOT(VAL, 2.2)
 
-# linear Rec.709 to sRGB (not piecewise)
+# Linear Rec.709 to sRGB (not piecewise)
 %define FROM_LINEAR(VAL) POW(VAL, 2.2)
 
 # Convert 2D coordinates into index, assumes ints that do not wrap

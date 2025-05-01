@@ -9,6 +9,7 @@ list custom_grid;
 list eca_lut;
 list temp_canvas_mono; # temporary single channel canvas
 list voxel temp_canvas; # temporary voxel canvas
+list stack; # stack for recursion
 
 on "initalise" {
     hide;
@@ -20,6 +21,7 @@ on "hard reset" {
     delete eca_lut;
     delete temp_canvas_mono;
     delete temp_canvas;
+    delete stack;
 }
 
 on "*" {
@@ -115,8 +117,8 @@ proc generate_city size_x, size_y, size_z, ground_col {
         brightness = random(0.5, 0.9);
         set_depositor_from_sRGB brightness, brightness, brightness;
 
-        local c1x = RANDOM_X;
-        local c1y = RANDOM_Y;
+        local c1x = RANDOM_X();
+        local c1y = RANDOM_Y();
         local cube_x = random(2,16);
         local cube_y = random(2,16);
         local cube_z = random(1, 15);
@@ -127,19 +129,137 @@ proc generate_city size_x, size_y, size_z, ground_col {
     repeat (90*placement_fac) { # pipes, grey
         brightness = random(0.5, 0.7);
         set_depositor_from_sRGB brightness+random(-0.1, 0.1), brightness+random(-0.1, 0.1), brightness+random(-0.1, 0.1);
-        random_walk_taxicab RANDOM_X, RANDOM_Y, random(1, 12), 16, 20;
+        random_walk_taxicab RANDOM_X(), RANDOM_Y(), random(1, 12), 16, 20;
     }
     repeat (10*placement_fac) { # pipes multicolor
         set_depositor_from_sRGB random(0.4, 0.9), random(0.4, 0.9), random(0.4, 0.9);
-        random_walk_taxicab RANDOM_X, RANDOM_Y, random(1, 16), 16, 20;
+        random_walk_taxicab RANDOM_X(), RANDOM_Y(), random(1, 16), 16, 20;
     }
     repeat (10*placement_fac) { # high pipes
         set_depositor_from_sRGB random(0.4, 0.8), random(0.4, 0.8), random(0.4, 0.8);
-        random_walk_taxicab RANDOM_X, RANDOM_Y, random(1, 16), 16, 20;
+        random_walk_taxicab RANDOM_X(), RANDOM_Y(), random(1, 16), 16, 20;
     }
     
     require_composite = true;
 }
+
+on "gen.control_panel.run" {
+    delete UI_return;
+    setting_from_id "gen.control_panel.cell_count_x";
+    setting_from_id "gen.control_panel.cell_count_y";
+    setting_from_id "gen.control_panel.cell_size";
+    setting_from_id "gen.control_panel.panel_color";
+    generate_control_panel UI_return[1], UI_return[2], UI_return[3], UI_return[4]; 
+}
+%define CSZ(FRAC) canvas_size_z*(FRAC)
+proc generate_control_panel cells_x, cells_y, cell_size, panel_color {
+    canvas_size_x = $cells_x * $cell_size;
+    canvas_size_y = $cells_y * $cell_size;
+    canvas_size_z = MAX(2, $cell_size);
+    clear_canvas;
+    reset_depositor;
+    set_depositor_from_number $panel_color;
+    draw_base_layer;
+    #draw_cuboid_corner_size 0, 0, 0, canvas_size_x, canvas_size_y, 1;
+    
+    delete custom_grid; # a list of rectangles
+    create_custom_grid_recursive_rectangles 0, 0, $cells_x, $cells_y;
+    
+    i = 0;
+    repeat (length custom_grid / 5) {
+        # debug colours
+        set_depositor_from_HSV custom_grid[i+5], RANDOM_0_1(), 1;
+        draw_cuboid_corner_size custom_grid[i+1]*$cell_size, custom_grid[i+2]*$cell_size, 0, custom_grid[i+3]*$cell_size, custom_grid[i+4]*$cell_size, 1;
+
+        if (custom_grid[i+3] == 1 and custom_grid[i+4] == 1) {
+            local origin_x = round((custom_grid[i+1]+0.5)*$cell_size);
+            local origin_y = round((custom_grid[i+2]+0.5)*$cell_size);
+
+            if (RANDOM_0_1() < 0.2) {
+                # Push button
+
+                # collar
+                set_depositor_from_sRGB_value 0.3;
+                draw_cylinder origin_x, origin_y, 0, $cell_size*0.4, CSZ(0.5);
+                # button surface
+                set_depositor_from_HSV random(0,5)/6, random(3,5)/6, random(3,5)/6;
+                
+                if (RANDOM_0_1() < 0.5) { # chamfered
+                    draw_cylinder_chamfered origin_x, origin_y, 0, $cell_size*0.3, CSZ(0.8), CSZ(0.1);
+                } else {
+                    draw_cylinder origin_x, origin_y, 0, $cell_size*0.3, CSZ(0.8);
+                }
+            } elif (RANDOM_0_1() < 0.3) {
+                # Light
+
+                # collar
+                set_depositor_from_sRGB_value 0.3;
+                draw_cylinder origin_x, origin_y, 0, $cell_size*0.3, CSZ(0.3);
+                # button surface
+                set_depositor_from_HSV random(0,5)/6, random(3,5)/6, random(3,5)/6;
+                depositor_voxel.emission = random("0.5", "0.8");
+                draw_sphere origin_x, origin_y, CSZ(0.3), $cell_size*0.25;
+            }
+        }
+        
+        i += 5;
+    }
+    
+}
+
+
+proc create_custom_grid_recursive_rectangles x, y, size_x, size_y {
+    delete stack;
+    add $x to stack;
+    add $y to stack;
+    add $size_x to stack;
+    add $size_y to stack;
+    add RANDOM_0_1() to stack;
+    add 0 to stack;
+
+    until (length stack == 0) {
+        if (RANDOM_0_1() < POW(stack[6]/12, 2)) {
+            # emit rectangle because life ran out or size is too small
+            add stack[1] to custom_grid;
+            add stack[2] to custom_grid;
+            add stack[3] to custom_grid;
+            add stack[4] to custom_grid;
+            add stack[5] to custom_grid;
+        } else {
+            # try splitting (must be run in a loop in the root rect)
+            if (RANDOM_0_1() < 0.5) {
+                # split x
+                local split_position = round(stack[3] * random("0.25", "0.75"));
+                add_custom_grid_rect stack[1], stack[2], split_position, stack[4], RANDOM_0_1(), stack[6]+1;
+                add_custom_grid_rect stack[1]+split_position, stack[2], stack[3]-split_position, stack[4], RANDOM_0_1(), stack[6]+1;
+            } else {
+                # split y
+                local split_position = round(stack[4] * random("0.25", "0.75"));
+                add_custom_grid_rect stack[1], stack[2], stack[3], split_position, RANDOM_0_1(), stack[6]+1;
+                add_custom_grid_rect stack[1], stack[2]+split_position, stack[3], stack[4]-split_position, RANDOM_0_1(), stack[6]+1;
+            }
+        }
+        delete stack[1];
+        delete stack[1];
+        delete stack[1];
+        delete stack[1];
+        delete stack[1];
+        delete stack[1];
+    }
+}
+proc add_custom_grid_rect x, y, size_x, size_y, seed, depth {
+    if ($size_x < 1 or $size_y < 1) {
+        stop_this_script; # invalid rectangle, don't use it
+    }
+    add $x to stack;
+    add $y to stack;
+    add $size_x to stack;
+    add $size_y to stack;
+    add $seed to stack;
+    add $depth to stack;
+}
+
+
 
 
 on "gen.eca.run" {
@@ -470,7 +590,7 @@ proc generate_nucleus radius, size_z, ground_col {
     set_depositor_from_HSV RANDOM_0_1(), random("0.0", "0.1"), RANDOM_0_1();
     repeat (random("0.0", "0.02") * canvas_size_x * canvas_size_y) {
         local dist = random(0, canvas_size_x*1.3); # random walk start distance from center
-        local rot = RANDOM_ANGLE;
+        local rot = RANDOM_ANGLE();
         random_walk_any (canvas_size_x/2)+dist*cos(rot), (canvas_size_y/2)+dist*sin(rot), random(0, canvas_size_z*0.2), rot, steps, canvas_size_x*random("0.05", "0.1"), turn;
     }
 
@@ -487,7 +607,7 @@ proc generate_nucleus radius, size_z, ground_col {
         set_depositor_from_sRGB RANDOM_0_1(), RANDOM_0_1(), RANDOM_0_1();
     }
     repeat (random("0.0", "6.0")*dist) {
-        local rot = RANDOM_ANGLE;
+        local rot = RANDOM_ANGLE();
         random_walk_any (canvas_size_x/2)+dist*cos(rot), (canvas_size_y/2)+dist*sin(rot), random(elev_min, elev_max), rot, steps, canvas_size_x*random("0.05", "0.1"), turn;
     }
     
@@ -534,9 +654,9 @@ proc generate_fibres size_x, size_y, size_z, density, cl_count, cl_rad, seg_len,
             set_depositor_from_number_lerp $col2, $col3, RANDOM_0_1();
         }
 
-        px_x = RANDOM_X;
-        px_y = RANDOM_Y;
-        px_z = RANDOM_Z;
+        local px_x = RANDOM_X();
+        local px_y = RANDOM_Y();
+        local px_z = RANDOM_Z();
         repeat $cl_count {
             random_walk_any px_x+($cl_rad*random("-1.0","1.0")), px_y+($cl_rad*random("-1.0","1.0")), px_z, random("0.0","360.0"), $seg_count, $seg_len, $seg_angle;
         }
@@ -559,7 +679,7 @@ on "gen.pipes.run" {
         set_depositor_from_sRGB RANDOM_0_1(), RANDOM_0_1(), RANDOM_0_1();
         depositor_voxel.opacity = random(0.5, "1.0");
 
-        random_walk_taxicab RANDOM_X, RANDOM_Y, RANDOM_Z, 20, 5;
+        random_walk_taxicab RANDOM_X(), RANDOM_Y(), RANDOM_Z(), 20, 5;
     }
 
     require_composite = true;
@@ -581,8 +701,8 @@ proc generate_refinery {
     repeat 3 {
         set_depositor_from_sRGB_value random(0.9, 1);
         
-        local tank_x = floor(RANDOM_X * 16)/16;
-        local tank_y = floor(RANDOM_Y * 16)/16;
+        local tank_x = floor(RANDOM_X() * 16)/16;
+        local tank_y = floor(RANDOM_Y() * 16)/16;
 
         draw_sphere tank_x, tank_y, tank_rad/2, tank_rad;
 
@@ -760,7 +880,7 @@ proc generate_test {
 
     repeat (20) { # pipes multicolor
         set_depositor_from_sRGB random(0.4, 0.9), random(0.4, 0.9), random(0.4, 0.9);
-        random_walk_taxicab RANDOM_X, RANDOM_Y, random(0, 2), 16, 20;
+        random_walk_taxicab RANDOM_X(), RANDOM_Y(), random(0, 2), 16, 20;
     }
 
 
@@ -993,7 +1113,7 @@ proc draw_base_layer {
     repeat canvas_size_y {
         local px_x = 0;
         repeat canvas_size_x {
-            set_voxel px_x, px_y, 0;
+            set_voxel px_x, px_y, 0; # depositor is in use
             px_x++;
         }
         px_y++;
@@ -1020,18 +1140,19 @@ proc draw_column x, y, z, height {
 }
 
 
-# draw a cylinder on the XY plane, extruded along Z. Negative height allowed.
+# Draw a cylinder on the XY plane, extruded along Z. Negative height allowed.
+# TODO make it work with fractions. The cylinder should use the center of voxel for dist comparison and origin should not be moved
 proc draw_cylinder x, y, z, radius, height {
-    local bb_width = round(2 * $radius); # bounding box width
-    local bb_min = 0.5 + (bb_width * -0.5); # bounding box local minima
+    local bb_width = ceil(2 * $radius); # bounding box width
+    local bb_min = 0.5 + floor(bb_width * -0.5); # bounding box local minima
 
-    local px_z = $z - (($height < 0)*round($height)); # handled differently, always start from base
-    repeat round($height) {
+    local px_z = $z - (($height < 0)*round($height)); # always start from minimum z and extrude upwards
+    repeat (round($height)) {
         local px_y = bb_min;
         repeat bb_width {
             local px_x = bb_min;
             repeat bb_width {
-                if VEC2_LEN(px_x, px_y) <= $radius { 
+                if (VEC2_LEN(px_x, px_y) <= $radius) { 
                     # the distance calculation prevents px from being stored as canvas space coordinates
                     set_voxel $x+px_x, $y+px_y, px_z;
                 }
@@ -1044,11 +1165,25 @@ proc draw_cylinder x, y, z, radius, height {
 }
 
 
+# Draw a cylinder with the top chamfered.
+proc draw_cylinder_chamfered x, y, z, radius, height, chamfer {
+    local px_z = $z - (($height < 0)*round($height)); # always start from minimum z and extrude upwards
+    draw_cylinder $x, $y, $z, $radius, $height-round($chamfer);
+    px_z += ($height-round($chamfer));
+    local reduction = 1;
+    repeat (round($chamfer)) {
+        draw_cylinder $x, $y, px_z, $radius-reduction, 1;
+        px_z++;
+        reduction++;
+    }
+}
+
+
 
 # sphere centered exactly at the given coordinates (not voxel counts)
 proc draw_sphere x, y, z, radius {
-    local bb_width = round(2 * $radius); # bounding box width
-    local bb_min = 0.5 + (bb_width * -0.5); # bounding box local minima
+    local bb_width = ceil(2 * $radius); # bounding box width
+    local bb_min = 0.5 + floor(bb_width * -0.5); # bounding box local minima
     
     local px_z = bb_min;
     repeat bb_width {
@@ -1056,7 +1191,7 @@ proc draw_sphere x, y, z, radius {
         repeat bb_width {
             local px_x = bb_min;
             repeat bb_width {
-                if VEC3_LEN(px_x, px_y, px_z) <= $radius { 
+                if (VEC3_LEN(px_x, px_y, px_z) <= $radius) { 
                     # the distance calculation prevents px from being stored as canvas space coordinates
                     set_voxel $x+px_x, $y+px_y, $z+px_z;
                 }
@@ -1070,14 +1205,14 @@ proc draw_sphere x, y, z, radius {
 
 
 
-# rectangular prism between from a corner
+# rectangular prism between from minimum corner
 proc draw_cuboid_corner_size x, y, z, size_x, size_y, size_z {
     local px_z = $z;
-    repeat abs(round($size_z)) {
+    repeat (round($size_z)) {
         local px_y = $y;
-        repeat abs(round($size_y)) {
+        repeat (round($size_y)) {
             local px_x = $x;
-            repeat abs(round($size_x)) {
+            repeat (round($size_x)) {
                 set_voxel px_x, px_y, px_z;
                 px_x++;
             }
@@ -1218,9 +1353,9 @@ proc draw_line_DDA x, y, z, dx, dy, dz, r {
 # replace exposed surfaces randomly
 proc glbfx_surface_replace coverage {
     repeat ((canvas_size_x * canvas_size_y * canvas_size_z) * $coverage) {
-        local px_x = RANDOM_X;
-        local px_y = RANDOM_Y;
-        local px_z = RANDOM_Z;
+        local px_x = RANDOM_X();
+        local px_y = RANDOM_Y();
+        local px_z = RANDOM_Z();
 
         if (canvas[INDEX_FROM_3D_NOWRAP_INTS(px_x, px_y, px_z, canvas_size_x, canvas_size_y)].opacity > 0) {
             
@@ -1246,9 +1381,9 @@ proc glbfx_surface_replace coverage {
 # deposit voxels adjacent to any non-air surface randomly
 proc glbfx_spatter coverage {
     repeat ((canvas_size_x * canvas_size_y * canvas_size_z) * $coverage) {
-        local px_x = RANDOM_X;
-        local px_y = RANDOM_Y;
-        local px_z = RANDOM_Z;
+        local px_x = RANDOM_X();
+        local px_y = RANDOM_Y();
+        local px_z = RANDOM_Z();
 
         if (canvas[INDEX_FROM_3D_NOWRAP_INTS(px_x, px_y, px_z, canvas_size_x, canvas_size_y)].opacity == 0) {
             if (canvas[INDEX_FROM_3D_CANVAS_INTS(px_x+1, px_y, px_z, canvas_size_x, canvas_size_y)].opacity > 0) {
@@ -1281,8 +1416,8 @@ proc glbfx_jitter coverage, probability_z {
     local max_index = (canvas_size_x * canvas_size_y * canvas_size_z)+1;
     repeat ((canvas_size_x * canvas_size_y * canvas_size_z) * $coverage) {
         # randomly choosing voxels means a column of air is possible. This is intentional. 40 minutes was wasted debugging correct behaviour.
-        local jitter_x = RANDOM_X;
-        local jitter_y = RANDOM_Y;
+        local jitter_x = RANDOM_X();
+        local jitter_y = RANDOM_Y();
         local jitter_z = random(0, canvas_size_z-2); # Do not cross upper boundary
 
         local jitter_i1 = INDEX_FROM_3D_CANVAS_INTS(jitter_x, jitter_y, jitter_z, canvas_size_x, canvas_size_y);
@@ -1313,8 +1448,8 @@ on "fx.smudge.run" {
 # randomly average pairs of non-air voxels
 proc glbfx_smudge coverage, probability_z {
     repeat ((canvas_size_x * canvas_size_y * canvas_size_z) * $coverage) {
-        local jitter_x = RANDOM_X;
-        local jitter_y = RANDOM_Y;
+        local jitter_x = RANDOM_X();
+        local jitter_y = RANDOM_Y();
         local jitter_z = random(0, canvas_size_z-2); # Do not cross upper boundary
 
         local jitter_i1 = INDEX_FROM_3D_CANVAS_INTS(jitter_x, jitter_y, jitter_z, canvas_size_x, canvas_size_y);
