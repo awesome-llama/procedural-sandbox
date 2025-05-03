@@ -3,29 +3,25 @@
 costumes "costumes/main/main.svg" as "main";
 hide;
 
-on "initalise" {
-    hide;
-}
-
-on "hard reset" {
-
-}
 
 # 2^(1/increment)
 %define ZOOM_INCREMENT sqrt(2)
 
 on "start main loop" {
-    render_resolution = 1;
-    zoom_extents;
-    
-    require_composite = true;
-    require_screen_refresh = true; # TODO rename to viewport
+    abc = 3;
+    if (reset_render_on_flag) {
+        render_resolution = 1;
+        zoom_extents;
+        
+        require_composite = true;
+        require_screen_refresh = true; # TODO rename to viewport
+    }
+
     last_time = days_since_2000();
     forever {
         dt = 86400*(days_since_2000()-last_time);
         if dt > 0.1 { dt = 0.1; } # limit to 10 FPS
         last_time = days_since_2000();
-        hide; # does this affect yielding?
         
         # reset hover detection
         if not mouse_down() {

@@ -30,6 +30,7 @@ on "initalise" {
 
 on "hard reset" {
     UI_sidebar_width = 160;
+    slider_sensitivity = 100;
 }
 
 %define TOP_BAR_HEIGHT 20
@@ -570,9 +571,9 @@ on "stage clicked" {
                 }
                 if mouse_moved { # only edit the slider if the mouse moved
                     if key_pressed("shift") {
-                        delta_per_px = abs(UI_data[clicked_element+6]-UI_data[clicked_element+5])/800;
+                        delta_per_px = (abs(UI_data[clicked_element+6]-UI_data[clicked_element+5])*slider_sensitivity)/200000;
                     } else {
-                        delta_per_px = abs(UI_data[clicked_element+6]-UI_data[clicked_element+5])/200;
+                        delta_per_px = (abs(UI_data[clicked_element+6]-UI_data[clicked_element+5])*slider_sensitivity)/50000;
                     }
                     if (UI_data[clicked_element+9] != 0) {
                         # require that the slider changes with max 20px of mouse movement
@@ -707,6 +708,13 @@ onkey "v" {
             }
         }
     }
+}
+
+
+on "project.settings.apply" {
+    reset_render_on_flag = get_setting_from_id("project.settings.reset_render_on_flag");
+    slider_sensitivity = get_setting_from_id("project.settings.slider_sensitivity");
+    print "changes applied", 3;
 }
 
 

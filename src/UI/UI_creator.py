@@ -653,8 +653,12 @@ panels['project.compositor_mode'] = Container([
 panels['project.settings'] = Container([
     Label.title('Project settings'),
     Separator(),
-    Checkbox('Dark background', 'project.settings.bg_dark', True),
-    Value('Slider sensitivity', 'project.settings.slider_sensitivity', 200, 10, 1000, 0, 10000, snap_frac=0.1),
+    Expander('Interface', '', True, [
+        Value('Slider sensitivity', 'project.settings.slider_sensitivity', 100, 20, 500, 0, 10000, snap_frac=1),
+    ]),
+    Expander('Render', '', True, [
+        Checkbox('Reset render on flag', 'project.settings.reset_render_on_flag', True),
+    ]),
     Separator(0),
     Button('Apply changes', 'project.settings.apply'),
 ])

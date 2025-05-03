@@ -41,30 +41,32 @@ list hex_lookup = file ```hex_lookup.txt```;
 
 
 on "initalise" {
-    #dev = round((username() == "awesome-llama")); # developer mode
-
     dt = 0; # delta time
     
-    cam_x = 0;
-    cam_y = 0;
-    cam_scale = 1; # shared by both?
+    if (reset_render_on_flag) {
+        cam_x = 0;
+        cam_y = 0;
+        cam_scale = 1; # shared by both?
 
-    # for orbit rotation in 3D only.
-    cam_azi = -30; # CCW around origin. 0 means face +Y (like top-down)
-    cam_elev = 45; # 0 is vertical (looking down), 90 is horizontal
+        # for orbit rotation in 3D only.
+        cam_azi = -30; # CCW around origin. 0 means face +Y (like top-down)
+        cam_elev = 45; # 0 is vertical (looking down), 90 is horizontal
 
-    render_resolution = 1; # the current resolution for compositing and rendering
-    render_resolution_default_orbit = 4;
-
-    require_composite = true;
-    require_iterative_compositor = false;
+        render_resolution = 1; # the current resolution for compositing and rendering
+    
+        require_composite = true;
+        require_iterative_compositor = false;
+    }
+    
     require_screen_refresh = true;
+    
+    if (reset_render_on_flag) { 
+        viewport_mode = ViewportMode.ALIGNED;
+        compositor_mode = CompositorMode.COLOR;
 
-    viewport_mode = ViewportMode.ALIGNED;
-    compositor_mode = CompositorMode.COLOR;
-
-    counted_samples = 1;
-    max_samples = 1;
+        counted_samples = 1;
+        max_samples = 1;
+    }
 
     # the "depositor" (chose an obscure but relevant name) is a description of what voxel will be placed by the procedural tools. It may be a single voxel or it may be a 3D template.
     depositor_mode = DepositorMode.DRAW;
@@ -78,11 +80,7 @@ on "initalise" {
     UI_last_hovered_group = "";
     UI_last_hovered_element = "";
 
-    UI_sidebar_width = 160; # set to 0 to hide
-
-    UI_clipboard_source = 0;
-
-    if (UI_current_panel == 0) { UI_current_panel = "menu.gen"; } # default panel on startup
+    if (reset_render_on_flag) { UI_sidebar_width = 160; }; # set to 0 to hide
     
     cmd_string = "";
     
@@ -107,6 +105,8 @@ on "hard reset" {
     TI_image_size_x = 0;
     TI_image_size_y = 0;
 
+    render_resolution_default_orbit = 4;
+
     delete TI_1_r;
     delete TI_2_g;
     delete TI_3_b;
@@ -120,11 +120,21 @@ on "hard reset" {
     delete UI_popup;
     
     UI_current_panel = "menu.gen";
+
+    UI_clipboard_source = 0;
     
     cmd_string = "";
+    
+    # project settings
+    reset_render_on_flag = true;
+    slider_speed = 200;
 }
 
 onflag {
+    if (not_first_time == false) { # goboscript hack to reset the project on first load
+        broadcast_and_wait "hard reset";
+        not_first_time = 1;
+    }
     broadcast "initalise"; # all receivers must complete within the frame, no loops allowed to start. Think of it as a soft reset.
     broadcast "start main loop";
 }

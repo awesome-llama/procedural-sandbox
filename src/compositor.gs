@@ -11,13 +11,21 @@ list render_cache_3_b;
 list XYZ raytracer_ray_origins;
 
 on "initalise" {
-    hide;
-    XYZ raytracer_ray_direction = XYZ {x:0, y:0, z:0}; # this would have to be a list if perspective rendering was done (or create a new script specifically for it)
-    
-    last_raytracer_config = "undefined"; # keeps track of the state of the raytracer lists so they only get updated when needed.
+    if (reset_render_on_flag) {
+        XYZ raytracer_ray_direction = XYZ {x:0, y:0, z:0}; # this would have to be a list if perspective rendering was done (or create a new script specifically for it)
+        
+        last_raytracer_config = "undefined"; # keeps track of the state of the raytracer lists so they only get updated when needed.
+    }
 }
 
-#on "hard reset" {}
+on "hard reset" {
+    delete render_cache_ao;
+    delete render_cache_topmost;
+    delete render_cache_1_r;
+    delete render_cache_2_g;
+    delete render_cache_3_b;
+    delete raytracer_ray_origins;
+}
 
 onkey "1" {
     compositor_mode = CompositorMode.COLOR;
@@ -424,9 +432,9 @@ proc iterate_aligned_ao max_samples, max_time {
 
     repeat $max_samples {
         i = 1;
-        iy = 0;
+        iy = 0.5; # start at center of voxel
         repeat canvas_size_y {
-            ix = 0;
+            ix = 0.5;
             repeat canvas_size_x {
                 local bearing = random("0", "360.0");
                 raycast_AO ix+RANDOM_0_1(), iy+RANDOM_0_1(), render_cache_topmost[i]+1, sin(bearing), cos(bearing), tan(random("18.43", "90.0"));
@@ -504,9 +512,9 @@ proc init_aligned_raytracer {
         raytracer_ray_direction = XYZ {x:0, y:0, z:-1};
         delete raytracer_ray_origins;
 
-        iy = 0;
+        iy = 0.5; # start at center of voxel
         repeat (canvas_size_y) {
-            ix = 0;
+            ix = 0.5;
             repeat (canvas_size_x) {
                 add XYZ {x:ix, y:iy, z:canvas_size_z+1} to raytracer_ray_origins;
                 ix++;
