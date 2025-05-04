@@ -93,6 +93,7 @@ struct template_metadata {
 
 %define RANDOM_ANGLE() random("0.0", "360.0")
 
+%define PROBABILITY(P) (RANDOM_0_1() < (P))
 
 ################################
 #             Math             #
@@ -112,10 +113,10 @@ struct template_metadata {
 
 
 # Smallest of 2 numbers
-%define MIN(A,B) (A)+(((A)>(B))*((B)-(A)))
+%define MIN(A,B) ((A)+(((A)>(B))*((B)-(A))))
 
 # Largest of 2 numbers
-%define MAX(A,B) (A)+(((A)<(B))*((B)-(A)))
+%define MAX(A,B) ((A)+(((A)<(B))*((B)-(A))))
 
 
 # Clamp, keep numbers above 0

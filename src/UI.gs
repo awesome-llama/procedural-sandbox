@@ -262,7 +262,7 @@ proc tab_button x, width, text, hover_id {
 }
 
 
-%define TOP_BAR_OFFSET(INDEX) $x+(INDEX)*20-10
+%define TOP_BAR_OFFSET(INDEX) ($x+(INDEX)*20-10)
 
 proc render_top_bar x, y {
     set_pen_color "#ffffff";
@@ -327,7 +327,7 @@ proc render_viewport_text {
 }
 
 # modular panel specific
-%define IS_HOVERED_MODULAR_PANEL() (UI_last_hovered_group == $panel_id) and (UI_last_hovered_element == $index)
+%define IS_HOVERED_MODULAR_PANEL() ((UI_last_hovered_group == $panel_id) and (UI_last_hovered_element == $index))
 
 # modular panel
 # recursive procedure, renders each modular element and then the next until an END is found.
@@ -730,7 +730,7 @@ on "project.settings.apply" {
 
 list PTE_font = file ```5x7 printable ASCII.txt```;
 
-%define CURR_COST_CHAR_INDEX costume_number() + 5
+%define CURR_COST_CHAR_INDEX() (costume_number() + 5)
 
 
 proc plainText x, y, size, text {
@@ -741,7 +741,7 @@ proc plainText x, y, size, text {
     switch_costume "large";
     repeat length $text {
         switch_costume $text[txt_i];
-        font_char_index = PTE_font[CURR_COST_CHAR_INDEX];
+        font_char_index = PTE_font[CURR_COST_CHAR_INDEX()];
         switch_costume "large";
         font_i = 3 + font_char_index;
         repeat PTE_font[5 + font_char_index] {
@@ -779,7 +779,7 @@ proc wrappedText x, y, size, text, wrap_width {
             until $text[txt_j] == " " or txt_j > length($text) or future_x >= $wrap_width {
                 txt_j += 1;
                 switch_costume $text[txt_j];
-                future_x += $size * (2 + PTE_font[2 + PTE_font[CURR_COST_CHAR_INDEX]]);
+                future_x += $size * (2 + PTE_font[2 + PTE_font[CURR_COST_CHAR_INDEX()]]);
             }
             if future_x >= $wrap_width {
                 x_offset = $x;
@@ -789,7 +789,7 @@ proc wrappedText x, y, size, text, wrap_width {
         }
 
         switch_costume $text[txt_i];
-        font_char_index = PTE_font[CURR_COST_CHAR_INDEX];
+        font_char_index = PTE_font[CURR_COST_CHAR_INDEX()];
         switch_costume "large";
         font_i = 3 + font_char_index;
         repeat PTE_font[5 + font_char_index] {

@@ -277,7 +277,7 @@ proc _write_temp_lists_to_canvas  {
     delete temp;
 }
 
-# copied from generator.gs:
+
 proc clear_canvas  {
     delete canvas;
     repeat (canvas_size_x * canvas_size_y * canvas_size_z) {

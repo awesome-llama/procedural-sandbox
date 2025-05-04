@@ -382,10 +382,10 @@ panels['gen.control_panel'] = Container([
     Expander('Dimensions', '', True, [
         Value('Cell count X', 'gen.control_panel.cell_count_x', 12, 1, 64, 1, 1024, snap_frac=1),
         Value('Cell count Y', 'gen.control_panel.cell_count_y', 12, 1, 64, 1, 1024, snap_frac=1),
-        Value('Cell size', 'gen.control_panel.cell_size', 10, 2, 24, 1, 256, snap_frac=1),
+        Value('Cell size', 'gen.control_panel.cell_size', 10, 4, 24, 1, 256, snap_frac=1),
     ]),
     Expander('Color', '', True, [
-        Color('Panel color', 'gen.control_panel.panel_color', '808080'),
+        Color('Panel color', 'gen.control_panel.panel_color', 'aaaaaa'),
     ]),
     Button('Generate', 'gen.control_panel.run'),
 ])
