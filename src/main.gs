@@ -9,7 +9,7 @@ hide;
 
 on "start main loop" {
     abc = 3;
-    if (reset_render_on_flag) {
+    if (PS_reset_render_on_flag) {
         render_resolution = 1;
         zoom_extents;
         

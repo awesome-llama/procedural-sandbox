@@ -43,7 +43,7 @@ list hex_lookup = file ```hex_lookup.txt```;
 on "initalise" {
     dt = 0; # delta time
     
-    if (reset_render_on_flag) {
+    if (PS_reset_render_on_flag) {
         cam_x = 0;
         cam_y = 0;
         cam_scale = 1; # shared by both?
@@ -60,12 +60,11 @@ on "initalise" {
     
     require_screen_refresh = true;
     
-    if (reset_render_on_flag) { 
+    if (PS_reset_render_on_flag) { 
         viewport_mode = ViewportMode.ALIGNED;
         compositor_mode = CompositorMode.COLOR;
 
         counted_samples = 1;
-        max_samples = 1;
     }
 
     # the "depositor" (chose an obscure but relevant name) is a description of what voxel will be placed by the procedural tools. It may be a single voxel or it may be a 3D template.
@@ -80,7 +79,7 @@ on "initalise" {
     UI_last_hovered_group = "";
     UI_last_hovered_element = "";
 
-    if (reset_render_on_flag) { UI_sidebar_width = 160; }; # set to 0 to hide
+    if (PS_reset_render_on_flag) { UI_sidebar_width = 160; }; # set to 0 to hide
     
     cmd_string = "";
     
@@ -126,8 +125,13 @@ on "hard reset" {
     cmd_string = "";
     
     # project settings
-    reset_render_on_flag = true;
-    slider_speed = 200;
+    PS_reset_render_on_flag = true;
+    PS_slider_speed = 200;
+    PS_max_iteration_time = 0.1;
+    PS_max_samples = 256;
+    PS_filter_size_fac_2D_PT = 0;
+    PS_filter_size_fac_3D_PT = 1;
+    broadcast "project.settings.apply"; # update the project settings from UI (which is always the source)
 }
 
 onflag {

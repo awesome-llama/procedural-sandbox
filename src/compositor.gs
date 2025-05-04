@@ -11,7 +11,7 @@ list render_cache_3_b;
 list XYZ raytracer_ray_origins;
 
 on "initalise" {
-    if (reset_render_on_flag) {
+    if (PS_reset_render_on_flag) {
         XYZ raytracer_ray_direction = XYZ {x:0, y:0, z:0}; # this would have to be a list if perspective rendering was done (or create a new script specifically for it)
         
         last_raytracer_config = "undefined"; # keeps track of the state of the raytracer lists so they only get updated when needed.
@@ -139,19 +139,16 @@ on "composite" {
 
 
 on "iterative compositor" {
-    max_samples = 256;
-    max_iteration_time = 0.1;
-
     if (viewport_mode == ViewportMode.ALIGNED) {
         if (compositor_mode == CompositorMode.SHADED) {
-            iterate_aligned_ao max_samples, max_iteration_time;
+            iterate_aligned_ao PS_max_samples, PS_max_iteration_time, 1; # use 1 because it is composited with color
             cmp_aligned_shaded_color;
 
         } elif (compositor_mode == CompositorMode.PATHTRACED) {
-            iterate_generic_pathtracer max_samples, max_iteration_time, 0;
+            iterate_generic_pathtracer PS_max_samples, PS_max_iteration_time, PS_filter_size_fac_2D_PT;
 
         } elif (compositor_mode == CompositorMode.AO) {
-            iterate_aligned_ao max_samples, max_iteration_time;
+            iterate_aligned_ao PS_max_samples, PS_max_iteration_time, PS_filter_size_fac_2D_PT;
             cmp_aligned_ao;
         }
     } elif (viewport_mode == ViewportMode.ORBIT) {
@@ -159,16 +156,16 @@ on "iterative compositor" {
             # use AO
 
         } elif (compositor_mode == CompositorMode.PATHTRACED) {
-            iterate_generic_pathtracer max_samples, max_iteration_time, 1;
+            iterate_generic_pathtracer PS_max_samples, PS_max_iteration_time, PS_filter_size_fac_3D_PT;
 
         } elif (compositor_mode == CompositorMode.AO) {
-            iterate_generic_ao max_samples, max_iteration_time, 1;
+            iterate_generic_ao PS_max_samples, PS_max_iteration_time, PS_filter_size_fac_3D_PT;
 
         }
     }
 
 
-    if (counted_samples >= max_samples) {
+    if (counted_samples >= PS_max_samples) {
         require_iterative_compositor = false;
     }
     require_screen_refresh = true;
@@ -425,19 +422,22 @@ proc init_aligned_ao_pass {
 }
 
 # ambient occlusion in 2D on the topmost non-air voxel. Requires topmost voxel data.
-proc iterate_aligned_ao max_samples, max_time {
+proc iterate_aligned_ao max_samples, max_time, filter_size {
     start_time = days_since_2000();
 
     layer_size = (canvas_size_x * canvas_size_y);
 
     repeat $max_samples {
+
+        set_sample_pixel_shift $filter_size;
+
         i = 1;
-        iy = 0.5; # start at center of voxel
+        iy = 0.5+shift.y; # start at center of voxel
         repeat canvas_size_y {
-            ix = 0.5;
+            ix = 0.5+shift.x;
             repeat canvas_size_x {
                 local bearing = random("0", "360.0");
-                raycast_AO ix+RANDOM_0_1(), iy+RANDOM_0_1(), render_cache_topmost[i]+1, sin(bearing), cos(bearing), tan(random("18.43", "90.0"));
+                raycast_AO ix, iy, render_cache_topmost[i]+1, sin(bearing), cos(bearing), tan(random("18.43", "90.0"));
                 render_cache_ao[i] += ray_light;
                 ix++;
                 i++;
@@ -1031,6 +1031,8 @@ proc reset_render_RGB {
 }
 
 proc set_sample_pixel_shift filter_size {
+    # create a random translation in camera space, with filter_size being the total width of the shift interval.
+
     if (viewport_mode == ViewportMode.ALIGNED) {
         XYZ shift = XYZ {x:random(-0.5, 0.5)*$filter_size, y:random(-0.5, 0.5)*$filter_size, z:0};
     } else {

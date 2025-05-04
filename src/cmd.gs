@@ -129,7 +129,9 @@ on "open commands" {
     stop_other_scripts;
     ask "(DEV TOOLS) enter command:";
     if (answer() != "") {
-        cmd_string = answer();
+        if (answer() != ".") { # check if the previous command should be re-run
+            cmd_string = answer();
+        }
         broadcast "run command";
     }
 }

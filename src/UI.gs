@@ -30,7 +30,7 @@ on "initalise" {
 
 on "hard reset" {
     UI_sidebar_width = 160;
-    slider_sensitivity = 100;
+    PS_slider_sensitivity = 100;
 }
 
 %define TOP_BAR_HEIGHT 20
@@ -323,7 +323,7 @@ proc render_viewport_text {
     plainText UI_sidebar_width-235, 150, 1, ("canvas size: " & ((((canvas_size_x & ", ") & canvas_size_y) & ", ") & canvas_size_z));
     plainText UI_sidebar_width-235, 140, 1, (compositor_mode);
     plainText UI_sidebar_width-235, 130, 1, ("cam scale: " & round(cam_scale*100)/100);
-    plainText UI_sidebar_width-235, 120, 1, ("timer: " & floor(( 100 * ((86400 * days_since_2000()) % 1))) & ", " & counted_samples & "/" & max_samples);
+    plainText UI_sidebar_width-235, 120, 1, ("timer: " & floor(( 100 * ((86400 * days_since_2000()) % 1))) & ", " & counted_samples & "/" & PS_max_samples);
 }
 
 # modular panel specific
@@ -566,22 +566,24 @@ on "stage clicked" {
             mouse_moved = false;
             until not mouse_down() {
                 get_unfenced_mouse;
-                if (unfenced_mouse_x != start_mouse_x) {
-                    mouse_moved = true;
-                }
+                if (unfenced_mouse_x != start_mouse_x) { mouse_moved = true; }
+
                 if mouse_moved { # only edit the slider if the mouse moved
-                    if key_pressed("shift") {
-                        delta_per_px = (abs(UI_data[clicked_element+6]-UI_data[clicked_element+5])*slider_sensitivity)/200000;
-                    } else {
-                        delta_per_px = (abs(UI_data[clicked_element+6]-UI_data[clicked_element+5])*slider_sensitivity)/50000;
-                    }
-                    if (UI_data[clicked_element+9] != 0) {
-                        # require that the slider changes with max 20px of mouse movement
-                        if (delta_per_px*UI_data[clicked_element+9] < 0.05) {
-                            delta_per_px = 0.05*UI_data[clicked_element+9];
-                        }
-                    }
+
+                    delta_per_px = (1/UI_data[clicked_element+9])/20; # start with increment at 20px
+                    if (delta_per_px > 10000000) { delta_per_px = 10000000; } # effectively accepts any floating point number
                     
+                    # scale down if the total travel is larger than 500px
+                    slider_total_travel = abs(UI_data[clicked_element+6]-UI_data[clicked_element+5])/delta_per_px;
+                    if (slider_total_travel > 500) {
+                        delta_per_px *= (slider_total_travel/500);
+                        slider_total_travel = 500;
+                    }
+                    delta_per_px *= PS_slider_sensitivity/100;
+                    if key_pressed("shift") {
+                        delta_per_px /= 4;
+                    }
+
                     set_value_element clicked_element, start_value + delta_per_px*(unfenced_mouse_x-start_mouse_x), true;
                 }
             }
@@ -712,8 +714,12 @@ onkey "v" {
 
 
 on "project.settings.apply" {
-    reset_render_on_flag = get_setting_from_id("project.settings.reset_render_on_flag");
-    slider_sensitivity = get_setting_from_id("project.settings.slider_sensitivity");
+    PS_reset_render_on_flag = get_setting_from_id("project.settings.reset_render_on_flag");
+    PS_slider_sensitivity = get_setting_from_id("project.settings.slider_sensitivity");
+    PS_max_iteration_time = get_setting_from_id("project.settings.max_frame_time");
+    PS_max_samples = get_setting_from_id("project.settings.max_samples");
+    PS_filter_size_fac_2D_PT = get_setting_from_id("project.settings.filter_size_fac_2D_PT");
+    PS_filter_size_fac_3D_PT = get_setting_from_id("project.settings.filter_size_fac_3D_PT");
     print "changes applied", 3;
 }
 

@@ -25,6 +25,7 @@ on "hard reset" {
 }
 
 on "*" {
+    # currently unused
     delete_all_templates;
     add_canvas_as_template;
     load_template_to_canvas 0;

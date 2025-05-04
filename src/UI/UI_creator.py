@@ -62,6 +62,11 @@ class Checkbox(Element):
 class Value(Element):
     def __init__(self, label, id='', value=0, soft_min=0, soft_max=1, hard_min="-Infinity", hard_max="Infinity", snap_frac=100, shape='sep'):
         super().__init__()
+        if float(soft_max) < float(soft_min):
+            raise Exception("soft limit interval is inverted")
+        if float(hard_max) < float(hard_min):
+            raise Exception("hard limit interval is inverted")
+        
         self.items = ['VALUE', label, id, value, value, soft_min, soft_max, hard_min, hard_max, snap_frac, shape]
 
     def to_flat_list(self, ids_list):
@@ -91,7 +96,7 @@ class Color(Element):
 
 class End(Element):
     # End indicates the end of a list of components.
-    # Its feature is that it doesn't recurse, all other components assume another follows at the same indent.
+    # It doesn't recurse, all other components assume another follows at the same indent.
 
     def __init__(self):
         super().__init__()
@@ -442,7 +447,7 @@ panels['gen.extruded_grid'] = Container([ # "I call them cities"
         Value('Cell count', 'gen.extruded_grid.cell_count', 16, 1, 64, 1, 1024, snap_frac=1),
         Value('Cell size', 'gen.extruded_grid.cell_size', 4, 1, 8, 1, 256, snap_frac=1),
         Value('Cell spacing', 'gen.extruded_grid.cell_spacing', 0, 0, 8, 0, 256, snap_frac=1),
-        Value('Max height', 'gen.extruded_grid.max_height', 8, 1, 16, 1, 256, snap_frac=1),
+        Value('Max. height', 'gen.extruded_grid.max_height', 8, 1, 16, 1, 256, snap_frac=1),
         Value('Jitter', 'gen.extruded_grid.jitter_fac', 0, 0, 1, snap_frac=1000),
     ]),
     Expander('Color', '', True, [
@@ -517,7 +522,7 @@ panels['gen.value_noise'] = Container([
     ]),
     Expander('Shape', '', True, [
         Value('Scale', 'gen.value_noise.scale', 16, 1, 64, 0, 4096, snap_frac=1),
-        Value('Max octaves', 'gen.value_noise.octaves', 5, 1, 8, 0, 64, snap_frac=1),
+        Value('Max. octaves', 'gen.value_noise.octaves', 5, 1, 8, 0, 64, snap_frac=1),
     ]),
     Button('Generate', 'gen.value_noise.run'),
 ])
@@ -657,6 +662,13 @@ panels['project.settings'] = Container([
         Value('Slider sensitivity', 'project.settings.slider_sensitivity', 100, 20, 500, 0, 10000, snap_frac=1),
     ]),
     Expander('Render', '', True, [
+        Label('Anti-aliasing:'),
+        Value('- 2D pathtraced', 'project.settings.filter_size_fac_2D_PT', 0, 0, 2, 0, 100, snap_frac=10),
+        Value('- 3D pathtraced', 'project.settings.filter_size_fac_3D_PT', 1, 0, 2, 0, 100, snap_frac=10),
+        Separator(),
+        Value('Max. samples', 'project.settings.max_samples', 256, 1, 1024, 1, 16777216, snap_frac=1),
+        Value('Max. frame time', 'project.settings.max_frame_time', 0.1, 0, 0.5, 0, 60, snap_frac=100),
+        Separator(),
         Checkbox('Reset render on flag', 'project.settings.reset_render_on_flag', True),
     ]),
     Separator(0),
@@ -671,6 +683,39 @@ panels['project.info'] = Container([
     Separator(),
     Label('2025'),
 ])
+
+"""panels['test.sliders'] = Container([
+    Label.title('Slider test'),
+    Separator(),
+    Expander('Int step 10', '', True, [
+        Value('0-0.1', 'test.sliders.b1', 0, 0, 0.1, snap_frac=0.1),
+        Value('0-1', 'test.sliders.b2', 0, 0, 1, snap_frac=0.1),
+        Value('0-10', 'test.sliders.b3', 0, 0, 10, snap_frac=0.1),
+        Value('0-100', 'test.sliders.b4', 0, 0, 100, snap_frac=0.1),
+        Value('0-1000', 'test.sliders.b5', 0, 0, 1000, snap_frac=0.1),
+    ]),
+    Expander('Int', '', True, [
+        Value('0-0.1', 'test.sliders.a1', 0, 0, 0.1, snap_frac=1),
+        Value('0-1', 'test.sliders.a2', 0, 0, 1, snap_frac=1),
+        Value('0-10', 'test.sliders.a3', 0, 0, 10, snap_frac=1),
+        Value('0-100', 'test.sliders.a4', 0, 0, 100, snap_frac=1),
+        Value('0-1000', 'test.sliders.a5', 0, 0, 1000, snap_frac=1),
+    ]),
+    Expander('Step 0.1', '', True, [
+        Value('0-0.1', 'test.sliders.c1', 0, 0, 0.1, snap_frac=10),
+        Value('0-1', 'test.sliders.c2', 0, 0, 1, snap_frac=10),
+        Value('0-10', 'test.sliders.c3', 0, 0, 10, snap_frac=10),
+        Value('0-100', 'test.sliders.c4', 0, 0, 100, snap_frac=10),
+        Value('0-1000', 'test.sliders.c5', 0, 0, 1000, snap_frac=10),
+    ]),
+    Expander('Step 0.01', '', True, [
+        Value('0-0.1', 'test.sliders.d1', 0, 0, 0.1, snap_frac=100),
+        Value('0-1', 'test.sliders.d2', 0, 0, 1, snap_frac=100),
+        Value('0-10', 'test.sliders.d3', 0, 0, 10, snap_frac=100),
+        Value('0-100', 'test.sliders.d4', 0, 0, 100, snap_frac=100),
+        Value('0-1000', 'test.sliders.d5', 0, 0, 1000, snap_frac=100),
+    ]),
+])"""
 
 
 ################################
