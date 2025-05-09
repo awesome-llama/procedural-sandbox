@@ -46,6 +46,7 @@ on "io.new_canvas.run"{
         set_depositor_from_number UI_return[5];
         draw_base_layer;
     }
+    require_composite = true;
 }
 
 
@@ -84,6 +85,7 @@ proc generate_ballpit size_x, size_y, size_z, ground_col, rad_min, rad_max, dens
         local height = round(canvas_size_z-1-radius-random(0, canvas_size_z-(2*radius)));
         draw_sphere random(1, canvas_size_x), random(1, canvas_size_y), POSITIVE_CLAMP(height), radius;
     }
+    require_composite = true;
 }
 
 
@@ -738,6 +740,7 @@ on "gen.value_noise.run" {
     setting_from_id "gen.value_noise.scale";
     setting_from_id "gen.value_noise.octaves";
     generate_value_noise UI_return[1], UI_return[2], UI_return[3], UI_return[4], true;
+    require_composite = true;
 }
 
 # 2D value noise
@@ -815,7 +818,6 @@ proc generate_value_noise size_x, size_y, scale, octaves, write_to_canvas {
             i++;
         }
         delete temp_canvas_mono; # delete mono list because its data is now in the canvas
-        require_composite = true;
     }
 }
 
@@ -906,7 +908,6 @@ proc generate_test {
     set_depositor_from_sRGB 0.2, 0.9, 0.5;
     depositor_voxel.opacity = 0.5;
     draw_sphere 20, 50, 0, 10;
-
 
     require_composite = true;
 }
@@ -1094,7 +1095,7 @@ proc set_voxel x, y, z {
 }
 
 
-# Reset the canvas to an empty state, ready for a generator to run. Use full_reset=true to erase templates.
+# Reset the canvas to an empty state, ready for a generator to run. Use full_reset=true to erase templates. Does not trigger compositor despite changing the canvas.
 proc reset_canvas full_reset, size_x, size_y, size_z {
     if $full_reset {
         delete_all_templates;
@@ -1357,7 +1358,7 @@ proc draw_line_DDA x, y, z, dx, dy, dz, r {
 ################################
 #        Global effects        #
 ################################
-# (glbfx)
+# abbreviated to glbfx
 
 
 # replace exposed surfaces randomly
@@ -1384,7 +1385,6 @@ proc glbfx_surface_replace coverage {
             }
         }
     }
-    require_composite = true;
 }
 
 
@@ -1411,7 +1411,6 @@ proc glbfx_spatter coverage {
             }
         }
     }
-    require_composite = true;
 }
 
 
@@ -1420,6 +1419,7 @@ on "fx.jitter.run" {
     setting_from_id "fx.jitter.coverage";
     setting_from_id "fx.jitter.probability_z";
     glbfx_jitter UI_return[1], UI_return[2];
+    require_composite = true;
 }
 # randomly shift voxels, swapping with neighbours
 proc glbfx_jitter coverage, probability_z {
@@ -1445,7 +1445,6 @@ proc glbfx_jitter coverage, probability_z {
             canvas[jitter_i2] = temp_voxel;
         }
     }
-    require_composite = true;
 }
 
 
@@ -1454,6 +1453,7 @@ on "fx.smudge.run" {
     setting_from_id "fx.smudge.coverage";
     setting_from_id "fx.smudge.probability_z";
     glbfx_smudge UI_return[1], UI_return[2];
+    require_composite = true;
 }
 # randomly average pairs of non-air voxels
 proc glbfx_smudge coverage, probability_z {
@@ -1480,7 +1480,6 @@ proc glbfx_smudge coverage, probability_z {
             canvas[jitter_i2] = canvas[jitter_i1];
         }
     }
-    require_composite = true;
 }
 
 
@@ -1502,7 +1501,6 @@ proc glbfx_color_noise min, max {
         
         i++;
     }
-    require_composite = true;
 }
 
 
@@ -1549,7 +1547,6 @@ proc glbfx_revolve dist_offset {
     }
     
     delete temp_canvas;
-    require_composite = true;
 }
 
 
@@ -1559,7 +1556,10 @@ proc radial_array dist_offset {
 
 
 
-on "fx.mirror.mirror_x" { glbfx_mirror_x true; }
+on "fx.mirror.mirror_x" {
+    glbfx_mirror_x true;
+    require_composite = true;
+}
 # copy one side to the other
 proc glbfx_mirror_x keep_lower {
     # no additional list required
@@ -1591,10 +1591,12 @@ proc glbfx_mirror_x keep_lower {
     }
     
     # no rewrite or temp list required
-    require_composite = true;
 }
 
-on "fx.mirror.mirror_y" { glbfx_mirror_y true; }
+on "fx.mirror.mirror_y" {
+    glbfx_mirror_y true;
+    require_composite = true;
+}
 # copy one side to the other
 proc glbfx_mirror_y keep_lower {
     # no additional list required
@@ -1619,9 +1621,8 @@ proc glbfx_mirror_y keep_lower {
         }
         iz++;
     }
-    
+
     # no rewrite or temp list required
-    require_composite = true;
 }
 
 
@@ -1636,6 +1637,7 @@ on "fx.recolor.run" {
     setting_from_id "fx.recolor.col_1";
     setting_from_id "fx.recolor.use_sRGB";
     glbfx_recolor UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6], UI_return[7], UI_return[8];
+    require_composite = true;
 }
 # remaps colors
 proc glbfx_recolor weight_r, weight_g, weight_b, map_0, map_1, col_0, col_1, use_sRGB {
@@ -1699,8 +1701,6 @@ proc glbfx_recolor weight_r, weight_g, weight_b, map_0, map_1, col_0, col_1, use
             i++;
         }
     }
-    
-    require_composite = true;
 }
 
 
