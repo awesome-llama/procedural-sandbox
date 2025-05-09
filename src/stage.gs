@@ -10,7 +10,7 @@ list voxel canvas;
 # final color to render on screen, 24-bit sRGB (8 bits per channel).
 list render_cache_final_col; # TODO: rename
 
-# TextImage shared lists:
+# TextImage shared lists (good to keep global):
 list TI_1_r;
 list TI_2_g;
 list TI_3_b;
