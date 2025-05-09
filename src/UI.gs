@@ -230,12 +230,18 @@ proc render_project_messages {
             require_screen_refresh = true;
         } else {
             local msg_bottom_y = 160-msg_i*10 - 6;
-            draw_rect -230, msg_bottom_y + 1, 460, 18, 3, "#000000"; # background
+
+            UI_check_touching_mouse -230, msg_bottom_y+20, 460, 20, "message", msg_i;
+            if (UI_last_hovered_group == "message") and (UI_last_hovered_element == msg_i) {
+                draw_rect -230, msg_bottom_y + 1, 460, 18, 3, "#202020"; # background
+                set_pen_color "#a03030";
+                plainText 215, msg_bottom_y + 7, 1, "x"; # close indicator
+            } else {
+                draw_rect -230, msg_bottom_y + 1, 460, 18, 3, "#000000"; # background
+            }
             
             set_pen_color "#00ffff";
             plainText -220, msg_bottom_y + 6, 1, project_messages[msg_i];
-
-            UI_check_touching_mouse -230, msg_bottom_y+20, 460, 20, "message", msg_i;
 
             msg_i += 2;
         }
