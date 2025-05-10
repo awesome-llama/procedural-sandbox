@@ -176,7 +176,7 @@ panels['menu.io'] = Container([
     btn_menu_set_page('Save canvas', 'io.save_canvas'),
     Button('Load canvas', 'io.load_canvas.run'), # run button, no page
     Separator(0, 5),
-    Button('Export rendered canvas', 'io.export_rendered_canvas.run'), # run button, no page
+    Button('Export displayed canvas', 'io.export_rendered_canvas.run'), # run button, no page
     
     Separator(0, 5),
 
@@ -256,7 +256,8 @@ panels['io.new_canvas'] = Container([
 panels['io.save_canvas'] = Container([
     Label.title('Save canvas'),
     Separator(),
-    Label('Can be losslessly loaded later'),
+    Label('Save all canvas data.'),
+    Label('Quantized to 8-bit.'),
     Expander('Layers', '', True, [
         Checkbox('Include opacity (alpha)', 'io.save_canvas.include_opacity', True),
         Checkbox('Include emission', 'io.save_canvas.include_emission', True),

@@ -68,8 +68,7 @@ proc render_canvas_2D {
         i = (iy*render_size_x) + min_x + 1;
         repeat (repeat_x) {
             set_pen_color render_cache_final_col[i];
-            #set_pen_transparency 0;
-            pen_down;
+            pen_down; # dots are required for drawing transparency
             pen_up;
             change_x pixel_screen_size;
             i += render_resolution;

@@ -159,7 +159,7 @@ proc _get_character_codes_from_data_stream data_stream {
     # iterate over inputted text, convert each to character indices. ! should be index 0.
     delete data_stream_list;
     i = 1;
-    repeat length($data_stream) {
+    repeat (length $data_stream) {
         switch_costume $data_stream[i];
         add (costume_number()-3) to data_stream_list;
         i++;
@@ -186,7 +186,7 @@ proc read_TextImage TextImage_file {
     delete layers;
     local str = "";
     i = 1;
-    repeat length($TextImage_file) {
+    repeat (length $TextImage_file) {
         if ($TextImage_file[i] == ",") {
             add str to TI_header;
             str = "";
@@ -321,10 +321,8 @@ proc _a_unpack_from_image_buffer step, i {
 
 
 
-
-on "write TextImage" { write_TextImage; }
+# Write a typical RGBA image
 proc write_TextImage {
-    # REQUIRES (image size x) (image size y)
     TI_image_size_x = floor(TI_image_size_x);
     TI_image_size_y = floor(TI_image_size_y);
     delete layers;
@@ -382,7 +380,7 @@ proc add_layer purpose, type, version, data_stream {
     add $purpose to layers;
     add $type to layers;
     add $version to layers;
-    add length($data_stream) to layers;
+    add length $data_stream to layers;
     add $data_stream to layers;
 }
 
@@ -770,67 +768,181 @@ proc read_TI_px_buffer_to_canvas_as_2D_color_map resize_canvas, interpret_linear
 ################################
 
 on "io.save_canvas.run" {
-    copy_canvas_to_TI_px_buffer;
-    broadcast_and_wait "write TextImage";
-    delete copy_this;
-    add TextImage_file to copy_this;
-    show copy_this;
+    delete UI_return;
+    setting_from_id "io.save_canvas.include_opacity";
+    setting_from_id "io.save_canvas.include_emission";
+    save_canvas UI_return[1], UI_return[2];
 }
-proc copy_canvas_to_TI_px_buffer {
-    TI_image_size_x = canvas_size_x;
-    TI_image_size_y = (canvas_size_y * canvas_size_z);
-    delete TI_1_r;
-    delete TI_2_g;
-    delete TI_3_b;
-    delete TI_4_a;
+proc save_canvas include_opacity, include_emission {
+    write_TextImage_begin canvas_size_x, (canvas_size_y * canvas_size_z);
+
+    # RGB8 main layer
+    delete image_buffer;
     i = 1;
     repeat (canvas_size_x * canvas_size_y * canvas_size_z) {
-        # transform to sRGB
-        add floor(canvas[i].r * 255) to TI_1_r;
-        add floor(canvas[i].g * 255) to TI_2_g;
-        add floor(canvas[i].b * 255) to TI_3_b;
-        add floor(canvas[i].opacity * 255) to TI_4_a;
+        local channel = canvas[i].r;
+        add floor(CLAMP_0_1(channel)*255) to image_buffer;
+        local channel = canvas[i].g;
+        add floor(CLAMP_0_1(channel)*255) to image_buffer;
+        local channel = canvas[i].b;
+        add floor(CLAMP_0_1(channel)*255) to image_buffer;
         i++;
     }
+    _data_stream_compress_RGB8_from_buffer TI_image_size_x;
+    add_layer "main", "RGB8", 0, data_stream;
+
+    # A8 alpha layer
+    if $include_opacity {
+        delete image_buffer;
+        local include_layer = false;
+        i = 1;
+        repeat (canvas_size_x * canvas_size_y * canvas_size_z) {
+            local channel = canvas[i].opacity;
+            channel = floor(CLAMP_0_1(channel)*255);
+            add channel to image_buffer;
+            if (channel < 255) { include_layer = true; }
+            i++;
+        }
+        if (include_layer) {
+            _data_stream_compress_A8_from_buffer TI_image_size_x;
+            add_layer "alpha", "A8", 0, data_stream;
+        }
+    }
+
+    # A8 emission layer
+    if $include_emission {
+        delete image_buffer;
+        local include_layer = false; # default
+        i = 1;
+        repeat (canvas_size_x * canvas_size_y * canvas_size_z) {
+            local channel = canvas[i].emission;
+            channel = floor(CLAMP_0_1(channel)*255);
+            add channel to image_buffer;
+            if (channel > 0) { include_layer = true; }
+            i++;
+        }
+        if (include_layer) {
+            _data_stream_compress_A8_from_buffer TI_image_size_x;
+            add_layer "emission", "A8", 0, data_stream;
+        }
+    }
+
+    write_TextImage_end;
 }
 
 
-on "io.export_rendered_canvas.run" {
-    copy_render_buffer_to_TI_px_buffer;
-    broadcast_and_wait "write TextImage";
-    delete copy_this;
-    add TextImage_file to copy_this;
-    show copy_this;
-}
-proc copy_render_buffer_to_TI_px_buffer {
-    # The render buffer is 2D and opaque
-    
-    TI_image_size_x = render_size_x;
-    TI_image_size_y = render_size_y;
-    delete TI_1_r;
-    delete TI_2_g;
-    delete TI_3_b;
-    delete TI_4_a;
+on "io.export_rendered_canvas.run" { export_rendered_canvas; }
+proc export_rendered_canvas {
+    write_TextImage_begin render_size_x, render_size_y;
+
+    # RGB8 main layer
+    delete image_buffer;
     i = 1;
-    repeat (length render_cache_final_col) {
-        # render cache is sRGB combined. No transform needed, only separation into channels.
-        add (floor((render_cache_final_col[i]/65536))%256) to TI_1_r;
-        add (floor((render_cache_final_col[i]/256))%256) to TI_2_g;
-        add (render_cache_final_col[i]%256) to TI_3_b;
-        add 255 to TI_4_a;
+    repeat (render_size_x * render_size_y) {
+        add ((render_cache_final_col[i]//65536)%256) to image_buffer; # guaranteed to be in range 0-255
+        add ((render_cache_final_col[i]//256)%256) to image_buffer;
+        add (render_cache_final_col[i]%256) to image_buffer;
         i++;
     }
+    _data_stream_compress_RGB8_from_buffer TI_image_size_x;
+    add_layer "main", "RGB8", 0, data_stream;
+
+    # A8 alpha layer
+    delete image_buffer;
+    local include_layer = false;
+    i = 1;
+    repeat (render_size_x * render_size_y) {
+        local alpha = (render_cache_final_col[i]//16777216); # guaranteed to be in range 0-255
+        if (alpha < 255) {
+            add (alpha * (alpha > 1)) to image_buffer; # alpha of 1 gets set to 0 (hides a minimum alpha limitation of the project)
+            include_layer = true;
+        } else {
+            add 255 to image_buffer;
+        }
+        i++;
+    }
+    if (include_layer) {
+        _data_stream_compress_A8_from_buffer TI_image_size_x;
+        add_layer "alpha", "A8", 0, data_stream;
+    }
+
+    write_TextImage_end;
 }
 
 
 on "io.export_height_map.run" {
-    # TODO
+    delete UI_return;
+    setting_from_id "io.export_height_map.map_0";
+    setting_from_id "io.export_height_map.map_1";
+    export_height_map UI_return[1], UI_return[2];
+}
+proc export_height_map map_0, map_1 {
+    write_TextImage_begin canvas_size_x, canvas_size_y;
+
+    # A8 main layer
+    delete image_buffer;
+    layer_size = (canvas_size_x * canvas_size_y);
+    i = 1;
+    repeat layer_size {
+        iz = canvas_size_z;
+        until ((iz < 0) or (canvas[i + (iz * layer_size)].opacity > 0)) { iz += -1; } # find topmost voxel
+        local height = ((iz+1) / canvas_size_z);
+        height = LERP($map_0, $map_1, height);
+        add floor(CLAMP_0_1(height)*255) to image_buffer;
+        i++;
+    }
+    _data_stream_compress_A8_from_buffer TI_image_size_x;
+    add_layer "main", "A8", 0, data_stream;
+
+    write_TextImage_end;
+}
+
+
+# reset vars and lists to write a custom TextImage file
+proc write_TextImage_begin size_x, size_y {
+    TI_image_size_x = floor(POSITIVE_CLAMP($size_x));
+    TI_image_size_y = floor(POSITIVE_CLAMP($size_y));
+    TextImage_file = ("txtimg,v:0," & ((("x:" & TI_image_size_x) & (",y:" & TI_image_size_y)) & ","));
+    TextImage_file &= (("_project:" & "PSB") & ",");
+    TextImage_file &= (("_z:" & canvas_size_z) & ",");
+    delete layers;
+    delete image_buffer;
+}
+
+# finish writing custom TextImage file
+proc write_TextImage_end {
+    delete image_buffer;
+
+    # layers (sets of 6 items)
+    TextImage_file &= ("p:" & (4*((length layers)/6)));
+    data_stream = "";
+    i = 0;
+    repeat ((length layers) / 6) {
+        TextImage_file &= ("," & layers[i+2]);
+        TextImage_file &= ("," & layers[i+3]);
+        TextImage_file &= ("," & layers[i+4]);
+        TextImage_file &= ("," & layers[i+5]);
+        data_stream &= (layers[i+6]);
+        i += 6;
+    }
+    delete layers;
+
+    TextImage_file &= ("|" & data_stream);
+    
+    show_copy_this;
+}
+
+proc show_copy_this {
+    delete copy_this;
+    add TextImage_file to copy_this;
+    show copy_this;
 }
 
 
 ################################
 #            Utils             #
 ################################
+
 
 # copied from transform canvas.gs:
 
