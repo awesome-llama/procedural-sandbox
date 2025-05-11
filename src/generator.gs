@@ -924,8 +924,6 @@ proc delete_all_templates {
 }
 
 proc add_canvas_as_template {
-    # TODO check if scratch and list limit reached
-
     # metadata
     add template_metadata { ptr:(length depositor_template_voxels), sx:canvas_size_x, sy:canvas_size_y, sz:canvas_size_z } to depositor_template_metadata;
     
@@ -1109,6 +1107,13 @@ proc reset_canvas full_reset, size_x, size_y, size_z {
     delete canvas;
     repeat (canvas_size_x * canvas_size_y * canvas_size_z) {
         add VOXEL_NONE to canvas;
+    }
+
+    if ((canvas_size_x * canvas_size_y * canvas_size_z) != length canvas) {
+        error "canvas does not contain all requested voxels";
+        if (length canvas == 200000) {
+            print "Error: Scratch's 200k list limit is reached, canvas is malformed", 6;
+        }
     }
 }
 
