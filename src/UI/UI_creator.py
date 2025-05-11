@@ -256,8 +256,8 @@ panels['io.new_canvas'] = Container([
 panels['io.save_canvas'] = Container([
     Label.title('Save canvas'),
     Separator(),
-    Label('Save all canvas data.'),
-    Label('Quantized to 8-bit.'),
+    Label('Save all canvas data,'),
+    Label('quantized to 8-bit.'),
     Expander('Layers', '', True, [
         Checkbox('Include opacity (alpha)', 'io.save_canvas.include_opacity', True),
         Checkbox('Include emission', 'io.save_canvas.include_emission', True),
@@ -289,12 +289,12 @@ panels['io.import_height_map'] = Container([
 panels['io.import_color_map'] = Container([
     Label.title('Import color map'),
     Separator(),
-    Label('Replaces voxel colors'),
-    Label('Does not affect opacity'),
-    Separator(),
-    Checkbox('Resize canvas if needed', 'io.import_color_map.resize_canvas', True),
-    Checkbox('Interpret as linear', 'io.import_color_map.interpret_linear', False),
-    Separator(0),
+    Label('Replaces voxel colors only.'),
+    Label('Does not affect opacity.'),
+    Expander('Settings', '', True, [
+        Checkbox('Resize canvas if needed', 'io.import_color_map.resize_canvas', True),
+        Checkbox('Interpret as linear', 'io.import_color_map.interpret_linear', False),
+    ]),
     Button('Input color map', 'io.import_color_map.run'),
 ])
 
@@ -572,9 +572,11 @@ panels['fx.rotate'] = Container([
 panels['fx.crop_xy'] = Container([
     Label.title('Crop XY'),
     Separator(),
-    Value.canvas_size('Size X', 'fx.crop_xy.size_x', 64),
-    Value.canvas_size('Size Y', 'fx.crop_xy.size_y', 64),
-    Checkbox('Centered', 'fx.crop_xy.centered', True),
+    Expander('Dimensions', '', True, [
+        Value.canvas_size('Size X', 'fx.crop_xy.size_x', 64),
+        Value.canvas_size('Size Y', 'fx.crop_xy.size_y', 64),
+        Checkbox('Centered', 'fx.crop_xy.centered', True),
+    ]),
     Button('Crop', 'fx.crop_xy.run'),
 ])
 
@@ -616,7 +618,7 @@ panels['fx.recolor'] = Container([
 panels['fx.jitter'] = Container([
     Label.title('Jitter'),
     Separator(),
-    Expander('', '', True, [
+    Expander('Settings', '', True, [
         Value('Coverage', 'fx.jitter.coverage', 0.1, 0, 0.2, 0, 1, snap_frac=1000),
         Value.fraction('Probability Z', 'fx.jitter.probability_z', 0),
     ]),
@@ -626,7 +628,7 @@ panels['fx.jitter'] = Container([
 panels['fx.smudge'] = Container([
     Label.title('Smudge'),
     Separator(),
-    Expander('', '', True, [
+    Expander('Settings', '', True, [
         Value('Coverage', 'fx.smudge.coverage', 0.1, 0, 0.2, 0, 1, snap_frac=1000),
         Value.fraction('Probability Z', 'fx.smudge.probability_z', 0.333),
     ]),
@@ -636,14 +638,17 @@ panels['fx.smudge'] = Container([
 panels['fx.reshape_canvas'] = Container([
     Label.title('Reshape canvas'),
     Separator(),
-    Label('Nondestructive.'),
-    Separator(0),
-    Button('Get current dimensions', 'fx.reshape_canvas.get_current_dimensions'),
-    Value.canvas_size('Size X', 'fx.reshape_canvas.size_x', ''),
-    Value.canvas_size('Size Y', 'fx.reshape_canvas.size_y', ''),
-    Value.canvas_size('Size Z', 'fx.reshape_canvas.size_z', ''),
-    Checkbox('Allow any size (dangerous)', 'fx.reshape_canvas.any_size', False),
-    Separator(0),
+    Label('Does not modify voxels,'),
+    Label('only canvas size.'),
+    Expander('Dimensions', '', True, [
+        Button('Get current dimensions', 'fx.reshape_canvas.get_current_dimensions'),
+        Value.canvas_size('Size X', 'fx.reshape_canvas.size_x', ''),
+        Value.canvas_size('Size Y', 'fx.reshape_canvas.size_y', ''),
+        Value.canvas_size('Size Z', 'fx.reshape_canvas.size_z', ''),
+    ]),
+    Expander('Dangerous', '', False, [
+        Checkbox('Allow any size', 'fx.reshape_canvas.any_size', False),
+    ]),
     Button('Set dimensions', 'fx.reshape_canvas.run'),
 ])
 
@@ -652,8 +657,12 @@ panels['fx.reshape_canvas'] = Container([
 ################################
 
 panels['project.compositor_mode'] = Container([
-    Button.run_command('Color', 'project.compositor_mode.1', 'compositor_mode COLOR'),
-    Button.run_command('Shaded', 'project.compositor_mode.2', 'compositor_mode SHADED'),
+    Button.run_command('1. Color', 'project.compositor_mode.1', 'compositor COLOR'),
+    Button.run_command('2. Shaded', 'project.compositor_mode.2', 'compositor SHADED'),
+    Button.run_command('3. Pathtraced', 'project.compositor_mode.3', 'compositor PATHTRACED'),
+    Button.run_command('4. Height', 'project.compositor_mode.4', 'compositor HEIGHT'),
+    Button.run_command('5. AO', 'project.compositor_mode.5', 'compositor AO'),
+    Button.run_command('6. Normal', 'project.compositor_mode.6', 'compositor NORMAL'),
 ])
 
 panels['project.settings'] = Container([

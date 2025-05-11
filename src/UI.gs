@@ -144,8 +144,8 @@ proc render_popup {
             render_modular_element UI_DATA_INDEX("popup.color_picker.apply"), UI_popup[3]+57, UI_popup[4]-98, 48, "popup";
         
         } elif UI_popup[2] == "compositor mode" {
-            
-        } elif UI_popup[2] == "section" {
+            # list of buttons
+            render_modular_element UI_DATA_INDEX("project.compositor_mode.1"), UI_popup[3]+5, UI_popup[4]-4, 90, "popup";
             
         } elif UI_popup[2] == "dropdown" {
             # not implemented, there aren't any dropdowns yet
@@ -372,7 +372,7 @@ proc render_modular_element index, x, y, width, panel_id {
 
     } elif (elem_type == "BUTTON") {
         # [type, label, id, button_clicked]
-        UI_check_touching_mouse $x, $y+1, $width, LINEHIGHT, $panel_id, $index;
+        UI_check_touching_mouse $x, $y-1, $width, LINEHIGHT, $panel_id, $index;
         if (IS_HOVERED_MODULAR_PANEL()) {
             draw_UI_rect $x, $y-1, $width, LINEHIGHT, 4, THEME_COL_OUTLINE_HIGHLIGHT, "#656565";
         } else {
@@ -428,9 +428,11 @@ proc render_modular_element index, x, y, width, panel_id {
             plainText $x+5, $y-TXT_Y_OFFSET, 1, (UI_data[$index+1] & ": " & UI_data[$index+3]);
 
             if (IS_HOVERED_MODULAR_PANEL()) {
-                set_pen_color THEME_COL_OUTLINE_HIGHLIGHT;
+                #set_pen_color THEME_COL_OUTLINE_HIGHLIGHT;
+                set_ghost_effect 50;
                 draw_triangle $x-2, $y-8, 180;
                 draw_triangle $x+$width+2, $y-8, 0;
+                set_ghost_effect 0;
             }
 
         } else {
@@ -446,9 +448,11 @@ proc render_modular_element index, x, y, width, panel_id {
             plainText (($x+$width)-INPUT_WIDTH)+3, $y-TXT_Y_OFFSET, 1, UI_data[$index+3];
             
             if (IS_HOVERED_MODULAR_PANEL()) {
-                set_pen_color THEME_COL_OUTLINE_HIGHLIGHT;
-                draw_triangle $x+$width+1, $y-8, 0;
+                #set_pen_color THEME_COL_OUTLINE_HIGHLIGHT;
+                set_ghost_effect 50;
+                draw_triangle $x+$width+2, $y-8, 0;
                 draw_triangle $x+$width-INPUT_WIDTH-2, $y-8, 180;
+                set_ghost_effect 0;
             }
         }
 
@@ -639,10 +643,13 @@ on "stage clicked" {
             viewport_mode = ViewportMode.ORBIT;
             render_resolution = render_resolution_default_orbit;
             require_composite = true;
-        } elif (clicked_element == "section") {
-            
         } elif (clicked_element == "compositor mode") {
-            
+            if (UI_popup[1]) {
+                delete UI_popup; # this won't work TODO
+                require_screen_refresh = true;
+            } else {
+                create_popup "compositor mode", 0, 160, 100, 116;
+            }
         } elif (clicked_element == "zoom in") {
             broadcast "zoom in";
         } elif (clicked_element == "zoom out") {

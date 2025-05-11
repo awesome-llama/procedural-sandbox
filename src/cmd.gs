@@ -97,23 +97,41 @@ nowarp proc evaluate_command {
         broadcast command[1]; # run any broadcast block
 
     } elif (command_name == "panel" or command_name == "page" or command_name == "p") {
+        delete UI_popup;
         UI_current_panel = command[1];
     
     } elif (command_name == "compositor") {
+        delete UI_popup;
         compositor_mode = command[1];
+        require_composite = true;
 
+    } elif (command_name == "composite") {
+        require_composite = command[1];
+    
+    } elif (command_name == "refresh") {
+        require_screen_refresh = command[1];
+    
     } elif (command_name == "export") {
         if (command[1] == "canvas") { broadcast "io.save_canvas.run"; }
         if (command[1] == "render") { broadcast "io.export_rendered_canvas.run"; }
         if (command[1] == "height") { broadcast "io.export_height_map.run"; }
 
-    } elif (command_name == "element") {
+    }  elif (command_name == "element") {
         # set any element in the UI. Arguments: string_id, index_offset, value_to_set
         local element_index = command[1] in UI_data_element_id;
         if (element_index == 0) { 
             error "element id doesn't exist: " & element_index;
         } else {
             UI_data[UI_data_element_index[element_index]+command[2]] = command[3];
+        }
+
+    } elif (command_name == "close") {
+        if (command[1] == "popup") {
+            delete UI_popup;
+            require_screen_refresh = true;
+        } elif (command[1] == "copy") {
+            delete copy_this;
+            hide copy_this;
         }
 
     } else {
