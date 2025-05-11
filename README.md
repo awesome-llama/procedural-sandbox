@@ -24,8 +24,11 @@ TextImage is the supported image format for this project. Use the converter tool
 
 
 ## Building
-If using Visual Studio Code, you may simply run the Build task. An sb3 file will be generated. This can be opened up in Scratch or TurboWarp (recommended).
-1. Run `UI_creator.py` to create the user interface list data.
-2. Run the goboscript build command. `goboscript build -i src -o "Procedural Sandbox.sb3"`
+
+1. Run `src/data_URL/process.py` to generate the data URL list data.
+2. Run `src/UI/UI_creator.py` to create the user interface list data.
+3. Run the goboscript build command. `goboscript build -i src -o "Procedural Sandbox.sb3"`. An sb3 file will be generated. This can be opened up in Scratch or TurboWarp (recommended).
+
+If using Visual Studio Code, you can run the Build tasks. The default task does not generate data URL lists. Use the full build for this.
 
 

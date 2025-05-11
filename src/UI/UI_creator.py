@@ -188,7 +188,7 @@ panels['menu.io'] = Container([
     Separator(0, 5),
 
     Label('3D models', '#baaaba'),
-    Button('Export .ply point cloud', 'io.export_ply.run'), # run button, no page
+    btn_menu_set_page('Export .ply point cloud', 'io.export_ply_point_cloud'),
 ])
 
 panels['menu.gen'] = Container([
@@ -306,6 +306,16 @@ panels['io.export_height_map'] = Container([
         Value('Map 1 to value', 'io.export_height_map.map_1', 1, -2, 2, snap_frac=1000),
     ]),
     Button('Export height map', 'io.export_height_map.run'),
+])
+
+panels['io.export_ply_point_cloud'] = Container([
+    Label.title('Export point cloud'),
+    Separator(),
+    Expander('Settings', '', True, [
+        Checkbox('Include 0 opacity voxels', 'io.export_ply_point_cloud.include_air', False),
+        Checkbox('Create data URL', 'io.export_ply_point_cloud.create_data_url', True),
+    ]),
+    Button('Export point cloud', 'io.export_ply_point_cloud.run'),
 ])
 
 

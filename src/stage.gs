@@ -41,6 +41,7 @@ list hex_lookup = file ```hex_lookup.txt```;
 
 
 on "initalise" {
+    version = "0.1"; # project version
     dt = 0; # delta time
     
     if (PS_reset_render_on_flag) {

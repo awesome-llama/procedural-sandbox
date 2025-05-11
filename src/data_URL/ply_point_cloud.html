@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head><title>Export</title></head>
+<body>
+	<div style="text-align:center;">
+	<a id="dl-btn">Download</a>
+	</div>
+	<script>
+		const data = "bWlzc2luZyBkYXRh";
+
+		const link = document.getElementById("dl-btn");
+		link.href = URL.createObjectURL(new Blob([Uint8Array.from(atob(data),c=>c.charCodeAt(0))],{type:"text/plain"}));
+		link.download = "point_cloud.ply";
+
+		window.addEventListener("load",link.click()); // click on load
+	</script>
+</body>
+</html>
