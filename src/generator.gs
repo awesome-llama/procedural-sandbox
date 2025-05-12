@@ -149,7 +149,7 @@ proc generate_control_panel cells_x, cells_y, cell_size, panel_color {
     set_depositor_from_number $panel_color;
     set_voxel 0, 0, 0;
     set_voxel 1, 1, 0;
-    add_canvas_as_template;
+    add_canvas_as_template; # template 1
 
     local cell_size = MAX(4, $cell_size);
     
@@ -243,7 +243,7 @@ proc control_panel_draw_element cell_size, grid_x, grid_y, grid_size_x, grid_siz
     }
     if (PROBABILITY(0.3)) {
         # create mesh
-        set_depositor_to_template 1, center_x, center_y, 0; 
+        set_depositor_to_template 1, center_x, center_y, 0;
         draw_cuboid_centered_XY center_x, center_y, 1, (radius_x*2)-CSZ(0.2), (radius_y*2)-CSZ(0.2), 1;
         stop_this_script;
     }
@@ -390,20 +390,27 @@ on "gen.erosion.run.generate" {
     generate_terrain UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5];
 }
 proc generate_terrain size_x, size_y, size_z, scale, color {
-    reset_canvas true, $size_x, $size_y, $size_z;
-    
+    reset_canvas true, 1, 1, $size_z; # column defining rock strata
+    set_depositor_from_number $color;
+    local HSV col = RGB_to_HSV(depositor_voxel.r, depositor_voxel.g, depositor_voxel.b);
+    iz = 0;
+    repeat ($size_z) {
+        set_depositor_from_HSV col.h+random("-0.05","0.05"), col.s+random("-0.05","0.05"), col.v+random("-0.1","0.1");
+        set_voxel 0, 0, iz;
+        iz++;
+    }
+    add_canvas_as_template; # template 1
+
+    reset_canvas false, $size_x, $size_y, $size_z;
     generate_value_noise $size_x, $size_y, $scale, 8, false; # doesn't write to the canvas
 
     # convert height into rock formation
-    set_depositor_from_number $color;
-    local HSV col = RGB_to_HSV(depositor_voxel.r, depositor_voxel.g, depositor_voxel.b);
-
+    set_depositor_to_template 1, 0, 0, 0; 
     i = 1;
     iy = 0;
     repeat canvas_size_y {
         ix = 0;
         repeat canvas_size_x {
-            set_depositor_from_HSV col.h+random("-0.05","0.05"), col.s+random("-0.05","0.05"), col.v+random("-0.1","0.1");
             draw_column ix, iy, 0, (temp_canvas_mono[i] * canvas_size_z);
             ix++;
             i++;
@@ -411,6 +418,8 @@ proc generate_terrain size_x, size_y, size_z, scale, color {
         iy++;
     }
     delete temp_canvas_mono;
+
+    glbfx_smudge 0.5, 1;
 
     require_composite = true;
 }
@@ -547,11 +556,11 @@ proc generate_maze cell_count, cell_size, wall_thickness, wall_height, pertubati
         repeat $cell_count {
             if maze_graph[2*(ix+iy*$cell_count)+1] {
                 # horz
-                draw_cuboid_corner_size ix*total_cell_size, iy*total_cell_size, 0, -1-total_cell_size, $wall_thickness, canvas_size_z;
+                draw_cuboid_corner_size ix*total_cell_size, iy*total_cell_size, 0, total_cell_size+$wall_thickness, $wall_thickness, canvas_size_z;
             }
             if maze_graph[2*(ix+iy*$cell_count)+2] {
                 # vert
-                draw_cuboid_corner_size ix*total_cell_size, iy*total_cell_size, 0, $wall_thickness, -1-total_cell_size, canvas_size_z;
+                draw_cuboid_corner_size ix*total_cell_size, iy*total_cell_size, 0, $wall_thickness, total_cell_size+$wall_thickness, canvas_size_z;
             }
             ix++;
         }

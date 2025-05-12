@@ -853,11 +853,11 @@ proc export_rendered_canvas {
     i = 1;
     repeat (render_size_x * render_size_y) {
         local alpha = (render_cache_final_col[i]//16777216); # guaranteed to be in range 0-255
-        if (alpha < 255) {
+        if (alpha == 0) {
+            add 255 to image_buffer; # render cache can't have an alpha of 0, this means it is opaque
+        } else {
             add (alpha * (alpha > 1)) to image_buffer; # alpha of 1 gets set to 0 (hides a minimum alpha limitation of the project)
             include_layer = true;
-        } else {
-            add 255 to image_buffer;
         }
         i++;
     }
