@@ -30,7 +30,6 @@ on "initalise" {
 
 on "hard reset" {
     UI_sidebar_width = 160;
-    PS_slider_sensitivity = 100;
 }
 
 %define TOP_BAR_HEIGHT 20
@@ -641,7 +640,7 @@ on "stage clicked" {
             require_composite = true;
         } elif (clicked_element == "viewport 3D") {
             viewport_mode = ViewportMode.ORBIT;
-            render_resolution = render_resolution_default_orbit;
+            render_resolution = PS_render_resolution_default_orbit;
             require_composite = true;
         } elif (clicked_element == "compositor mode") {
             if (UI_popup[1]) {
@@ -727,12 +726,20 @@ onkey "v" {
 
 
 on "project.settings.apply" {
-    PS_reset_render_on_flag = get_setting_from_id("project.settings.reset_render_on_flag");
     PS_slider_sensitivity = get_setting_from_id("project.settings.slider_sensitivity");
-    PS_max_iteration_time = get_setting_from_id("project.settings.max_frame_time");
-    PS_max_samples = get_setting_from_id("project.settings.max_samples");
+
+    PS_sky_intensity = get_setting_from_id("project.settings.sky_intensity");
+    PS_emission_intensity = get_setting_from_id("project.settings.emission_intensity");
+
     PS_filter_size_fac_2D_PT = get_setting_from_id("project.settings.filter_size_fac_2D_PT");
     PS_filter_size_fac_3D_PT = get_setting_from_id("project.settings.filter_size_fac_3D_PT");
+
+    PS_max_samples = get_setting_from_id("project.settings.max_samples");
+    PS_max_iteration_time = get_setting_from_id("project.settings.max_frame_time");
+    PS_render_resolution_default_orbit = get_setting_from_id("project.settings.resolution");
+
+    PS_reset_render_on_flag = get_setting_from_id("project.settings.reset_render_on_flag");
+
     print "changes applied", 3;
 }
 

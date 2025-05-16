@@ -91,6 +91,9 @@ proc render_image origin_x, origin_y, size_x, size_y, scale {
     if ($scale > 1) {
         origin_x += (0.5*$scale);
         origin_y += (0.5*$scale);
+        if ($scale == 3) {
+            set_pen_size 3.1; # fill some gaps
+        }
     }
 
     iy = 0;

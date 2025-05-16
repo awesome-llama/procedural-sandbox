@@ -105,8 +105,6 @@ on "hard reset" {
     TI_image_size_x = 0;
     TI_image_size_y = 0;
 
-    render_resolution_default_orbit = 4;
-
     delete TI_1_r;
     delete TI_2_g;
     delete TI_3_b;
@@ -126,12 +124,20 @@ on "hard reset" {
     cmd_string = "";
     
     # project settings
-    PS_reset_render_on_flag = true;
-    PS_slider_speed = 200;
-    PS_max_iteration_time = 0.1;
-    PS_max_samples = 256;
+    PS_slider_sensitivity = 200;
+
+    PS_sky_intensity = 1;
+    PS_emission_intensity = 1;
+
     PS_filter_size_fac_2D_PT = 0;
     PS_filter_size_fac_3D_PT = 1;
+
+    PS_max_samples = 256;
+    PS_max_iteration_time = 0.1;
+    PS_render_resolution_default_orbit = 4;
+
+    PS_reset_render_on_flag = true;
+
     broadcast "project.settings.apply"; # update the project settings from UI (which is always the source)
 }
 

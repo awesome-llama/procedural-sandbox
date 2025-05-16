@@ -591,9 +591,9 @@ proc iterate_generic_pathtracer max_samples, max_time, filter_size {
                         # diffuse bounce
 
                         # add light from emission
-                        acc_col_r += att_r * (linear_col_r * emission); # no opacity accounted for, surface reflection only
-                        acc_col_g += att_g * (linear_col_g * emission);
-                        acc_col_b += att_b * (linear_col_b * emission);
+                        acc_col_r += att_r * (linear_col_r * (emission * PS_emission_intensity)); # no opacity accounted for, surface reflection only
+                        acc_col_g += att_g * (linear_col_g * (emission * PS_emission_intensity));
+                        acc_col_b += att_b * (linear_col_b * (emission * PS_emission_intensity));
 
                         # update attenuation (scales towards 0)
                         att_r *= 1-((1-linear_col_r));
@@ -651,14 +651,14 @@ proc iterate_generic_pathtracer max_samples, max_time, filter_size {
             if (hit_index > 0) {
                 # add light from emission
                 opacity = canvas[hit_index].opacity;
-                acc_col_r += att_r * TO_LINEAR(canvas[hit_index].r) * canvas[hit_index].emission * opacity;
-                acc_col_g += att_g * TO_LINEAR(canvas[hit_index].g) * canvas[hit_index].emission * opacity;
-                acc_col_b += att_b * TO_LINEAR(canvas[hit_index].b) * canvas[hit_index].emission * opacity;
+                acc_col_r += att_r * TO_LINEAR(canvas[hit_index].r) * (canvas[hit_index].emission * PS_emission_intensity) * opacity;
+                acc_col_g += att_g * TO_LINEAR(canvas[hit_index].g) * (canvas[hit_index].emission * PS_emission_intensity) * opacity;
+                acc_col_b += att_b * TO_LINEAR(canvas[hit_index].b) * (canvas[hit_index].emission * PS_emission_intensity) * opacity;
             } else {
                 # sky
-                acc_col_r += att_r * (1.2 * TO_LINEAR(0.5+(vec_y/2)));
-                acc_col_g += att_g * (1.2 * TO_LINEAR(0.5+(vec_y/2))); 
-                acc_col_b += att_b * (1.2 * TO_LINEAR(0.5+(vec_y/2)));
+                acc_col_r += att_r * (PS_sky_intensity * TO_LINEAR(0.5+(vec_y/2)));
+                acc_col_g += att_g * (PS_sky_intensity * TO_LINEAR(0.5+(vec_y/2))); 
+                acc_col_b += att_b * (PS_sky_intensity * TO_LINEAR(0.5+(vec_y/2)));
             }
 
             render_cache_1_r[i] += acc_col_r;

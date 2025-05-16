@@ -123,11 +123,9 @@ on "stage clicked" {
         
         } elif (viewport_mode == ViewportMode.ORBIT) {
 
-            render_resolution = render_resolution_default_orbit * 2;
-
             UPDATE_MOUSE()
             until (not mouse_down()) {
-                render_resolution = render_resolution_default_orbit * 2;
+                render_resolution = PS_render_resolution_default_orbit * 2; # movement uses 2x just to make it faster
                 cam_azi = (cam_azi + ((prev_mouse_x-mouse_x()) * 0.4)) % 360;
                 cam_elev += ((mouse_y()-prev_mouse_y) * 0.4);
                 if (cam_elev > 85) {
@@ -138,7 +136,7 @@ on "stage clicked" {
                 UPDATE_MOUSE()
                 require_composite = true;
             }
-            render_resolution = render_resolution_default_orbit;
+            render_resolution = PS_render_resolution_default_orbit;
             require_composite = true;
 
         }
