@@ -123,6 +123,32 @@ on "fx.rotate.rotate_+90" {
     resample_xy 0, canvas_size_y-1, 0, -1, canvas_size_y, 1, 0, canvas_size_x;
 }
 
+
+on "fx.rotate.set_origin_0" {
+    set_setting_from_id "fx.rotate.ox", 0;
+    set_setting_from_id "fx.rotate.oy", 0;
+}
+on "fx.rotate.set_origin_center" {
+    set_setting_from_id "fx.rotate.ox", canvas_size_x/2;
+    set_setting_from_id "fx.rotate.oy", canvas_size_y/2;
+}
+
+on "fx.rotate.run" {
+    # custom rotation
+    delete UI_return;
+    setting_from_id "fx.rotate.ox";
+    setting_from_id "fx.rotate.oy";
+    setting_from_id "fx.rotate.angle";
+    rotate_around UI_return[1], UI_return[2], UI_return[3];
+}
+proc rotate_around ox, oy, angle {
+    local ax = cos(0-$angle);
+    local ay = sin(0-$angle);
+    local bx = cos(90-$angle);
+    local by = sin(90-$angle);
+    resample_xy ($ox-0.5)*(1-(ax+bx))+0.5, ($oy-0.5)*(1-(ay+by))+0.5, ax, ay, canvas_size_x, bx, by, canvas_size_y;
+}
+
 on "fx.mirror.flip_x" {
     resample_xy canvas_size_x-1, 0, -1, 0, canvas_size_x, 0, 1, canvas_size_y;
 }
@@ -132,6 +158,7 @@ on "fx.mirror.flip_y" {
 
 # iterate over the canvas using start, stop, step for the x and y axes. 
 # origin (ox, oy), 1st axis vector (ax, ay) 1st axis size, 2nd axis vector (bx, by), 2nd axis size
+# note that coordinates are floored. If you want to round, add 0.5 to the origin.
 proc resample_xy origin_x, origin_y, ax, ay, a_size, bx, by, b_size {
     delete temp_canvas;
 

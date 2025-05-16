@@ -577,6 +577,17 @@ panels['fx.rotate'] = Container([
     Separator(),
     Button('Rotate +90 (CCW)', 'fx.rotate.rotate_+90'),
     Button('Rotate -90 (CW)', 'fx.rotate.rotate_-90'),
+    Separator(0),
+    Expander('Advanced', '', False, [
+        Value('Angle (CCW)', 'fx.rotate.angle', 0, -180, 180),
+        Separator(0),
+        Value('Origin X', 'fx.rotate.ox', 0, -256, 256, -4096, 4096),
+        Value('Origin Y', 'fx.rotate.oy', 0, -256, 256, -4096, 4096),
+        Button('Set origin  to 0,0', 'fx.rotate.set_origin_0'),
+        Button('Set origin to center', 'fx.rotate.set_origin_center'),
+        Separator(0),
+        Button('Rotate', 'fx.rotate.run'),
+    ]),
 ])
 
 panels['fx.crop_xy'] = Container([
