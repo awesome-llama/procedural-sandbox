@@ -65,6 +65,7 @@ onkey "6" {
 
 on "composite" {
     require_iterative_compositor = false; # default off
+    render_resolution = requested_render_resolution; # this is the only time the resolution is set
 
     # run different custom blocks depending on mode
     if (viewport_mode == ViewportMode.ALIGNED) {
@@ -896,7 +897,7 @@ proc raycast_wrapped_canvas x, y, z, dx, dy, dz {
 
     hit_index = 0; # no hit
 
-    repeat canvas_size_x+canvas_size_y {
+    repeat ((canvas_size_x+canvas_size_y+canvas_size_z)*12) { # todo: make it not stop short on some canvases
         # find the shortest len variable and increase it:
         if (len_x < len_z) {
             if (len_x < len_y) {

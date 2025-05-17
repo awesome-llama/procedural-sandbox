@@ -10,7 +10,7 @@ hide;
 on "start main loop" {
     abc = 3;
     if (PS_reset_render_on_flag) {
-        render_resolution = 1;
+        requested_render_resolution = 1;
         zoom_extents;
         
         require_composite = true;
@@ -64,14 +64,14 @@ on "start main loop" {
 onkey "any" {
     if (PRESSED_WASD()) {
         if (viewport_mode == ViewportMode.ALIGNED) {
-            render_resolution = 2;
+            requested_render_resolution = 2;
             until (not PRESSED_WASD()) {
                 movement_speed = 200*(1+key_pressed("shift"));
                 cam_x += (PRESSED_MOVE_X() * ((dt*movement_speed)/cam_scale));
                 cam_y += (PRESSED_MOVE_Y() * ((dt*movement_speed)/cam_scale));
                 require_screen_refresh = true;
             }
-            render_resolution = 1;
+            requested_render_resolution = 1;
             require_screen_refresh = true;
             
         } elif (viewport_mode == ViewportMode.ORBIT) {
@@ -109,38 +109,53 @@ onkey "p" {
 on "stage clicked" {
     if (UI_last_hovered_group == "viewport") {
         if (viewport_mode == ViewportMode.ALIGNED) {
-            render_resolution = 2;
-
-            UPDATE_MOUSE()
-            until (not mouse_down()) {
-                cam_x += ((prev_mouse_x-mouse_x())/cam_scale);
-                cam_y += ((prev_mouse_y-mouse_y())/cam_scale);
-                UPDATE_MOUSE()
+            
+            wait_until_mouse_moves;
+            if mouse_moved {
+                requested_render_resolution = 2;
+                until (not mouse_down()) {
+                    cam_x += ((prev_mouse_x-mouse_x())/cam_scale);
+                    cam_y += ((prev_mouse_y-mouse_y())/cam_scale);
+                    UPDATE_MOUSE()
+                    require_screen_refresh = true;
+                }
+                requested_render_resolution = 1;
                 require_screen_refresh = true;
             }
-            render_resolution = 1;
-            require_screen_refresh = true;
-        
         } elif (viewport_mode == ViewportMode.ORBIT) {
 
-            UPDATE_MOUSE()
-            until (not mouse_down()) {
-                render_resolution = PS_render_resolution_default_orbit * 2; # movement uses 2x just to make it faster
-                cam_azi = (cam_azi + ((prev_mouse_x-mouse_x()) * 0.4)) % 360;
-                cam_elev += ((mouse_y()-prev_mouse_y) * 0.4);
-                if (cam_elev > 85) {
-                    cam_elev = 85;
-                } elif (cam_elev < 0) {
-                    cam_elev = 0;
+            wait_until_mouse_moves;
+            if mouse_moved {
+                requested_render_resolution = PS_render_resolution_default_orbit * 2; # movement uses 2x just to make it faster
+                until (not mouse_down()) {
+                    cam_azi = (cam_azi + ((prev_mouse_x-mouse_x()) * 0.4)) % 360;
+                    cam_elev += ((mouse_y()-prev_mouse_y) * 0.4);
+                    if (cam_elev > 85) {
+                        cam_elev = 85;
+                    } elif (cam_elev < 0) {
+                        cam_elev = 0;
+                    }
+                    UPDATE_MOUSE()
+                    require_composite = true;
                 }
-                UPDATE_MOUSE()
+                requested_render_resolution = PS_render_resolution_default_orbit;
                 require_composite = true;
             }
-            render_resolution = PS_render_resolution_default_orbit;
-            require_composite = true;
-
         }
     }
+}
+
+
+nowarp proc wait_until_mouse_moves {
+    mouse_moved = false;
+    UPDATE_MOUSE()
+    until (not mouse_down()) {
+        if ((abs(mouse_x()-prev_mouse_x) > 2) or (abs(mouse_y()-prev_mouse_y) > 2)) {
+            mouse_moved = true;
+            stop_this_script;
+        }
+    }
+    mouse_moved = false;
 }
 
 

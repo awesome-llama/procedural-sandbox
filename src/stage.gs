@@ -53,8 +53,9 @@ on "initalise" {
         cam_azi = -30; # CCW around origin. 0 means face +Y (like top-down)
         cam_elev = 45; # 0 is vertical (looking down), 90 is horizontal
 
-        render_resolution = 1; # the current resolution for compositing and rendering
-    
+        requested_render_resolution = 1; # the current resolution for compositing and rendering
+        render_resolution = requested_render_resolution;
+
         require_composite = true;
         require_iterative_compositor = false;
     }

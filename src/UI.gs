@@ -636,11 +636,11 @@ on "stage clicked" {
             require_screen_refresh = true;
         } elif (clicked_element == "viewport 2D") {
             viewport_mode = ViewportMode.ALIGNED;
-            render_resolution = 1;
+            requested_render_resolution = 1;
             require_composite = true;
         } elif (clicked_element == "viewport 3D") {
             viewport_mode = ViewportMode.ORBIT;
-            render_resolution = PS_render_resolution_default_orbit;
+            requested_render_resolution = PS_render_resolution_default_orbit;
             require_composite = true;
         } elif (clicked_element == "compositor mode") {
             if (UI_popup[1]) {
