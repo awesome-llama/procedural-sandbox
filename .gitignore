@@ -4,7 +4,7 @@
 src/UI/UI_data*.txt
 
 # data URL fragments
-src/data_URL/fragments_*.txt
+src/data_URL/fragments*.txt
 
 # For development of this project
 test*.py

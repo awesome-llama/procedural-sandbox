@@ -189,6 +189,7 @@ panels['menu.io'] = Container([
 
     Label('3D models', '#baaaba'),
     btn_menu_set_page('Export .ply point cloud', 'io.export_ply_point_cloud'),
+    btn_menu_set_page('Export .obj surfaces', 'io.export_obj_surface'),
 ])
 
 panels['menu.gen'] = Container([
@@ -315,9 +316,18 @@ panels['io.export_ply_point_cloud'] = Container([
         Checkbox('Include 0 opacity voxels', 'io.export_ply_point_cloud.include_air', False),
         Checkbox('Create data URL', 'io.export_ply_point_cloud.create_data_url', True),
     ]),
-    Button('Export point cloud', 'io.export_ply_point_cloud.run'),
+    Button('Export', 'io.export_ply_point_cloud.run'),
 ])
 
+panels['io.export_obj_surface'] = Container([
+    Label.title('Export mesh surface'),
+    Separator(),
+    Expander('Settings', '', True, [
+        Checkbox('Right-handed Z-up', 'io.export_obj_surface.right_handed_z_up', True),
+        Checkbox('Create data URL', 'io.export_obj_surface.create_data_url', True),
+    ]),
+    Button('Export', 'io.export_obj_surface.run'),
+])
 
 ################################
 #             Gen              #

@@ -4,19 +4,32 @@ import urllib.parse
 
 FILE_SUBSTITUTION = 'bWlzc2luZyBkYXRh'
 
-fragments = ['data:text/html,']
+def parse_doc(path):
+    with open(path, encoding='UTF-8') as f:
+        document = f.read()
 
-with open('src/data_URL/ply_point_cloud.html', encoding='UTF-8') as f:
-    document = f.read()
+    document = urllib.parse.quote(document)
+    return document
 
-document = urllib.parse.quote(document)
 
-_split = document.split(FILE_SUBSTITUTION)
-if len(_split) != 2: raise Exception('File failed to split into 2')
+def split_generic(output: list, document: str, delimiter: str):
+    _split = document.split(delimiter)
+    if len(_split) != 2: raise Exception('File failed to split into 2')
 
-fragments.append(_split[0])
-fragments.append(FILE_SUBSTITUTION)
-fragments.append(_split[1])
+    output.append('data:text/html,' + _split[0])
+    output.append(_split[1])
 
-with open('src/data_URL/fragments_ply_point_cloud.txt', 'w', encoding='UTF-8') as f:
+
+
+fragments = []
+
+document = parse_doc('src/data_URL/ply_point_cloud.html')
+split_generic(fragments, document, FILE_SUBSTITUTION)
+
+document = parse_doc('src/data_URL/obj_surface.html')
+split_generic(fragments, document, FILE_SUBSTITUTION)
+
+
+
+with open('src/data_URL/fragments.txt', 'w', encoding='UTF-8') as f:
     f.writelines([f"{elem}\n" for elem in fragments])
