@@ -643,12 +643,7 @@ on "stage clicked" {
             requested_render_resolution = PS_render_resolution_default_orbit;
             require_composite = true;
         } elif (clicked_element == "compositor mode") {
-            if (UI_popup[1]) {
-                delete UI_popup; # this won't work TODO
-                require_screen_refresh = true;
-            } else {
-                create_popup "compositor mode", 0, 160, 100, 116;
-            }
+            create_popup "compositor mode", 0, 160, 100, 116;
         } elif (clicked_element == "zoom in") {
             broadcast "zoom in";
         } elif (clicked_element == "zoom out") {
@@ -739,6 +734,8 @@ on "project.settings.apply" {
     PS_render_resolution_default_orbit = get_setting_from_id("project.settings.resolution");
 
     PS_reset_render_on_flag = get_setting_from_id("project.settings.reset_render_on_flag");
+
+    require_composite = true;
 
     print "changes applied", 3;
 }
