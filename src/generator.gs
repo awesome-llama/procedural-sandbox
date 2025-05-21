@@ -858,6 +858,43 @@ proc generate_wheel rim_radius, sidewall_height, tire_width {
 }
 
 
+on "gen.sphere.run" {
+    delete UI_return;
+    setting_from_id "gen.sphere.canvas_size";
+    setting_from_id "gen.sphere.include_ground";
+    setting_from_id "gen.sphere.ground_col";
+    setting_from_id "gen.sphere.sphere_radius";
+    setting_from_id "gen.sphere.sphere_color";
+    setting_from_id "gen.sphere.sphere_emission";
+    generate_sphere UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6];
+    require_composite = true;
+}
+proc generate_sphere canvas_size, include_ground, ground_col, sphere_radius, sphere_color, sphere_emission {
+    reset_canvas true, $canvas_size*2, $canvas_size*2, $sphere_radius*2;
+    if $include_ground {
+        set_depositor_from_number $ground_col;
+        draw_base_layer;
+    }
+    set_depositor_from_number $sphere_color;
+    depositor_voxel.emission = $sphere_emission;
+    draw_sphere $canvas_size, $canvas_size, $sphere_radius, $sphere_radius;
+}
+
+
+on "gen.template.run" {
+    reset_canvas true, 64, 64, 8;
+    set_depositor_from_sRGB_value 0.8;
+    draw_base_layer;
+    set_depositor_from_sRGB 1, 0, 0;
+    draw_sphere 16, 16, 4, 4;
+    set_depositor_from_sRGB 0, 1, 0;
+    draw_sphere 32, 16, 4, 4;
+    set_depositor_from_sRGB 0, 0, 1;
+    draw_sphere 24, 32, 4, 4;
+    require_composite = true;
+}
+
+
 on "gen.grad.run" { generate_grad; }
 proc generate_grad {
     reset_canvas true, 101, 101, 5;

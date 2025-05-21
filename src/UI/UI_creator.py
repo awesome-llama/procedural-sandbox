@@ -209,6 +209,9 @@ panels['menu.gen'] = Container([
     btn_menu_set_page('Elem. cellular automata', 'gen.eca'),
     btn_menu_set_page('Extruded grid', 'gen.extruded_grid'),
     btn_menu_set_page('Maze', 'gen.maze'),
+    Separator(0, 5),
+    btn_menu_set_page('Sphere', 'gen.sphere'),
+    Button('Template', 'gen.template.run'),
 ])
 
 panels['menu.fx'] = Container([
@@ -548,6 +551,22 @@ panels['gen.value_noise'] = Container([
     Button('Generate', 'gen.value_noise.run'),
 ])
 
+
+panels['gen.sphere'] = Container([
+    Label.title('Sphere'),
+    Separator(),
+    Expander('Canvas', '', True, [
+        Value('Canvas radius', 'gen.sphere.canvas_size', 16, 1, 256, 0, 4096, snap_frac=1),
+        Checkbox('Include ground', 'gen.sphere.include_ground', True),
+        Color('Ground color', 'gen.sphere.ground_col', 'aaaaaa'),
+    ]),
+    Expander('Sphere', '', True, [
+        Value.canvas_size('Radius', 'gen.sphere.sphere_radius', 4),
+        Color('Color', 'gen.sphere.sphere_color', '00ff00'),
+        Value.fraction('Emission', 'gen.sphere.sphere_emission', 0),
+    ]),
+    Button('Generate', 'gen.sphere.run'),
+])
 
 ################################
 #              FX              #
