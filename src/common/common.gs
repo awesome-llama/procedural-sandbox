@@ -162,10 +162,10 @@ struct template_metadata {
 %define COMBINE_RGB_CHANNELS(R,G,B) (65536*floor(255*(R)) + 256*floor(255*(G)) + floor(255*(B)))
 
 # sRGB to linear Rec.709 (not piecewise)
-%define TO_LINEAR(VAL) ROOT(VAL, 2.2)
+%define TO_LINEAR(VAL) POW(VAL, 2.2)
 
 # Linear Rec.709 to sRGB (not piecewise)
-%define FROM_LINEAR(VAL) POW(VAL, 2.2)
+%define FROM_LINEAR(VAL) ROOT(VAL, 2.2)
 
 # Convert 2D coordinates into index, assumes ints that do not wrap
 %define INDEX_FROM_2D_NOWRAP_INTS(X,Y,SIZE_X) (1 + (((SIZE_X)*(Y)) + (X)))
