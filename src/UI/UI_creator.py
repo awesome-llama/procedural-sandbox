@@ -725,6 +725,7 @@ panels['project.settings'] = Container([
         Label('Pathtracer:'),
         Value('Sky intensity', 'project.settings.sky_intensity', 1, 0, 2, 0, 100, snap_frac=100),
         Value('Emission intensity', 'project.settings.emission_intensity', 1, 0, 2, 0, 100, snap_frac=100),
+        Checkbox('"PBR Neutral" tone map', 'project.settings.use_tone_map', False),
         Separator(),
         Label('Anti-aliasing:'),
         Value('- 2D pathtraced', 'project.settings.filter_size_fac_2D_PT', 0, 0, 2, 0, 100, snap_frac=10),

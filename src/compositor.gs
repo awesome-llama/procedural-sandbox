@@ -662,14 +662,22 @@ proc iterate_generic_pathtracer max_samples, max_time, filter_size {
                 acc_col_b += att_b * (PS_sky_intensity * TO_LINEAR(0.5+(vec_y/2)));
             }
 
+            # add to result
             render_cache_1_r[i] += acc_col_r;
             render_cache_2_g[i] += acc_col_g;
             render_cache_3_b[i] += acc_col_b;
 
-            # combine
-            local r = FROM_LINEAR(render_cache_1_r[i] / (counted_samples));
-            local g = FROM_LINEAR(render_cache_2_g[i] / (counted_samples));
-            local b = FROM_LINEAR(render_cache_3_b[i] / (counted_samples));
+            # convert to displayed color
+            if PS_use_tone_map {
+                PBR_neutral_tone_map (render_cache_1_r[i] / (counted_samples)), (render_cache_2_g[i] / (counted_samples)), (render_cache_3_b[i] / (counted_samples));
+                local r = FROM_LINEAR(return_r);
+                local g = FROM_LINEAR(return_g);
+                local b = FROM_LINEAR(return_b);
+            } else {
+                local r = FROM_LINEAR(render_cache_1_r[i] / (counted_samples));
+                local g = FROM_LINEAR(render_cache_2_g[i] / (counted_samples));
+                local b = FROM_LINEAR(render_cache_3_b[i] / (counted_samples));
+            }
             if r > 1 {r = 1;}
             if g > 1 {g = 1;}
             if b > 1 {b = 1;}
@@ -686,6 +694,72 @@ proc iterate_generic_pathtracer max_samples, max_time, filter_size {
         }
     }
 }
+
+%define PBR_NEUTRAL_START_COMPRESSION 0.76
+%define PBR_NEUTRAL_DESATURATION 0.15
+%define PBR_NEUTRAL_D (1 - PBR_NEUTRAL_START_COMPRESSION)
+
+# https://github.com/KhronosGroup/ToneMapping/blob/main/PBR_Neutral/README.md
+proc PBR_neutral_tone_map r, g, b {
+    #local startCompression = 0.8 - 0.04;
+    #local desaturation = 0.15;
+    
+    # find min and max
+    if ($r < $b) {
+        if ($r < $g) {
+            if ($g < $b) {
+                local chan_min = $r; # AKA `x`
+                local chan_max = $b; # AKA `peak`
+            } else {
+                local chan_min = $r;
+                local chan_max = $g;
+            }
+        } else {
+            local chan_min = $g;
+            local chan_max = $b;
+        }
+    } else {
+        if ($g < $b) {
+            local chan_min = $g;
+            local chan_max = $r;
+        } else {
+            if ($r < $g) {
+                local chan_min = $b;
+                local chan_max = $g;
+            } else {
+                local chan_min = $b;
+                local chan_max = $r;
+            }
+        }
+    }
+
+    if (chan_min < 0.08) {
+        local offset = chan_min - (6.25 * chan_min * chan_min);
+    } else {
+        local offset = 0.04;
+    }
+    
+    return_r = $r - offset;
+    return_g = $g - offset;
+    return_b = $b - offset;
+
+    if (chan_max < PBR_NEUTRAL_START_COMPRESSION) {
+        stop_this_script;
+    }
+
+    #local d = (1 - startCompression);
+    local new_peak = 1 - (PBR_NEUTRAL_D * PBR_NEUTRAL_D / ((chan_max + PBR_NEUTRAL_D) - PBR_NEUTRAL_START_COMPRESSION));
+    return_r *= (new_peak / chan_max);
+    return_g *= (new_peak / chan_max);
+    return_b *= (new_peak / chan_max);
+
+    # mix
+    local f = 1 / (PBR_NEUTRAL_DESATURATION * (chan_max - new_peak) + 1);
+    return_r = f * return_r + (1 - f) * new_peak;
+    return_g = f * return_g + (1 - f) * new_peak;
+    return_b = f * return_b + (1 - f) * new_peak;
+}
+
 
 proc iterate_generic_ao max_samples, max_time, filter_size {
     start_time = days_since_2000();

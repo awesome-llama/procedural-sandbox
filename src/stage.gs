@@ -133,6 +133,8 @@ on "hard reset" {
     PS_filter_size_fac_2D_PT = 0;
     PS_filter_size_fac_3D_PT = 1;
 
+    PS_use_tone_map = false;
+
     PS_max_samples = 256;
     PS_max_iteration_time = 0.1;
     PS_render_resolution_default_orbit = 4;

@@ -726,6 +726,8 @@ on "project.settings.apply" {
     PS_sky_intensity = get_setting_from_id("project.settings.sky_intensity");
     PS_emission_intensity = get_setting_from_id("project.settings.emission_intensity");
 
+    PS_use_tone_map = get_setting_from_id("project.settings.use_tone_map");
+
     PS_filter_size_fac_2D_PT = get_setting_from_id("project.settings.filter_size_fac_2D_PT");
     PS_filter_size_fac_3D_PT = get_setting_from_id("project.settings.filter_size_fac_3D_PT");
 
