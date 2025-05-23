@@ -1,4 +1,4 @@
-%include common/common.gs
+%include lib/common
 
 # User-invoked transformations. Any transformations needed in the generator should be implemented there only.
 

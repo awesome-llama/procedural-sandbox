@@ -1,4 +1,4 @@
-%include common/common.gs
+%include lib/common
 
 costumes "costumes/stage/darkchecker.png" as "darkchecker";
 
@@ -37,7 +37,7 @@ list UI_return; # for user-triggered operations that need additional data retrie
 list UI_popup; 
 
 # 2-digit hexadecimal lookup table
-list hex_lookup = file ```hex_lookup.txt```;
+list hex_lookup = file ```data/hex_lookup.txt```;
 
 
 on "initalise" {

@@ -1,4 +1,4 @@
-%include common/common.gs
+%include lib/common
 
 costumes "costumes/compositor/compositor.svg" as "compositor";
 hide;

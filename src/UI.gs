@@ -1,4 +1,4 @@
-%include common/common.gs
+%include lib/common
 
 # For more info see: https://scratch.mit.edu/projects/934459716/
 
@@ -747,7 +747,7 @@ on "project.settings.apply" {
 #       Text renderers         #
 ################################
 
-list PTE_font = file ```5x7 printable ASCII.txt```;
+list PTE_font = file ```data/5x7 printable ASCII.txt```;
 
 %define CURR_COST_CHAR_INDEX() (costume_number() + 5)
 

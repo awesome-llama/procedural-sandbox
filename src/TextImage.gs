@@ -1,5 +1,7 @@
 # github.com/awesome-llama/TextImage
 
+%include lib/common
+
 costumes "costumes/TextImage/icon.svg" as "icon", "costumes/blank.svg" as "@ascii/";
 hide;
 
@@ -9,8 +11,8 @@ list data_stream_list;
 list source_data_stream_list;
 list hash_table; # hash operation
 
-list volumes = file```TextImage_volumes.txt```; # similarity volume data
-list op_sizes = file```TextImage_operation_sizes.txt```; # number of characters for each operation, for RLE
+list volumes = file ```data/TextImage_volumes.txt```; # similarity volume data
+list op_sizes = file ```data/TextImage_operation_sizes.txt```; # number of characters for each operation, for RLE
 
 
 on "initalise" {
@@ -590,8 +592,6 @@ proc _data_stream_process_RLE RLE_index, op_size_start_index {
 # The following interface with TextImage and are not part of its library.
 # They are in this sprite because of the close access needed to TextImage procedures and lists.
 
-
-%include common/common.gs
 
 # lists used to store the canvas temporarily
 list voxel temp;

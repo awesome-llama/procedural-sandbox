@@ -1,11 +1,6 @@
 # Common library of miscellaneous items for all sprites in this project.
 # Not a valid sprite by iself.
 
-#costumes "costumes/blank.svg";
-
-
-################################
-
 # RGB channels
 struct RGB {
     r,
@@ -35,7 +30,7 @@ struct voxel {
 # empty colorless air, no parameters
 %define VOXEL_NONE voxel { opacity:0, r:0, g:0, b:0, emission:0 }
 
-# ARGB(1/255,0,0,0), the most transparent color still able to be drawn with pen
+# ARGB(1/255,0,0,0) is the most transparent color able to be drawn with pen
 %define COL_TRANSPARENT() 16777216;
 
 # generic 3D point
