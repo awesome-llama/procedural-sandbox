@@ -19,7 +19,7 @@ TextImage is the supported image format for this project. Use the converter tool
 
 
 ## Dependencies
-- goboscript 3.1.0
+- goboscript 3.2
 - Python 3.12
 
 

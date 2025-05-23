@@ -305,7 +305,7 @@ proc top_bar_button id, costume, x, y, enabled {
 
     goto $x, $y;
 
-    if $enabled {
+    if ($enabled) {
         set_ghost_effect 70;
         switch_costume "fill";
         stamp;
@@ -791,7 +791,7 @@ proc wrappedText x, y, size, text, wrap_width {
     txt_i = 1;
     switch_costume "large";
     repeat length $text {
-        if $text[txt_i] == " " {
+        if ($text[txt_i] == " ") {
             # search for the next space to ensure the word fits in the line
             txt_j = txt_i + 1;
             future_x = (x_offset - $x) + $size * 5; # width of space added
@@ -850,7 +850,7 @@ proc draw_triangle x, y, dir {
 proc draw_UI_rect x, y, width, height, radius, outline_col, fill_col {
     # drawn from top-left, unlike draw_rect
 
-    if $outline_col != $fill_col {
+    if ($outline_col != $fill_col) {
         # draw outline
         draw_rect $x, ($y-$height), $width, $height, $radius, $outline_col;
         

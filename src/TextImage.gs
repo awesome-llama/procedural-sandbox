@@ -645,7 +645,7 @@ proc copy_TI_px_buffer_to_canvas {
     i = 1;
     repeat (length TI_1_r) {
         
-        add voxel {opacity:TI_4_a[i]/255, r:TI_1_r[i]/255, g:TI_2_g[i]/255, b:TI_3_b[i]/255} to canvas;
+        add voxel {opacity:TI_4_a[i]/255, r:TI_1_r[i]/255, g:TI_2_g[i]/255, b:TI_3_b[i]/255, emission:0} to canvas;
         i++;
     }
 }
