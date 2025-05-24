@@ -8,7 +8,6 @@ hide;
 %define ZOOM_INCREMENT sqrt(2)
 
 on "start main loop" {
-    abc = 3;
     if (PS_reset_render_on_flag) {
         requested_render_resolution = 1;
         zoom_extents;
@@ -20,11 +19,11 @@ on "start main loop" {
     last_time = days_since_2000();
     forever {
         dt = 86400*(days_since_2000()-last_time);
-        if dt > 0.1 { dt = 0.1; } # limit to 10 FPS
+        if (dt > 0.1) { dt = 0.1; } # limit to 10 FPS
         last_time = days_since_2000();
         
         # reset hover detection
-        if not mouse_down() {
+        if (not mouse_down()) {
             # the last hover variables are so that the click detection hats have usable data.
             # the hats do not run after the main loop.
             UI_last_hovered_group = UI_hovered_group;
@@ -159,15 +158,8 @@ nowarp proc wait_until_mouse_moves {
 }
 
 
-onkey "space" {
-    # manual debug refresh
-    require_composite = true;
-    require_screen_refresh = true;
-}
-
 onkey "up arrow" { broadcast "zoom in"; }
 on "zoom in" {
-    #cam_scale = (cam_scale*2);
     change_zoom 1;
     limit_scroll;
     if (viewport_mode == ViewportMode.ORBIT) {
@@ -178,7 +170,6 @@ on "zoom in" {
 
 onkey "down arrow" { broadcast "zoom out"; }
 on "zoom out" {
-    #cam_scale = (cam_scale/2);
     change_zoom -1;
     limit_scroll;
     if (viewport_mode == ViewportMode.ORBIT) {
@@ -205,6 +196,7 @@ proc limit_scroll  {
     }
 }
 
+
 on "zoom extents" { zoom_extents; }
 proc zoom_extents {
     # first get avail width and height of viewport
@@ -214,7 +206,7 @@ proc zoom_extents {
     cam_x = (canvas_size_x/2);
     cam_y = (canvas_size_y/2);
     
-    if canvas_size_x == 0 or canvas_size_y == 0 {
+    if (canvas_size_x == 0 or canvas_size_y == 0) {
         cam_scale = 1;
     } elif ((canvas_size_x/canvas_size_y) > (viewport_width/viewport_height)) { # find which side will reach the limit first
         # x is largest
@@ -225,23 +217,12 @@ proc zoom_extents {
     }
 
     if (viewport_mode == ViewportMode.ORBIT) {
+        cam_azi = -45;
+        cam_elev = 45;
         require_composite = true;
     } else {
         require_screen_refresh = true;
     }
-}
-
-
-# triggered by UI button
-on "center camera" {
-    if (viewport_mode == ViewportMode.ALIGNED) {
-        cam_x = (canvas_size_x/2);
-        cam_y = (canvas_size_y/2);
-    } elif (viewport_mode == ViewportMode.ORBIT) {
-        cam_azi = 0;
-        cam_elev = 45;
-    }
-    
 }
 
 

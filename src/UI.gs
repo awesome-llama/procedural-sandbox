@@ -737,6 +737,10 @@ on "project.settings.apply" {
 
     PS_reset_render_on_flag = get_setting_from_id("project.settings.reset_render_on_flag");
 
+    if (viewport_mode == ViewportMode.ORBIT) {
+        requested_render_resolution = PS_render_resolution_default_orbit;
+    }
+    
     require_composite = true;
 
     print "changes applied", 3;
