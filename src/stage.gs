@@ -6,9 +6,9 @@ costumes "costumes/stage/darkchecker.png" as "darkchecker";
 # The "canvas" is the 3D voxel environment that can be drawn to with color and opacity. Stored as sRGB. Other comments may reference "air" which is any voxel with 0 opacity.
 list voxel canvas;
 
-# The render cache is a 2D projection of the canvas for displaying on screen.
+# The render buffer is a 2D projection of the canvas for displaying on screen.
 # final color to render on screen, 24-bit sRGB (8 bits per channel).
-list render_cache_final_col; # TODO: rename
+list render_buffer_final_col;
 
 # TextImage shared lists (good to keep global):
 list TI_1_r;
@@ -60,7 +60,7 @@ on "initalise" {
         require_iterative_compositor = false;
     }
     
-    require_screen_refresh = true;
+    require_viewport_refresh = true;
     
     if (PS_reset_render_on_flag) { 
         viewport_mode = ViewportMode.ALIGNED;

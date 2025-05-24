@@ -109,7 +109,7 @@ nowarp proc evaluate_command {
         require_composite = command[1];
     
     } elif (command_name == "refresh") {
-        require_screen_refresh = command[1];
+        require_viewport_refresh = command[1];
     
     } elif (command_name == "export") {
         if (command[1] == "canvas") { broadcast "io.save_canvas.run"; }
@@ -128,7 +128,7 @@ nowarp proc evaluate_command {
     } elif (command_name == "close") {
         if (command[1] == "popup") {
             delete UI_popup;
-            require_screen_refresh = true;
+            require_viewport_refresh = true;
         } elif (command[1] == "copy") {
             delete copy_this;
             hide copy_this;

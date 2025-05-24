@@ -67,7 +67,7 @@ proc render_canvas_2D {
         goto ss_origin_x + min_x*cam_scale + (UI_sidebar_width/2), ss_origin_y + iy*cam_scale - 10;
         i = (iy*render_size_x) + min_x + 1;
         repeat (repeat_x) {
-            set_pen_color render_cache_final_col[i];
+            set_pen_color render_buffer_final_col[i];
             pen_down; # dots are required for drawing transparency
             pen_up;
             change_x pixel_screen_size;
@@ -101,12 +101,12 @@ proc render_image origin_x, origin_y, size_x, size_y, scale {
     repeat ($size_y) {
         set_x origin_x - $scale;
         i = (iy * $size_x) + 1;
-        set_pen_color render_cache_final_col[i];
+        set_pen_color render_buffer_final_col[i];
         pen_down;
         change_x $scale * 2;
         repeat ($size_x - 1) {
             i += 1;
-            set_pen_color render_cache_final_col[i];
+            set_pen_color render_buffer_final_col[i];
             change_x $scale;
         }
         pen_up;

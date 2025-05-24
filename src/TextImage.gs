@@ -839,9 +839,9 @@ proc export_rendered_canvas {
     delete image_buffer;
     i = 1;
     repeat (render_size_x * render_size_y) {
-        add ((render_cache_final_col[i]//65536)%256) to image_buffer; # guaranteed to be in range 0-255
-        add ((render_cache_final_col[i]//256)%256) to image_buffer;
-        add (render_cache_final_col[i]%256) to image_buffer;
+        add ((render_buffer_final_col[i]//65536)%256) to image_buffer; # guaranteed to be in range 0-255
+        add ((render_buffer_final_col[i]//256)%256) to image_buffer;
+        add (render_buffer_final_col[i]%256) to image_buffer;
         i++;
     }
     _data_stream_compress_RGB8_from_buffer TI_image_size_x;
@@ -852,7 +852,7 @@ proc export_rendered_canvas {
     local include_layer = false;
     i = 1;
     repeat (render_size_x * render_size_y) {
-        local alpha = (render_cache_final_col[i]//16777216); # guaranteed to be in range 0-255
+        local alpha = (render_buffer_final_col[i]//16777216); # guaranteed to be in range 0-255
         if (alpha == 0) {
             add 255 to image_buffer; # render cache can't have an alpha of 0, this means it is opaque
         } else {

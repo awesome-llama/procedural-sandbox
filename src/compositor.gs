@@ -3,11 +3,11 @@
 costumes "costumes/compositor/compositor.svg" as "compositor";
 hide;
 
-list render_cache_ao; # ambient occlusion
-list render_cache_topmost; # elevation index of topmost voxel (really just a heightmap)
-list render_cache_1_r; # 2D color maps, sRGB 0-1
-list render_cache_2_g;
-list render_cache_3_b;
+list buffer_ao; # ambient occlusion
+list buffer_topmost; # elevation index of topmost voxel (really just a heightmap)
+list buffer_r;
+list buffer_g;
+list buffer_b;
 list XYZ raytracer_ray_origins;
 
 on "initalise" {
@@ -19,11 +19,11 @@ on "initalise" {
 }
 
 on "hard reset" {
-    delete render_cache_ao;
-    delete render_cache_topmost;
-    delete render_cache_1_r;
-    delete render_cache_2_g;
-    delete render_cache_3_b;
+    delete buffer_ao;
+    delete buffer_topmost;
+    delete buffer_r;
+    delete buffer_g;
+    delete buffer_b;
     delete raytracer_ray_origins;
 }
 
@@ -169,7 +169,7 @@ on "iterative compositor" {
     if (counted_samples >= PS_max_samples) {
         require_iterative_compositor = false;
     }
-    require_screen_refresh = true;
+    require_viewport_refresh = true;
 }
 
 
@@ -181,8 +181,8 @@ on "iterative compositor" {
 # the topmost non-0-opacity voxel, found by raycasting downwards. The index of the solid voxel, not the air above it.
 proc generate_pass_topmost {
     layer_size = (canvas_size_x * canvas_size_y);
-    if ((length render_cache_topmost) != layer_size) { # optimised
-        delete render_cache_topmost;
+    if ((length buffer_topmost) != layer_size) { # optimised
+        delete buffer_topmost;
         
         i = 1;
         repeat layer_size {
@@ -190,7 +190,7 @@ proc generate_pass_topmost {
             until ((iz < 0) or (canvas[i + (iz * layer_size)].opacity > 0)) {
                 iz += -1;
             }
-            add iz to render_cache_topmost;
+            add iz to buffer_topmost;
             i++;
         }
     
@@ -201,7 +201,7 @@ proc generate_pass_topmost {
             until ((iz < 0) or (canvas[i + (iz * layer_size)].opacity > 0)) {
                 iz += -1;
             }
-            render_cache_topmost[i] = iz;
+            buffer_topmost[i] = iz;
             i++;
         }
     }
@@ -219,16 +219,16 @@ proc cmp_aligned_color {
     layer_size = (canvas_size_x * canvas_size_y);
     i = 1;
     repeat layer_size {
-        local index = render_cache_topmost[i];
+        local index = buffer_topmost[i];
         if index < 0 {
             # entire column was air, use background color
-            render_cache_final_col[i] = COL_TRANSPARENT();
+            render_buffer_final_col[i] = COL_TRANSPARENT();
         } else {
-            render_cache_final_col[i] = COMBINE_RGB_CHANNELS((canvas[i + index*layer_size].r), (canvas[i + index*layer_size].g), (canvas[i + index*layer_size].b));
+            render_buffer_final_col[i] = COMBINE_RGB_CHANNELS((canvas[i + index*layer_size].r), (canvas[i + index*layer_size].g), (canvas[i + index*layer_size].b));
         }
         i++;
     }
-    require_screen_refresh = true;
+    require_viewport_refresh = true;
 }
 
 # heightmap of the topmost non-transparent voxel, normalised to greyscale 0-1
@@ -236,11 +236,11 @@ proc cmp_aligned_heightmap {
     generate_pass_topmost;
     i = 1;
     repeat (canvas_size_x * canvas_size_y) {
-        local height = (render_cache_topmost[i]+1) / canvas_size_z;
-        render_cache_final_col[i] = COMBINE_RGB_CHANNELS(height, height, height);
+        local height = (buffer_topmost[i]+1) / canvas_size_z;
+        render_buffer_final_col[i] = COMBINE_RGB_CHANNELS(height, height, height);
         i++;
     }
-    require_screen_refresh = true;
+    require_viewport_refresh = true;
 }
 
 # sum of opacity, normalised to greyscale 0-1
@@ -255,21 +255,21 @@ proc cmp_aligned_density {
             zoffset += layer_size;
         }
         density = density / canvas_size_z;
-        render_cache_final_col[i] = COMBINE_RGB_CHANNELS(density, density, density);
+        render_buffer_final_col[i] = COMBINE_RGB_CHANNELS(density, density, density);
         i++;
     }
-    require_screen_refresh = true;
+    require_viewport_refresh = true;
 }
 
 # heightmap of the topmost non-transparent voxel, normalised to greyscale 0-1
 %define NRM_KERNEL_X(DX,DY,WX) \
-dx += WX*(render_cache_topmost[INDEX_FROM_2D_INTS(ix+(DX), iy+(DY), canvas_size_x, canvas_size_y)] - h);
+dx += WX*(buffer_topmost[INDEX_FROM_2D_INTS(ix+(DX), iy+(DY), canvas_size_x, canvas_size_y)] - h);
 
 %define NRM_KERNEL_Y(DX,DY,WY) \
-dy += WY*(render_cache_topmost[INDEX_FROM_2D_INTS(ix+(DX), iy+(DY), canvas_size_x, canvas_size_y)] - h);
+dy += WY*(buffer_topmost[INDEX_FROM_2D_INTS(ix+(DX), iy+(DY), canvas_size_x, canvas_size_y)] - h);
 
 %define NRM_KERNEL_XY(DX,DY,WX,WY) \
-local kernel_h = (render_cache_topmost[INDEX_FROM_2D_INTS(ix+(DX), iy+(DY), canvas_size_x, canvas_size_y)] - h);\
+local kernel_h = (buffer_topmost[INDEX_FROM_2D_INTS(ix+(DX), iy+(DY), canvas_size_x, canvas_size_y)] - h);\
 dx += WX*kernel_h;\
 dy += WY*kernel_h;\
 
@@ -286,7 +286,7 @@ proc cmp_aligned_normal intensity {
 
             local dx = 0;
             local dy = 0;
-            local h = render_cache_topmost[i]; # height of current
+            local h = buffer_topmost[i]; # height of current
             
             # x
             NRM_KERNEL_X(-1,0,W_EDGE)
@@ -309,13 +309,13 @@ proc cmp_aligned_normal intensity {
             # normalise
             local len = VEC3_LEN(dx,dy,1)*2; # multiply by 2 because normal map centers at 0.5
 
-            render_cache_final_col[i] = COMBINE_RGB_CHANNELS(0.5+(dx/len), 0.5+(dy/len), 0.5+(1/len));
+            render_buffer_final_col[i] = COMBINE_RGB_CHANNELS(0.5+(dx/len), 0.5+(dy/len), 0.5+(1/len));
 
             ix++;
         }
         iy++;
     }
-    require_screen_refresh = true;
+    require_viewport_refresh = true;
 }
 
 
@@ -326,14 +326,14 @@ proc cmp_orbit_color {
         raycast_wrapped_canvas raytracer_ray_origins[i].x+shift.x, raytracer_ray_origins[i].y+shift.y, raytracer_ray_origins[i].z+shift.z, raytracer_ray_direction.x, raytracer_ray_direction.y, raytracer_ray_direction.z;
         
         if (hit_index > 0) {
-            render_cache_final_col[i] = COMBINE_RGB_CHANNELS(canvas[hit_index].r, canvas[hit_index].g, canvas[hit_index].b);
+            render_buffer_final_col[i] = COMBINE_RGB_CHANNELS(canvas[hit_index].r, canvas[hit_index].g, canvas[hit_index].b);
         } else {
-            render_cache_final_col[i] = COL_TRANSPARENT();
+            render_buffer_final_col[i] = COL_TRANSPARENT();
         }
         i++;
     }
 
-    require_screen_refresh = true;
+    require_viewport_refresh = true;
 }
 
 
@@ -355,14 +355,14 @@ proc cmp_orbit_shaded {
             }
             brightness_fac = 1-((1-brightness_fac) * (1-canvas[hit_index].emission)); # disable shading for emission
             
-            render_cache_final_col[i] = COMBINE_RGB_CHANNELS(canvas[hit_index].r*brightness_fac, canvas[hit_index].g*brightness_fac, canvas[hit_index].b*brightness_fac);
+            render_buffer_final_col[i] = COMBINE_RGB_CHANNELS(canvas[hit_index].r*brightness_fac, canvas[hit_index].g*brightness_fac, canvas[hit_index].b*brightness_fac);
         } else {
-            render_cache_final_col[i] = COL_TRANSPARENT();
+            render_buffer_final_col[i] = COL_TRANSPARENT();
         }
         i++;
     }
 
-    require_screen_refresh = true;
+    require_viewport_refresh = true;
 }
 
 proc cmp_orbit_height {
@@ -374,14 +374,14 @@ proc cmp_orbit_height {
         if (hit_index > 0) {
             local height = hit_position.z / canvas_size_z;
             height = CLAMP_0_1(height);
-            render_cache_final_col[i] = COMBINE_RGB_CHANNELS(height, height, height);
+            render_buffer_final_col[i] = COMBINE_RGB_CHANNELS(height, height, height);
         } else {
-            render_cache_final_col[i] = COL_TRANSPARENT();
+            render_buffer_final_col[i] = COL_TRANSPARENT();
         }
         i++;
     }
 
-    require_screen_refresh = true;
+    require_viewport_refresh = true;
 }
 
 proc cmp_orbit_normal {
@@ -391,18 +391,18 @@ proc cmp_orbit_normal {
         raycast_wrapped_canvas raytracer_ray_origins[i].x+shift.x, raytracer_ray_origins[i].y+shift.y, raytracer_ray_origins[i].z+shift.z, raytracer_ray_direction.x, raytracer_ray_direction.y, raytracer_ray_direction.z;
         
         if (hit_index > 0) {
-            render_cache_final_col[i] = COMBINE_RGB_CHANNELS(
+            render_buffer_final_col[i] = COMBINE_RGB_CHANNELS(
                 0.5 + (side==0) * ((step_x < 0) - 0.5), 
                 0.5 + (side==1) * ((step_y < 0) - 0.5), 
                 0.5 + (side==2) * ((step_z < 0) - 0.5) 
                 );
         } else {
-            render_cache_final_col[i] = COL_TRANSPARENT();
+            render_buffer_final_col[i] = COL_TRANSPARENT();
         }
         i++;
     }
 
-    require_screen_refresh = true;
+    require_viewport_refresh = true;
 }
 
 ################################
@@ -414,11 +414,11 @@ proc cmp_orbit_normal {
 proc init_aligned_ao_pass {
     generate_pass_topmost;
     counted_samples = 1;
-    delete render_cache_ao;
-    delete render_cache_final_col;
+    delete buffer_ao;
+    delete render_buffer_final_col;
     repeat layer_size {
-        add 0 to render_cache_ao;
-        add 0 to render_cache_final_col;
+        add 0 to buffer_ao;
+        add 0 to render_buffer_final_col;
     }
 }
 
@@ -438,8 +438,8 @@ proc iterate_aligned_ao max_samples, max_time, filter_size {
             ix = 0.5+shift.x;
             repeat canvas_size_x {
                 local bearing = random("0", "360.0");
-                raycast_AO ix, iy, render_cache_topmost[i]+1, sin(bearing), cos(bearing), tan(random("18.43", "90.0"));
-                render_cache_ao[i] += ray_light;
+                raycast_AO ix, iy, buffer_topmost[i]+1, sin(bearing), cos(bearing), tan(random("18.43", "90.0"));
+                buffer_ao[i] += ray_light;
                 ix++;
                 i++;
             }
@@ -472,13 +472,13 @@ proc cmp_aligned_shaded_color {
             }
             iz += layer_size;
         }
-        local ao_fac = 0.5 + (0.5 * (render_cache_ao[i] / counted_samples));
+        local ao_fac = 0.5 + (0.5 * (buffer_ao[i] / counted_samples));
         if (ao_fac > 1) { ao_fac = 1; }
 
         local r = FROM_LINEAR(r * ao_fac);
         local g = FROM_LINEAR(g * ao_fac);
         local b = FROM_LINEAR(b * ao_fac);
-        render_cache_final_col[i] = COMBINE_RGB_CHANNELS(r, g, b);
+        render_buffer_final_col[i] = COMBINE_RGB_CHANNELS(r, g, b);
         i++;
     }
 }
@@ -487,10 +487,10 @@ proc cmp_aligned_shaded_color {
 proc cmp_aligned_ao {
     i = 1;
     repeat (canvas_size_x * canvas_size_y) {
-        local ao_fac = FROM_LINEAR((1 * render_cache_ao[i]) / counted_samples);
+        local ao_fac = FROM_LINEAR((1 * buffer_ao[i]) / counted_samples);
         if (ao_fac > 1) { ao_fac = 1; }
         
-        render_cache_final_col[i] = COMBINE_RGB_CHANNELS(ao_fac, ao_fac, ao_fac);
+        render_buffer_final_col[i] = COMBINE_RGB_CHANNELS(ao_fac, ao_fac, ao_fac);
         i++;
     }
 }
@@ -566,9 +566,9 @@ proc iterate_generic_pathtracer max_samples, max_time, filter_size {
             local acc_col_r = 0;
             local acc_col_g = 0;
             local acc_col_b = 0;
-            local att_r = 1;
-            local att_g = 1;
-            local att_b = 1;
+            local throughput_r = 1;
+            local throughput_g = 1;
+            local throughput_b = 1;
 
             vec_x = raytracer_ray_direction.x; # set initially just in case the first ray doesn't hit anything, it's used for sky color
             vec_y = raytracer_ray_direction.y;
@@ -592,14 +592,14 @@ proc iterate_generic_pathtracer max_samples, max_time, filter_size {
                         # diffuse bounce
 
                         # add light from emission
-                        acc_col_r += att_r * (linear_col_r * (emission * PS_emission_intensity)); # no opacity accounted for, surface reflection only
-                        acc_col_g += att_g * (linear_col_g * (emission * PS_emission_intensity));
-                        acc_col_b += att_b * (linear_col_b * (emission * PS_emission_intensity));
+                        acc_col_r += throughput_r * (linear_col_r * (emission * PS_emission_intensity)); # no opacity accounted for, surface reflection only
+                        acc_col_g += throughput_g * (linear_col_g * (emission * PS_emission_intensity));
+                        acc_col_b += throughput_b * (linear_col_b * (emission * PS_emission_intensity));
 
-                        # update attenuation (scales towards 0)
-                        att_r *= 1-((1-linear_col_r));
-                        att_g *= 1-((1-linear_col_g));
-                        att_b *= 1-((1-linear_col_b));
+                        # update throughput (scales towards 0)
+                        throughput_r *= 1-((1-linear_col_r));
+                        throughput_g *= 1-((1-linear_col_g));
+                        throughput_b *= 1-((1-linear_col_b));
 
                         if (side == 0) {
                             if (step_x > 0) { 
@@ -652,37 +652,37 @@ proc iterate_generic_pathtracer max_samples, max_time, filter_size {
             if (hit_index > 0) {
                 # add light from emission
                 opacity = canvas[hit_index].opacity;
-                acc_col_r += att_r * TO_LINEAR(canvas[hit_index].r) * (canvas[hit_index].emission * PS_emission_intensity) * opacity;
-                acc_col_g += att_g * TO_LINEAR(canvas[hit_index].g) * (canvas[hit_index].emission * PS_emission_intensity) * opacity;
-                acc_col_b += att_b * TO_LINEAR(canvas[hit_index].b) * (canvas[hit_index].emission * PS_emission_intensity) * opacity;
+                acc_col_r += throughput_r * TO_LINEAR(canvas[hit_index].r) * (canvas[hit_index].emission * PS_emission_intensity) * opacity;
+                acc_col_g += throughput_g * TO_LINEAR(canvas[hit_index].g) * (canvas[hit_index].emission * PS_emission_intensity) * opacity;
+                acc_col_b += throughput_b * TO_LINEAR(canvas[hit_index].b) * (canvas[hit_index].emission * PS_emission_intensity) * opacity;
             } else {
                 # sky
-                acc_col_r += att_r * (PS_sky_intensity * TO_LINEAR(0.5+(vec_y/2)));
-                acc_col_g += att_g * (PS_sky_intensity * TO_LINEAR(0.5+(vec_y/2))); 
-                acc_col_b += att_b * (PS_sky_intensity * TO_LINEAR(0.5+(vec_y/2)));
+                acc_col_r += throughput_r * (PS_sky_intensity * TO_LINEAR(0.5+(vec_y/2)));
+                acc_col_g += throughput_g * (PS_sky_intensity * TO_LINEAR(0.5+(vec_y/2))); 
+                acc_col_b += throughput_b * (PS_sky_intensity * TO_LINEAR(0.5+(vec_y/2)));
             }
 
             # add to result
-            render_cache_1_r[i] += acc_col_r;
-            render_cache_2_g[i] += acc_col_g;
-            render_cache_3_b[i] += acc_col_b;
+            buffer_r[i] += acc_col_r;
+            buffer_g[i] += acc_col_g;
+            buffer_b[i] += acc_col_b;
 
             # convert to displayed color
             if PS_use_tone_map {
-                PBR_neutral_tone_map (render_cache_1_r[i] / (counted_samples)), (render_cache_2_g[i] / (counted_samples)), (render_cache_3_b[i] / (counted_samples));
+                PBR_neutral_tone_map (buffer_r[i] / (counted_samples)), (buffer_g[i] / (counted_samples)), (buffer_b[i] / (counted_samples));
                 local r = FROM_LINEAR(return_r);
                 local g = FROM_LINEAR(return_g);
                 local b = FROM_LINEAR(return_b);
             } else {
-                local r = FROM_LINEAR(render_cache_1_r[i] / (counted_samples));
-                local g = FROM_LINEAR(render_cache_2_g[i] / (counted_samples));
-                local b = FROM_LINEAR(render_cache_3_b[i] / (counted_samples));
+                local r = FROM_LINEAR(buffer_r[i] / (counted_samples));
+                local g = FROM_LINEAR(buffer_g[i] / (counted_samples));
+                local b = FROM_LINEAR(buffer_b[i] / (counted_samples));
             }
             if r > 1 {r = 1;}
             if g > 1 {g = 1;}
             if b > 1 {b = 1;}
 
-            render_cache_final_col[i] = COMBINE_RGB_CHANNELS(r, g, b);
+            render_buffer_final_col[i] = COMBINE_RGB_CHANNELS(r, g, b);
 
             i++;
         }
@@ -770,7 +770,7 @@ proc iterate_generic_ao max_samples, max_time, filter_size {
 
         i = 1;
         repeat (render_size_x * render_size_y) {
-            local attenuation = 1;
+            local throughput = 1;
             
             current_opacity = 0;
 
@@ -821,8 +821,8 @@ proc iterate_generic_ao max_samples, max_time, filter_size {
                     } else {
                         # transparency
                         
-                        # update attenuation (scales towards 0)
-                        attenuation *= (1-opacity);
+                        # update throughput (scales towards 0)
+                        throughput *= (1-opacity);
 
                         # transparency - pass through unimpeded
                         # TODO: optimise with a single raycast
@@ -838,13 +838,13 @@ proc iterate_generic_ao max_samples, max_time, filter_size {
 
             if (not (hit_index > 0)) {
                 # sky
-                render_cache_1_r[i] += attenuation;
+                buffer_r[i] += throughput;
             }
 
             # combine
-            local val = FROM_LINEAR(render_cache_1_r[i] / (counted_samples));
+            local val = FROM_LINEAR(buffer_r[i] / (counted_samples));
             if val > 1 {val = 1;}
-            render_cache_final_col[i] = COMBINE_RGB_CHANNELS(val, val, val);
+            render_buffer_final_col[i] = COMBINE_RGB_CHANNELS(val, val, val);
 
             i++;
         }
@@ -1085,23 +1085,23 @@ proc random_lambertian_vector nx, ny, nz {
 
 # resize the render cache (final col only)
 proc resize_render_cache {
-    if ((length render_cache_final_col) != (render_size_x * render_size_y)) {
-        delete render_cache_final_col;
+    if ((length render_buffer_final_col) != (render_size_x * render_size_y)) {
+        delete render_buffer_final_col;
         repeat (render_size_x * render_size_y) {
-            add 0 to render_cache_final_col;
+            add 0 to render_buffer_final_col;
         }
     }
 }
 
 # set the render cache to 0, required by raytracers as these are used additively.
 proc reset_render_RGB {
-    delete render_cache_1_r;
-    delete render_cache_2_g;
-    delete render_cache_3_b;
+    delete buffer_r;
+    delete buffer_g;
+    delete buffer_b;
     repeat (render_size_x * render_size_y) {
-        add 0 to render_cache_1_r;
-        add 0 to render_cache_2_g;
-        add 0 to render_cache_3_b;
+        add 0 to buffer_r;
+        add 0 to buffer_g;
+        add 0 to buffer_b;
     }
 }
 

@@ -13,7 +13,7 @@ on "start main loop" {
         zoom_extents;
         
         require_composite = true;
-        require_screen_refresh = true; # TODO rename to viewport
+        require_viewport_refresh = true;
     }
 
     last_time = days_since_2000();
@@ -43,11 +43,11 @@ on "start main loop" {
         if (require_iterative_compositor == true) {
             broadcast_and_wait "iterative compositor";
         }
-        if (require_screen_refresh == true) {
+        if (require_viewport_refresh == true) {
             erase_all;
             broadcast "render viewport";
             broadcast "render viewport text";
-            require_screen_refresh = false;
+            require_viewport_refresh = false;
         }
 
         broadcast "render ui"; # always redraw, no erase. This goes to the UI sprite only.
@@ -68,10 +68,10 @@ onkey "any" {
                 movement_speed = 200*(1+key_pressed("shift"));
                 cam_x += (PRESSED_MOVE_X() * ((dt*movement_speed)/cam_scale));
                 cam_y += (PRESSED_MOVE_Y() * ((dt*movement_speed)/cam_scale));
-                require_screen_refresh = true;
+                require_viewport_refresh = true;
             }
             requested_render_resolution = 1;
-            require_screen_refresh = true;
+            require_viewport_refresh = true;
             
         } elif (viewport_mode == ViewportMode.ORBIT) {
             # move the camera forwards or sideways horizontally, using current azimuth
@@ -116,10 +116,10 @@ on "stage clicked" {
                     cam_x += ((prev_mouse_x-mouse_x())/cam_scale);
                     cam_y += ((prev_mouse_y-mouse_y())/cam_scale);
                     UPDATE_MOUSE()
-                    require_screen_refresh = true;
+                    require_viewport_refresh = true;
                 }
                 requested_render_resolution = 1;
-                require_screen_refresh = true;
+                require_viewport_refresh = true;
             }
         } elif (viewport_mode == ViewportMode.ORBIT) {
 
@@ -165,7 +165,7 @@ on "zoom in" {
     if (viewport_mode == ViewportMode.ORBIT) {
         require_composite = true;
     }
-    require_screen_refresh = true;
+    require_viewport_refresh = true;
 }
 
 onkey "down arrow" { broadcast "zoom out"; }
@@ -175,7 +175,7 @@ on "zoom out" {
     if (viewport_mode == ViewportMode.ORBIT) {
         require_composite = true;
     }
-    require_screen_refresh = true;
+    require_viewport_refresh = true;
 }
 
 
@@ -221,7 +221,7 @@ proc zoom_extents {
         cam_elev = 45;
         require_composite = true;
     } else {
-        require_screen_refresh = true;
+        require_viewport_refresh = true;
     }
 }
 

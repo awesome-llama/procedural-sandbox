@@ -156,7 +156,7 @@ proc render_popup {
 
 on "popup.color_picker.cancel" {
     delete UI_popup;
-    require_screen_refresh = true;
+    require_viewport_refresh = true;
 }
 
 
@@ -168,7 +168,7 @@ on "popup.color_picker.apply" {
         error "not a color picker";
     }
     delete UI_popup;
-    require_screen_refresh = true;
+    require_viewport_refresh = true;
 }
 
 
@@ -222,11 +222,11 @@ proc render_project_messages {
     local msg_i = 1;
     repeat ((length project_messages) / 2) {
         project_messages[msg_i+1] -= dt; # replace this with delta time
-        if project_messages[msg_i+1] < 0 {
+        if (project_messages[msg_i+1] < 0) {
             # delete message:
             delete project_messages[msg_i];
             delete project_messages[msg_i];
-            require_screen_refresh = true;
+            require_viewport_refresh = true;
         } else {
             local msg_bottom_y = 160-msg_i*10 - 6;
 
@@ -537,7 +537,7 @@ on "stage clicked" {
             # delete message
             delete project_messages[UI_last_hovered_element];
             delete project_messages[UI_last_hovered_element];
-            require_screen_refresh = true;
+            require_viewport_refresh = true;
         }
         
         stop_this_script;
@@ -547,7 +547,7 @@ on "stage clicked" {
         # pass
     } else {
         # close popup and continue checking for other UI elements
-        if UI_popup[1] { require_screen_refresh = true; } # is showing
+        if (UI_popup[1]) { require_viewport_refresh = true; } # is showing
         delete UI_popup;
     }
 
@@ -596,7 +596,7 @@ on "stage clicked" {
                     set_value_element clicked_element, start_value + delta_per_px*(unfenced_mouse_x-start_mouse_x), true;
                 }
             }
-            if not mouse_moved {
+            if (not mouse_moved) {
                 ask "set \"" & UI_data[clicked_element+1] & "\" to number";
                 if (answer() != "") {
                     set_value_element clicked_element, answer()+0, false;
@@ -611,7 +611,7 @@ on "stage clicked" {
             set_setting_from_id "popup.color_picker.color", UI_data[clicked_element+3];
             set_color_picker_sliders_from_color;
 
-            require_screen_refresh = true; # update previous picker, temporary solution
+            require_viewport_refresh = true; # update previous picker, temporary solution
 
         } elif (UI_data[clicked_element] == "EXPANDER") {
             UI_data[clicked_element+3] = 1 - UI_data[clicked_element+3];
@@ -630,10 +630,10 @@ on "stage clicked" {
             if (viewport_mode == ViewportMode.ORBIT) {
                 require_composite = true;
             }
-            require_screen_refresh = true;
+            require_viewport_refresh = true;
         } elif (clicked_element == "open side bar") {
             UI_sidebar_width = 160;
-            require_screen_refresh = true;
+            require_viewport_refresh = true;
         } elif (clicked_element == "viewport 2D") {
             viewport_mode = ViewportMode.ALIGNED;
             requested_render_resolution = 1;
@@ -654,7 +654,7 @@ on "stage clicked" {
             UI_current_panel = "project.settings";
             if (UI_sidebar_width < 8) {
                 UI_sidebar_width = 160;
-                require_screen_refresh = true;
+                require_viewport_refresh = true;
             }
         }
     }
@@ -740,7 +740,7 @@ on "project.settings.apply" {
     if (viewport_mode == ViewportMode.ORBIT) {
         requested_render_resolution = PS_render_resolution_default_orbit;
     }
-    
+
     require_composite = true;
 
     print "changes applied", 3;
