@@ -52,6 +52,8 @@ on "hard reset" {
 # all text colour
 %define THEME_COL_TEXT "#ffffff"
 
+# all text colour
+%define THEME_COL_TEXT_MINOR "#aaaaaa"
 
 %define LINEHIGHT 16
 %define TXT_Y_OFFSET 12
@@ -346,7 +348,7 @@ proc render_modular_element index, x, y, width, panel_id {
         render_modular_element $index+1, $x, UI_y, $width, $panel_id;
 
     } elif (elem_type == "LABEL") {
-        # [type, text]
+        # [type, text, color]
         if (UI_data[$index+2] == "") { # custom color
             set_pen_color THEME_COL_TEXT;
         } else {
@@ -354,6 +356,17 @@ proc render_modular_element index, x, y, width, panel_id {
         }
         plainText $x, $y-TXT_Y_OFFSET, 1, UI_data[$index+1];
         UI_y -= LINEHIGHT;
+        render_modular_element $index+3, $x, UI_y, $width, $panel_id;
+
+    } elif (elem_type == "TEXTBLOCK") {
+        # [type, text, color]
+        if (UI_data[$index+2] == "") { # custom color
+            set_pen_color THEME_COL_TEXT_MINOR;
+        } else {
+            set_pen_color UI_data[$index+2];
+        }
+        wrappedText $x, $y-TXT_Y_OFFSET, 1, UI_data[$index+1], $width;
+        UI_y += (y_offset-($y+4));
         render_modular_element $index+3, $x, UI_y, $width, $panel_id;
 
     } elif (elem_type == "SEPARATOR") {

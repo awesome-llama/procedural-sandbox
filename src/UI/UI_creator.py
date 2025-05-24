@@ -25,6 +25,12 @@ class Label(Element):
         # create a label suitable for a panel title
         return Label(text, "#FF8CFF")
 
+class TextBlock(Element):
+    # label but wrapped text for longer bits of information
+    def __init__(self, text, color=''):
+        super().__init__()
+        self.items = ['TEXTBLOCK', text, color]
+
 class Separator(Element):
     def __init__(self, width_fac=1, height=3):
         super().__init__()
@@ -261,8 +267,7 @@ panels['io.new_canvas'] = Container([
 panels['io.save_canvas'] = Container([
     Label.title('Save canvas'),
     Separator(),
-    Label('Save all canvas data,'),
-    Label('quantized to 8-bit.'),
+    TextBlock('Save all canvas data, quantized to 8-bit.'),
     Expander('Layers', '', True, [
         Checkbox('Include opacity (alpha)', 'io.save_canvas.include_opacity', True),
         Checkbox('Include emission', 'io.save_canvas.include_emission', True),
@@ -282,7 +287,7 @@ panels['io.import_height_map'] = Container([
         Value('Red', 'io.import_height_map.weight_r', 0.25, 0, 1, snap_frac=1000),
         Value('Green', 'io.import_height_map.weight_g', 0.5,  0, 1, snap_frac=1000),
         Value('Blue', 'io.import_height_map.weight_b', 0.25, 0, 1, snap_frac=1000),
-        Label('All usually should add to 1'),
+        TextBlock('All usually should add to 1'),
     ]),
     Expander('Remap height', '', True, [
         Value('Map 0 to height', 'io.import_height_map.map_0', 0, -2, 2, snap_frac=1000),
@@ -294,8 +299,7 @@ panels['io.import_height_map'] = Container([
 panels['io.import_color_map'] = Container([
     Label.title('Import color map'),
     Separator(),
-    Label('Replaces voxel colors only.'),
-    Label('Does not affect opacity.'),
+    TextBlock('Replaces voxel colors only. Does not affect opacity.'),
     Expander('Settings', '', True, [
         Checkbox('Resize canvas if needed', 'io.import_color_map.resize_canvas', True),
         Checkbox('Interpret as linear', 'io.import_color_map.interpret_linear', False),
@@ -425,8 +429,7 @@ panels['gen.eca'] = Container([
         Value('Extrude Z', 'gen.eca.extrude_z', 1, 0, 4, 0, 4096, 1)
     ]),
     Expander('Variant', '', True, [
-        Label('Suggested rules:'),
-        Label('18, 30, 45, 73, 90, 105, 110, 184'),
+        TextBlock('Suggested rules: 18, 30, 45, 73, 90, 105, 110, 184'),
         Separator(0),
         Value('Rule', 'gen.eca.rule', 110, 0, 255, 0, 255, snap_frac=1),
         Checkbox('Random initial condition', 'gen.eca.random_initial_condition', True),
@@ -651,7 +654,7 @@ panels['fx.recolor'] = Container([
         Value('Red', 'fx.recolor.weight_r', 0.25, 0, 1, snap_frac=1000),
         Value('Green', 'fx.recolor.weight_g', 0.5,  0, 1, snap_frac=1000),
         Value('Blue', 'fx.recolor.weight_b', 0.25, 0, 1, snap_frac=1000),
-        Label('All usually should add to 1'),
+        TextBlock('All usually should add to 1'),
     ]),
     Expander('Input range', '', True, [
         Value('Map 0 to value', 'fx.recolor.map_0', 0, -2, 2, snap_frac=1000),
@@ -669,6 +672,7 @@ panels['fx.recolor'] = Container([
 panels['fx.jitter'] = Container([
     Label.title('Jitter'),
     Separator(),
+    TextBlock('Randomly translate voxels'),
     Expander('Settings', '', True, [
         Value('Coverage', 'fx.jitter.coverage', 0.1, 0, 0.2, 0, 1, snap_frac=1000),
         Value.fraction('Probability Z', 'fx.jitter.probability_z', 0),
@@ -679,6 +683,7 @@ panels['fx.jitter'] = Container([
 panels['fx.smudge'] = Container([
     Label.title('Smudge'),
     Separator(),
+    TextBlock('Randomly blend adjacent voxel color.'),
     Expander('Settings', '', True, [
         Value('Coverage', 'fx.smudge.coverage', 0.1, 0, 0.2, 0, 1, snap_frac=1000),
         Value.fraction('Probability Z', 'fx.smudge.probability_z', 0.333),
@@ -689,8 +694,7 @@ panels['fx.smudge'] = Container([
 panels['fx.reshape_canvas'] = Container([
     Label.title('Reshape canvas'),
     Separator(),
-    Label('Does not modify voxels,'),
-    Label('only canvas size.'),
+    TextBlock('Nondestructive adjustment of canvas dimensions. Voxel order is maintained and reversible.'),
     Expander('Dimensions', '', True, [
         Button('Get current dimensions', 'fx.reshape_canvas.get_current_dimensions'),
         Value.canvas_size('Size X', 'fx.reshape_canvas.size_x', ''),
@@ -699,6 +703,7 @@ panels['fx.reshape_canvas'] = Container([
     ]),
     Expander('Dangerous', '', False, [
         Checkbox('Allow any size', 'fx.reshape_canvas.any_size', False),
+        TextBlock('Allow for dimensions that result in a canvas unequal to the actual number of stored voxels.'),
     ]),
     Button('Set dimensions', 'fx.reshape_canvas.run'),
 ])
