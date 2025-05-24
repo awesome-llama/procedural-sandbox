@@ -1,4 +1,4 @@
-"""Create the lists for the various generators"""
+"""Create the lists for the modular UI"""
 
 import itertools
 
@@ -60,12 +60,12 @@ class Checkbox(Element):
         return list(self.items)
 
 class Value(Element):
-    def __init__(self, label, id='', value=0, soft_min=0, soft_max=1, hard_min="-Infinity", hard_max="Infinity", snap_frac=100, shape='sep'):
+    def __init__(self, label, id='', value=0, soft_min=0, soft_max=1, hard_min='-Infinity', hard_max='Infinity', snap_frac=100, shape='sep'):
         super().__init__()
         if float(soft_max) < float(soft_min):
-            raise Exception("soft limit interval is inverted")
+            raise Exception('soft limit interval is inverted')
         if float(hard_max) < float(hard_min):
-            raise Exception("hard limit interval is inverted")
+            raise Exception('hard limit interval is inverted')
         
         self.items = ['VALUE', label, id, value, value, soft_min, soft_max, hard_min, hard_max, snap_frac, shape]
 
@@ -85,7 +85,8 @@ class Value(Element):
         return Value(label, id, value, 1, soft_max, hard_min=0, hard_max=4096, snap_frac=1)
 
 class Color(Element):
-    def __init__(self, label='Color', id='', color="808080"):
+    def __init__(self, label='Color', id='', color='#808080'):
+        if color.startswith('#'): color = color[1:] # remove hash
         if len(color) != 6: raise ValueError('color must be 6 hexadecimal digits')
         super().__init__()
         self.items = ['COLOR', label, id, int(color, 16), int(color, 16)]
@@ -138,7 +139,7 @@ panels = {}
 
 panels['popup.color_picker'] = Container([
     Label.title('Color picker'),
-    Color('Color', 'popup.color_picker.color', 'ff3000'),
+    Color('Color', 'popup.color_picker.color', '#ff3000'),
     Value('Mode', 'popup.color_picker.mode', 0, 0, 3, snap_frac=1), # 0=HSV, 1=RGB
     
     Value.fraction('Hue', 'popup.color_picker.hue', 0.1),
@@ -252,7 +253,7 @@ panels['io.new_canvas'] = Container([
     ]),
     Expander('Base layer', '', True, [
         Checkbox('Include base layer', 'io.new_canvas.include_base', False),
-        Color('Base color', 'io.new_canvas.base_col', '808080'),
+        Color('Base color', 'io.new_canvas.base_col', '#808080'),
     ]),
     Button('Create new canvas', 'io.new_canvas.run'),
 ])
@@ -275,7 +276,7 @@ panels['io.import_height_map'] = Container([
     Expander('Canvas', '', True, [
         Checkbox('Erase canvas', 'io.import_height_map.erase_canvas', True),
         Value.canvas_size('New size Z', 'io.import_height_map.size_z', 16, 64),
-        Color('New voxel color', 'io.import_height_map.new_color', 'aaaaaa'),
+        Color('New voxel color', 'io.import_height_map.new_color', '#aaaaaa'),
     ]),
     Expander('Channel weights', '', False, [
         Value('Red', 'io.import_height_map.weight_r', 0.25, 0, 1, snap_frac=1000),
@@ -353,9 +354,9 @@ panels['gen.fibres'] = Container([
         Value('Segment angle', 'gen.fibres.segment_angle', 30, 0, 90, 0, 360, 1),
     ]),
     Expander('Color', '', True, [
-        Color('Color 1', 'gen.fibres.col1', '48433e'),
-        Color('Color 2', 'gen.fibres.col2', 'a8a39e'),
-        Color('Color 3', 'gen.fibres.col3', '745b43'),
+        Color('Color 1', 'gen.fibres.col1', '#48433e'),
+        Color('Color 2', 'gen.fibres.col2', '#a8a39e'),
+        Color('Color 3', 'gen.fibres.col3', '#745b43'),
     ]),
     Button('Generate', 'gen.fibres.run'),
 ])
@@ -367,7 +368,7 @@ panels['gen.ballpit'] = Container([
         Value.canvas_size('Size X', 'gen.ballpit.size_x', 64),
         Value.canvas_size('Size Y', 'gen.ballpit.size_y', 64),
         Value.canvas_size('Size Z', 'gen.ballpit.size_z', 16, 64),
-        Color('Ground color', 'gen.ballpit.ground_col', '48433e'),
+        Color('Ground color', 'gen.ballpit.ground_col', '#48433e'),
     ]),
     Expander('Balls', '', True, [
         Value('Min. radius', 'gen.ballpit.radius_min', 1, 0.5, 16, 0, 256, 2),
@@ -375,7 +376,7 @@ panels['gen.ballpit'] = Container([
         Value('Density', 'gen.ballpit.density', 0.5, 0, 1, 0, 10),
         Separator(0),
         Expander('Ball color', '', False, [
-            Color('Target color', 'gen.ballpit.ball_target_col', 'ff3000'),
+            Color('Target color', 'gen.ballpit.ball_target_col', '#ff3000'),
             Value.fraction('Hue variance', 'gen.ballpit.variance_hue', 0.1),
             Value.fraction('Sat variance', 'gen.ballpit.variance_sat', 0.7),
             Value.fraction('Val variance', 'gen.ballpit.variance_val', 0.2),
@@ -395,7 +396,7 @@ panels['gen.city'] = Container([
         Value.canvas_size('Size Z', 'gen.city.size_z', 16, 64),
     ]),
     Expander('Color', '', True, [
-        Color('Ground color', 'gen.city.ground_col', 'aaaaaa'),
+        Color('Ground color', 'gen.city.ground_col', '#aaaaaa'),
     ]),
     Button('Generate', 'gen.city.run'),
 ])
@@ -409,7 +410,7 @@ panels['gen.control_panel'] = Container([
         Value('Cell size', 'gen.control_panel.cell_size', 10, 4, 24, 1, 256, snap_frac=1),
     ]),
     Expander('Color', '', True, [
-        Color('Panel color', 'gen.control_panel.panel_color', 'aaaaaa'),
+        Color('Panel color', 'gen.control_panel.panel_color', '#aaaaaa'),
     ]),
     Button('Generate', 'gen.control_panel.run'),
 ])
@@ -431,8 +432,8 @@ panels['gen.eca'] = Container([
         Checkbox('Random initial condition', 'gen.eca.random_initial_condition', True),
     ]),
     Expander('Color', '', True, [
-        Color('State 0', 'gen.eca.state_0_col', '303030'),
-        Color('State 1', 'gen.eca.state_1_col', 'ffffff'),
+        Color('State 0', 'gen.eca.state_0_col', '#303030'),
+        Color('State 1', 'gen.eca.state_1_col', '#ffffff'),
     ]),
     Button('Generate', 'gen.eca.run'),
 ])
@@ -445,7 +446,7 @@ panels['gen.erosion'] = Container([
         Value.canvas_size('Size Y', 'gen.erosion.size_y', 64),
         Value.canvas_size('Size Z', 'gen.erosion.size_z', 16, 64),
         Value('Scale', 'gen.erosion.scale', 16, 1, 256, 0, 4096, snap_frac=1),
-        Color('Ground color', 'gen.erosion.ground_col', 'AA997C'),
+        Color('Ground color', 'gen.erosion.ground_col', '#AA997C'),
         Button('Generate', 'gen.erosion.run.generate'),
     ]),
     Expander('Erode', '', False, [
@@ -456,9 +457,9 @@ panels['gen.erosion'] = Container([
     ]),
     Expander('Finalise', '', False, [
         Value('Water level', 'gen.erosion.water_level_fac', 0.2, 0, 1, snap_frac=1000),
-        Color('Water color', 'gen.erosion.water_col', '3e5c90'),
+        Color('Water color', 'gen.erosion.water_col', '#3e5c90'),
         Value('Grass amount', 'gen.erosion.grass_fac', 0.5, 0, 1, snap_frac=1000),
-        Color('Grass color', 'gen.erosion.grass_col', '70aa60'),
+        Color('Grass color', 'gen.erosion.grass_col', '#70aa60'),
         Value('Tree amount', 'gen.erosion.tree_fac', 0.2, 0, 1, snap_frac=1000),
         Button('Run', 'gen.erosion.run.finalise'),
     ]),
@@ -475,8 +476,8 @@ panels['gen.extruded_grid'] = Container([ # "I call them cities"
         Value('Jitter', 'gen.extruded_grid.jitter_fac', 0, 0, 1, snap_frac=1000),
     ]),
     Expander('Color', '', True, [
-        Color('Color 1', 'gen.extruded_grid.col1', '007F7F'), # green
-        Color('Color 2', 'gen.extruded_grid.col2', 'FDFE7F'), # yellow
+        Color('Color 1', 'gen.extruded_grid.col1', '#007F7F'), # green
+        Color('Color 2', 'gen.extruded_grid.col2', '#FDFE7F'), # yellow
         Value.fraction('Glow', 'gen.extruded_grid.glow', 0),
     ]),
     Button('Generate', 'gen.extruded_grid.run'),
@@ -493,8 +494,8 @@ panels['gen.maze'] = Container([
         Value.fraction('Pertubation', 'gen.maze.pertubation', 0.5),
     ]),
     Expander('Color', '', True, [
-        Color('Ground color', 'gen.maze.ground_col', 'ffffff'),
-        Color('Wall color', 'gen.maze.wall_col', '000000'),
+        Color('Ground color', 'gen.maze.ground_col', '#ffffff'),
+        Color('Wall color', 'gen.maze.wall_col', '#000000'),
     ]),
     Button('Generate', 'gen.maze.run'),
 ])
@@ -521,7 +522,7 @@ panels['gen.pipelines'] = Container([
         Value.canvas_size('Size Z', 'gen.pipelines.size_z', 16, 64),
     ]),
     Expander('Color', '', True, [
-        Color('Ground color', 'gen.pipelines.ground_col', 'aaaaaa'),
+        Color('Ground color', 'gen.pipelines.ground_col', '#aaaaaa'),
     ]),
     Button('Generate', 'gen.pipelines.run'),
 ])
@@ -558,11 +559,11 @@ panels['gen.sphere'] = Container([
     Expander('Canvas', '', True, [
         Value('Canvas radius', 'gen.sphere.canvas_size', 16, 1, 256, 0, 4096, snap_frac=1),
         Checkbox('Include ground', 'gen.sphere.include_ground', True),
-        Color('Ground color', 'gen.sphere.ground_col', 'aaaaaa'),
+        Color('Ground color', 'gen.sphere.ground_col', '#aaaaaa'),
     ]),
     Expander('Sphere', '', True, [
         Value.canvas_size('Radius', 'gen.sphere.sphere_radius', 4),
-        Color('Color', 'gen.sphere.sphere_color', '00ff00'),
+        Color('Color', 'gen.sphere.sphere_color', '#00ff00'),
         Value.fraction('Emission', 'gen.sphere.sphere_emission', 0),
     ]),
     Button('Generate', 'gen.sphere.run'),
@@ -657,8 +658,8 @@ panels['fx.recolor'] = Container([
         Value('Map 1 to value', 'fx.recolor.map_1', 1, -2, 2, snap_frac=1000),
     ]),
     Expander('Output colors', '', True, [
-        Color('Val 0 to color', 'fx.recolor.col_0', '000000'),
-        Color('Val 1 to color', 'fx.recolor.col_1', 'ffffff'),
+        Color('Val 0 to color', 'fx.recolor.col_0', '#000000'),
+        Color('Val 1 to color', 'fx.recolor.col_1', '#ffffff'),
     ]),
     Checkbox('Interpolate in sRGB', 'fx.recolor.use_sRGB', True),
     Separator(0),
@@ -788,7 +789,7 @@ panels['project.info'] = Container([
 #    Generate lists & save     #
 ################################
 
-element_list = [""]*10 # element data
+element_list = [""]*10 # element data, initalised with empty items as a fail safe
 panel_lookup = [] # list of where the panels begin
 element_lookup = [] # k-v tuple list of where the elements are
 
