@@ -95,7 +95,7 @@ on "composite" {
             cmp_aligned_density;
 
         } elif (compositor_mode == CompositorMode.NORMAL) {
-            cmp_aligned_normal 1;
+            cmp_aligned_normal;
 
         }
     } elif (viewport_mode == ViewportMode.ORBIT) {
@@ -276,7 +276,7 @@ dy += WY*kernel_h;\
 %define W_EDGE 0.25
 %define W_CORNER 0.125
 
-proc cmp_aligned_normal intensity {
+proc cmp_aligned_normal {
     generate_pass_topmost;
     iy = 0;
     repeat (canvas_size_y) {
@@ -288,23 +288,32 @@ proc cmp_aligned_normal intensity {
             local dy = 0;
             local h = buffer_topmost[i]; # height of current
             
-            # x
-            NRM_KERNEL_X(-1,0,W_EDGE)
+            # 2x2 kernel
             NRM_KERNEL_X(1,0,-W_EDGE)
-            
-            # y
-            NRM_KERNEL_Y(0,-1,W_EDGE)
             NRM_KERNEL_Y(0,1,-W_EDGE)
-
-            # corners
             NRM_KERNEL_XY(1,1,-W_CORNER,-W_CORNER)
-            NRM_KERNEL_XY(-1,1,W_CORNER,-W_CORNER)
-            NRM_KERNEL_XY(1,-1,-W_CORNER,W_CORNER)
-            NRM_KERNEL_XY(-1,-1,W_CORNER,W_CORNER)
+
+            # 3x3 kernel
+            if (PS_normal_map_kernel_size == 3) {
+                # x
+                NRM_KERNEL_X(-1,0,W_EDGE)
+                #NRM_KERNEL_X(1,0,-W_EDGE) # also used by 2x2
+                
+                # y
+                NRM_KERNEL_Y(0,-1,W_EDGE)
+                #NRM_KERNEL_Y(0,1,-W_EDGE) # also used by 2x2
+
+                # corners
+                #NRM_KERNEL_XY(1,1,-W_CORNER,-W_CORNER) # also used by 2x2
+                NRM_KERNEL_XY(-1,1,W_CORNER,-W_CORNER)
+                NRM_KERNEL_XY(1,-1,-W_CORNER,W_CORNER)
+                NRM_KERNEL_XY(-1,-1,W_CORNER,W_CORNER)
+            }
+            
 
             # weight
-            dx *= $intensity;
-            dy *= $intensity;
+            dx *= PS_normal_map_intensity;
+            dy *= PS_normal_map_intensity;
 
             # normalise
             local len = VEC3_LEN(dx,dy,1)*2; # multiply by 2 because normal map centers at 0.5

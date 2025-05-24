@@ -719,11 +719,14 @@ panels['project.compositor_mode'] = Container([
 panels['project.settings'] = Container([
     Label.title('Project settings'),
     Separator(),
-    Expander('Interface', '', True, [
+    Expander('Interface', '', False, [
         Value('Slider sensitivity', 'project.settings.slider_sensitivity', 100, 20, 500, 0, 10000, snap_frac=1),
     ]),
-    Expander('Render', '', True, [
-        Label('Pathtracer:'),
+    Expander('Render (misc)', '', False, [
+        Value('Resolution 3D', 'project.settings.resolution', 4, 1, 12, 1, 64, snap_frac=1),
+        Checkbox('Reset render on flag', 'project.settings.reset_render_on_flag', True),
+    ]),
+    Expander('Pathtracer', '', False, [
         Value('Sky intensity', 'project.settings.sky_intensity', 1, 0, 2, 0, 100, snap_frac=100),
         Value('Emission intensity', 'project.settings.emission_intensity', 1, 0, 2, 0, 100, snap_frac=100),
         Checkbox('"PBR Neutral" tone map', 'project.settings.use_tone_map', False),
@@ -734,9 +737,10 @@ panels['project.settings'] = Container([
         Separator(),
         Value('Max. samples', 'project.settings.max_samples', 256, 1, 1024, 1, 16777216, snap_frac=1),
         Value('Max. frame time', 'project.settings.max_frame_time', 0.1, 0, 0.5, 0, 60, snap_frac=100),
-        Value('Resolution 3D', 'project.settings.resolution', 4, 1, 12, 1, 64, snap_frac=1),
-        Separator(),
-        Checkbox('Reset render on flag', 'project.settings.reset_render_on_flag', True),
+    ]),
+    Expander('Normal map', '', False, [
+        Value('Intensity', 'project.settings.normal_map_intensity', 1, 0, 2, snap_frac=1000),
+        Value('Kernel size', 'project.settings.normal_map_kernel_size', 2, 2, 3, 2, 3, snap_frac=1)
     ]),
     Separator(0),
     Button('Apply changes', 'project.settings.apply'),

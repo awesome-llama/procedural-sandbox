@@ -736,6 +736,9 @@ on "project.settings.apply" {
     PS_render_resolution_default_orbit = get_setting_from_id("project.settings.resolution");
 
     PS_reset_render_on_flag = get_setting_from_id("project.settings.reset_render_on_flag");
+    
+    PS_normal_map_intensity = get_setting_from_id("project.settings.normal_map_intensity");
+    PS_normal_map_kernel_size = get_setting_from_id("project.settings.normal_map_kernel_size");
 
     if (viewport_mode == ViewportMode.ORBIT) {
         requested_render_resolution = PS_render_resolution_default_orbit;

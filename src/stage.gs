@@ -141,6 +141,9 @@ on "hard reset" {
 
     PS_reset_render_on_flag = true;
 
+    PS_normal_map_intensity = 1;
+    PS_normal_map_kernel_size = 2;
+
     broadcast "project.settings.apply"; # update the project settings from UI (which is always the source)
 }
 
