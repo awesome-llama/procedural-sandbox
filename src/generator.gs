@@ -64,12 +64,11 @@ on "gen.ballpit.run" {
     setting_from_id "gen.ballpit.variance_hue";
     setting_from_id "gen.ballpit.variance_sat";
     setting_from_id "gen.ballpit.variance_val";
-    setting_from_id "gen.ballpit.variance_opacity";
     setting_from_id "gen.ballpit.variance_glow";
-    generate_ballpit UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6], UI_return[7], UI_return[8], UI_return[9], UI_return[10], UI_return[11], UI_return[12], UI_return[13]; 
+    generate_ballpit UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6], UI_return[7], UI_return[8], UI_return[9], UI_return[10], UI_return[11], UI_return[12]; 
 }
 %define AVG_VOL_OF_SPHERE(RAD1,RAD2) (1.04719755 * (((RAD2*RAD2*RAD2*RAD2)-(RAD1*RAD1*RAD1*RAD1))/(RAD2*RAD1)))
-proc generate_ballpit size_x, size_y, size_z, ground_col, rad_min, rad_max, density, ball_col, var_hue, var_sat, var_val, var_opacity, var_glow {
+proc generate_ballpit size_x, size_y, size_z, ground_col, rad_min, rad_max, density, ball_col, var_hue, var_sat, var_val, var_glow {
     reset_canvas true, $size_x, $size_y, $size_z;
 
     set_depositor_from_number $ground_col;
@@ -78,7 +77,6 @@ proc generate_ballpit size_x, size_y, size_z, ground_col, rad_min, rad_max, dens
     repeat ($density * ((canvas_size_x * canvas_size_y * canvas_size_z)/AVG_VOL_OF_SPHERE($rad_min, $rad_max))) {
         set_depositor_from_number $ball_col;
         randomise_depositor_by_HSV $var_hue, $var_sat, $var_val;
-        depositor_voxel.opacity = 1-random("0.0", $var_opacity);
         set_depositor_glow $var_glow;
 
         local radius = round(random($rad_min, $rad_max)*2)/2;
@@ -698,23 +696,10 @@ proc generate_fibres size_x, size_y, size_z, density, cl_count, cl_rad, seg_len,
 }
 
 
-on "gen.pipes.run" {
-    reset_canvas true, 64, 64, 8;
-    set_depositor_from_sRGB 0.7, 0.7, 0.6;
-    draw_base_layer;
-
-    repeat 100 {
-        set_depositor_from_sRGB RANDOM_0_1(), RANDOM_0_1(), RANDOM_0_1();
-        depositor_voxel.opacity = random(0.5, "1.0");
-
-        random_walk_taxicab RANDOM_X(), RANDOM_Y(), RANDOM_Z(), 20, 5;
-    }
-
-    require_composite = true;
+on "gen.refinery.run" {
+    delete UI_return;
+    generate_refinery;
 }
-
-
-on "gen.refinery.run" { generate_refinery; }
 proc generate_refinery {
     reset_canvas true, 64, 64, 16;
     set_depositor_from_sRGB 0.7, 0.7, 0.6;
@@ -828,33 +813,6 @@ proc generate_value_noise size_x, size_y, scale, octaves, write_to_canvas {
         }
         delete temp_canvas_mono; # delete mono list because its data is now in the canvas
     }
-}
-
-
-on "gen.wheel.run" { 
-    delete UI_return;
-    #setting_from_id "gen.wheel.rim_radius";
-    generate_wheel 25, 9, 8; 
-}
-proc generate_wheel rim_radius, sidewall_height, tire_width {
-    reset_canvas true, round($rim_radius + 2*$sidewall_height), 1, round($tire_width);
-
-    # rim
-    set_depositor_from_sRGB 0.7, 0.9, 0.6;
-    draw_line_DDA 0, 0, 1, 1, 0, 0, $rim_radius*0.5;
-    #set_depositor_from_sRGB 0.4, 0.9, 0.6;
-    draw_line_DDA $rim_radius*0.5, 0, 2, $rim_radius, 0, $tire_width, $rim_radius*0.5+2; # WIP
-    #set_depositor_from_sRGB 0.9, 0.9, 0.6;
-    draw_column $rim_radius, 0, 0, $tire_width;
-
-    # tire
-    set_depositor_from_HSV 0.2, 0.02, 0.2;
-    draw_cuboid_corner_size $rim_radius+1, 0, 0, $sidewall_height-1, 1, $tire_width;
-    draw_cuboid_corner_size $rim_radius+$sidewall_height, 0, 1, 1, 1, $tire_width-2;
-
-    glbfx_revolve 0;
-
-    require_composite = true;
 }
 
 

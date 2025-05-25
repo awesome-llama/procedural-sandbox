@@ -203,8 +203,7 @@ panels['menu.gen'] = Container([
     btn_menu_set_page('City', 'gen.city'),
     btn_menu_set_page('Control Panel', 'gen.control_panel'),
     btn_menu_set_page('Nucleus', 'gen.nucleus'),
-    btn_menu_set_page('Pipelines', 'gen.pipelines'),
-    btn_menu_set_page('Wheel', 'gen.wheel'),
+    btn_menu_set_page('Refinery', 'gen.refinery'),
     Separator(0, 5),
     btn_menu_set_page('Erosion', 'gen.erosion'),
     btn_menu_set_page('Fibres', 'gen.fibres'),
@@ -216,7 +215,6 @@ panels['menu.gen'] = Container([
     btn_menu_set_page('Maze', 'gen.maze'),
     Separator(0, 5),
     btn_menu_set_page('Sphere', 'gen.sphere'),
-    Button('Template', 'gen.template.run'),
 ])
 
 panels['menu.fx'] = Container([
@@ -356,9 +354,9 @@ panels['gen.fibres'] = Container([
         Value('Segment angle', 'gen.fibres.segment_angle', 30, 0, 90, 0, 360, 1),
     ]),
     Expander('Color', '', True, [
-        Color('Color 1', 'gen.fibres.col1', '#48433e'),
-        Color('Color 2', 'gen.fibres.col2', '#a8a39e'),
-        Color('Color 3', 'gen.fibres.col3', '#745b43'),
+        Color('Color 1', 'gen.fibres.col1', "#837a71"),
+        Color('Color 2', 'gen.fibres.col2', "#c1b9b0"),
+        Color('Color 3', 'gen.fibres.col3', "#bd936d"),
     ]),
     Button('Generate', 'gen.fibres.run'),
 ])
@@ -370,19 +368,18 @@ panels['gen.ballpit'] = Container([
         Value.canvas_size('Size X', 'gen.ballpit.size_x', 64),
         Value.canvas_size('Size Y', 'gen.ballpit.size_y', 64),
         Value.canvas_size('Size Z', 'gen.ballpit.size_z', 16, 64),
-        Color('Ground color', 'gen.ballpit.ground_col', '#48433e'),
+        Color('Ground color', 'gen.ballpit.ground_col', '#aaaaaa'),
     ]),
     Expander('Balls', '', True, [
         Value('Min. radius', 'gen.ballpit.radius_min', 1, 0.5, 16, 0, 256, 2),
         Value('Max. radius', 'gen.ballpit.radius_max', 4, 0.5, 16, 0, 256, 2),
-        Value('Density', 'gen.ballpit.density', 0.5, 0, 1, 0, 10),
+        Value('Density', 'gen.ballpit.density', 0.2, 0, 1, 0, 10),
         Separator(0),
         Expander('Ball color', '', False, [
             Color('Target color', 'gen.ballpit.ball_target_col', '#ff3000'),
             Value.fraction('Hue variance', 'gen.ballpit.variance_hue', 0.1),
             Value.fraction('Sat variance', 'gen.ballpit.variance_sat', 0.7),
             Value.fraction('Val variance', 'gen.ballpit.variance_val', 0.2),
-            Value.fraction('Opacity variance', 'gen.ballpit.variance_opacity', 1),
             Value.fraction('Glow', 'gen.ballpit.variance_glow', 0.5),
         ]),
     ]),
@@ -514,28 +511,18 @@ panels['gen.nucleus'] = Container([
     Button('Generate', 'gen.nucleus.run'),
 ])
 
-panels['gen.pipelines'] = Container([
-    Label.title('Generate pipelines'),
+panels['gen.refinery'] = Container([
+    Label.title('Generate refinery'),
     Separator(),
     Expander('Canvas', '', True, [
-        Value.canvas_size('Size X', 'gen.pipelines.size_x', 64),
-        Value.canvas_size('Size Y', 'gen.pipelines.size_y', 64),
-        Value.canvas_size('Size Z', 'gen.pipelines.size_z', 16, 64),
+        Value.canvas_size('Size X', 'gen.refinery.size_x', 64),
+        Value.canvas_size('Size Y', 'gen.refinery.size_y', 64),
+        Value.canvas_size('Size Z', 'gen.refinery.size_z', 16, 64),
     ]),
     Expander('Color', '', True, [
-        Color('Ground color', 'gen.pipelines.ground_col', '#aaaaaa'),
+        Color('Ground color', 'gen.refinery.ground_col', '#aaaaaa'),
     ]),
-    Button('Generate', 'gen.pipelines.run'),
-])
-
-panels['gen.wheel'] = Container([
-    Label.title('Generate wheel'),
-    Separator(),
-    Value('Rim radius', 'gen.wheel.rim_radius', 25, 1, 256, 0, 4096, snap_frac=1),
-    Value('Sidewall height', 'gen.wheel.sidewall_height', 9, 1, 512, 0, 4096, snap_frac=1),
-    Value('Tire width', 'gen.wheel.tire_width', 8, 1, 512, 0, 4096, snap_frac=1),
-    Separator(0),
-    Button('Generate', 'gen.wheel.run'),
+    Button('Generate', 'gen.refinery.run'),
 ])
 
 # https://en.wikipedia.org/wiki/Value_noise
