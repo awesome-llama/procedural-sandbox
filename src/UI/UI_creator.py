@@ -146,20 +146,18 @@ panels = {}
 panels['popup.color_picker'] = Container([
     Label.title('Color picker'),
     Color('Color', 'popup.color_picker.color', '#ff3000'),
-    Value('Mode', 'popup.color_picker.mode', 0, 0, 3, snap_frac=1), # 0=HSV, 1=RGB
+    Value('Mode', 'popup.color_picker.mode', 0, 0, 2, snap_frac=1), # 0=HSV, 1=RGB
     
     Value.fraction('Hue', 'popup.color_picker.hue', 0.1),
     Value.fraction('Sat', 'popup.color_picker.sat', 0.4),
     Value.fraction('Val', 'popup.color_picker.val', 1.0),
     End(),
     
-    Value.fraction('R', 'popup.color_picker.r', 0.1), # it's easier to be decimal
-    Value.fraction('G', 'popup.color_picker.g', 0.8),
-    Value.fraction('B', 'popup.color_picker.b', 1.0),
-    End(),
-
-    Button('Set from hex code', 'popup.color_picker.set_from_hex'),
-    End(),
+    #Value.fraction('R', 'popup.color_picker.r', 0.1),
+    #Value.fraction('G', 'popup.color_picker.g', 0.8),
+    #Value.fraction('B', 'popup.color_picker.b', 1.0),
+    #End(),
+    
     Button('Cancel', 'popup.color_picker.cancel'),
     End(),
     Button('Apply', 'popup.color_picker.apply'),

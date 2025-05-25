@@ -34,7 +34,6 @@ on "start main loop" {
                 UI_hovered_group = "";
             }
             UI_hovered_element = "";
-        
         }
 
         if (require_composite == true) {
@@ -46,7 +45,7 @@ on "start main loop" {
         if (require_viewport_refresh == true) {
             erase_all;
             broadcast "render viewport";
-            broadcast "render viewport text";
+            broadcast "render viewport overlay";
             require_viewport_refresh = false;
         }
 

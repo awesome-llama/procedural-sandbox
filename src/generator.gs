@@ -895,17 +895,19 @@ on "gen.template.run" {
 }
 
 
-on "gen.grad.run" { generate_grad; }
-proc generate_grad {
-    reset_canvas true, 101, 101, 5;
+on "gen.grad.run" {
+    generate_grad 120, 80;
+}
+proc generate_grad size_x, size_y {
+    reset_canvas true, $size_x, $size_y, 1;
     set_depositor_from_sRGB 0.5, 0.5, 0.5;
     draw_base_layer;
 
     local px_y = 0;
-    repeat 101 {
+    repeat $size_y {
         local px_x = 0;
-        repeat 101 {
-            set_depositor_from_HSV px_x/100, px_y/100, 1;
+        repeat $size_x {
+            set_depositor_from_HSV px_x/($size_x), 1, px_y/($size_y);
             set_voxel px_x, px_y, 0;
             px_x++;
         }

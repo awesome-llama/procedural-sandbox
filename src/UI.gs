@@ -18,6 +18,9 @@ costumes
 "costumes/UI/icons/zoom in.svg",
 "costumes/UI/icons/zoom out.svg",
 "costumes/UI/icons/zoom fit.svg",
+"costumes/UI/icons/info.svg",
+"costumes/UI/hsv0.png",
+"costumes/UI/hsv1.png",
 "costumes/UI/mouse detect.svg" as "mouse detect",
 ;
 hide;
@@ -120,29 +123,59 @@ proc render_popup {
         
         # render the different popups depending on data
         if UI_popup[2] == "color picker" {
+            UI_y = UI_popup[4]-5; # UI_y is the same variable used by the modular element procedure
 
             # draw new proposed color
             local CP_col = get_setting_from_id("popup.color_picker.color");
-            draw_UI_rect UI_popup[3]+5, UI_popup[4]-5, 100, 10, 0, CP_col, CP_col;
+            draw_UI_rect UI_popup[3]+5, UI_y, 120, 10, 0, CP_col, CP_col;
 
-            # draw original colour preview
-            draw_UI_rect UI_popup[3]+5, UI_popup[4]-5, 20, 10, 0, UI_data[UI_popup[7]+3], UI_data[UI_popup[7]+3];
+            # draw original colour preview on top
+            draw_UI_rect UI_popup[3]+5, UI_y, 30, 10, 0, UI_data[UI_popup[7]+3], UI_data[UI_popup[7]+3];
 
-            if (get_setting_from_id("popup.color_picker.mode") == 0) { # HSV
-                render_modular_element UI_DATA_INDEX("popup.color_picker.hue"), UI_popup[3]+5, UI_popup[4]-32, UI_popup[5]-10, "popup";
+            UI_check_touching_mouse UI_popup[3]+5, UI_y-12, 50, 9, "popup", "set_col_from_hex";
+            if (UI_last_hovered_group == "popup") and (UI_last_hovered_element == "set_col_from_hex") {
+                set_pen_color THEME_COL_OUTLINE_HIGHLIGHT;
+            } else {
+                set_pen_color THEME_COL_TEXT;
+            }
+            plainText UI_popup[3]+5, UI_y-21, 1, "#" & RGB_num_to_hex_code(CP_col);
 
-                # update color
-                set_setting_from_id "popup.color_picker.color", HSV_to_number(\
-                    get_setting_from_id("popup.color_picker.hue"), \
-                    get_setting_from_id("popup.color_picker.sat"), \
-                    get_setting_from_id("popup.color_picker.val"));
+            UI_y -= 25;
+
+            #if (get_setting_from_id("popup.color_picker.mode") == 0) {
+            local CP_h = get_setting_from_id("popup.color_picker.hue");
+            local CP_s = get_setting_from_id("popup.color_picker.sat");
+            local CP_v = get_setting_from_id("popup.color_picker.val");
+
+            UI_check_touching_mouse UI_popup[3]+4, (UI_y+1), 122, 82, "popup", "HSV_2D";
+            if (UI_last_hovered_group == "popup") and (UI_last_hovered_element == "HSV_2D") {
+                set_pen_color THEME_COL_OUTLINE_HIGHLIGHT;
+                set_pen_size 1;
+                draw_rectangle_corner_wh UI_popup[3]+4, (UI_y-81), 121, 81;
             }
 
-            set_pen_color THEME_COL_TEXT;
-            plainText UI_popup[3]+5, UI_popup[4]-26, 1, "#" & RGB_num_to_hex_code(CP_col);
+            clear_graphic_effects;
+            switch_costume "hsv1";
+            goto UI_popup[3]+65, UI_y-40;
+            stamp;
+            switch_costume "hsv0";
+            set_ghost_effect CP_s*100;
+            stamp;
+            
+            set_pen_color "#ffffff";
+            set_pen_size 1;
+            draw_rectangle_corner_wh round(UI_popup[3]+5+(CP_h*120)-2), round((UI_y-80)+(CP_v*80)-2), 3, 3;
+            UI_y -= 84;
 
-            render_modular_element UI_DATA_INDEX("popup.color_picker.cancel"), UI_popup[3]+5, UI_popup[4]-98, 48, "popup";
-            render_modular_element UI_DATA_INDEX("popup.color_picker.apply"), UI_popup[3]+57, UI_popup[4]-98, 48, "popup";
+            render_modular_element UI_DATA_INDEX("popup.color_picker.hue"), UI_popup[3]+5, UI_y, UI_popup[5]-10, "popup";
+
+            # update color from HSV sliders
+            set_setting_from_id "popup.color_picker.color", HSV_to_number(CP_h, CP_s, CP_v);
+            #}
+
+            set_pen_color THEME_COL_TEXT;
+            render_modular_element UI_DATA_INDEX("popup.color_picker.cancel"), UI_popup[3]+5, UI_popup[4]-165, 58, "popup";
+            render_modular_element UI_DATA_INDEX("popup.color_picker.apply"), UI_popup[3]+67, UI_popup[4]-165, 58, "popup";
         
         } elif UI_popup[2] == "compositor mode" {
             # list of buttons
@@ -175,7 +208,7 @@ on "popup.color_picker.apply" {
 
 
 proc set_color_picker_sliders_from_color {
-    if (get_setting_from_id("popup.color_picker.mode") == 0) { # HSV
+    if (true) { # get_setting_from_id("popup.color_picker.mode") == 0
         # convert RGB num to HSV
         local CP_col = get_setting_from_id("popup.color_picker.color");
         local HSV col_picker_hsv = RGB_to_HSV((CP_col//65536)%256/255, (CP_col//256)%256/255, CP_col%256/255);
@@ -295,7 +328,8 @@ proc render_top_bar x, y {
     top_bar_button "zoom in", "zoom in", TOP_BAR_OFFSET(10), $y-10, false;
 
     # right-aligned settings cog
-    top_bar_button "settings", "settings", 240-10, $y-10, false;
+    top_bar_button "settings", "settings", 240-30, $y-10, false;
+    top_bar_button "info", "info", 240-10, $y-10, false;
 }
 
 # custom implementation, not general-purpose
@@ -324,13 +358,55 @@ proc top_bar_button id, costume, x, y, enabled {
 }
 
 
-on "render viewport text" { render_viewport_text; }
-proc render_viewport_text {
+on "render viewport overlay" { render_viewport_overlay; }
+proc render_viewport_overlay {
+    # Text
     set_pen_color THEME_COL_TEXT;
     plainText UI_sidebar_width-235, 150, 1, ("canvas size: " & ((((canvas_size_x & ", ") & canvas_size_y) & ", ") & canvas_size_z));
     plainText UI_sidebar_width-235, 140, 1, (compositor_mode);
     plainText UI_sidebar_width-235, 130, 1, ("cam scale: " & round(cam_scale*100)/100);
     plainText UI_sidebar_width-235, 120, 1, ("timer: " & floor(( 100 * ((86400 * days_since_2000()) % 1))) & ", " & counted_samples & "/" & PS_max_samples);
+
+    # Axes
+    draw_axes UI_sidebar_width+15-240, -165, 10;
+}
+
+proc draw_axes ox, oy, size {
+    if (viewport_mode == ViewportMode.ALIGNED) {
+        set_pen_color "#00ff00";
+        goto $ox, $oy;
+        pen_down;
+        goto $ox, $oy+$size;
+        pen_up;
+
+        set_pen_color "#ff0000";
+        goto $ox, $oy;
+        pen_down;
+        goto $ox+$size, $oy;
+        pen_up;
+
+    } elif (viewport_mode == ViewportMode.ORBIT) {
+        set_pen_color "#00ff00";
+        goto $ox, $oy;
+        pen_down;
+        local XYZ axis_vec = rotate_world_space_to_cam_space(0, $size, 0);
+        goto $ox+axis_vec.x, $oy+axis_vec.y;
+        pen_up;
+
+        set_pen_color "#ff0000";
+        goto $ox, $oy;
+        pen_down;
+        local XYZ axis_vec = rotate_world_space_to_cam_space($size, 0, 0);
+        goto $ox+axis_vec.x, $oy+axis_vec.y;
+        pen_up;
+
+        set_pen_color "#0000ff"; # render z last because it is always closer to the camera
+        goto $ox, $oy;
+        pen_down;
+        local XYZ axis_vec = rotate_world_space_to_cam_space(0, 0, $size);
+        goto $ox+axis_vec.x, $oy+axis_vec.y;
+        pen_up;
+    }
 }
 
 # modular panel specific
@@ -557,7 +633,31 @@ on "stage clicked" {
     }
 
     if (UI_last_hovered_group == "popup") {
-        # pass
+        
+        if (UI_last_hovered_element == "HSV_2D") {
+            # set hue and val by mouse position
+            until not mouse_down() {
+                set_value_element UI_data_element_index["popup.color_picker.hue" in UI_data_element_id], (mouse_x()-(UI_popup[3]+5))/120, true;
+                set_value_element UI_data_element_index["popup.color_picker.val" in UI_data_element_id], (mouse_y()-(UI_popup[4]-30-80))/80, true;
+            }
+        } elif (UI_last_hovered_element == "set_col_from_hex") {
+            ask "input a color (6-digit hex code)";
+            if (answer() != "") {
+                if (answer()[1] == "#") {
+                    if (length answer() == 7) {
+                        set_setting_from_id "popup.color_picker.color", 0+("0x"&answer()[2]&answer()[3]&answer()[4]&answer()[5]&answer()[6]&answer()[7]);
+                        set_color_picker_sliders_from_color;
+                    }
+                } else {
+                    if (length answer() == 6) {
+                        set_setting_from_id "popup.color_picker.color", 0+("0x"&answer());
+                        set_color_picker_sliders_from_color;
+                    }
+                }
+            }
+        }
+
+
     } else {
         # close popup and continue checking for other UI elements
         if (UI_popup[1]) { require_viewport_refresh = true; } # is showing
@@ -595,11 +695,17 @@ on "stage clicked" {
                     delta_per_px = (1/UI_data[clicked_element+9])/20; # start with increment at 20px
                     if (delta_per_px > 10000000) { delta_per_px = 10000000; } # effectively accepts any floating point number
                     
-                    # scale down if the total travel is larger than 500px
+                    if (UI_data[clicked_element+10] == "full") {
+                        max_travel = 200; # full sliders should have travel closer to their width
+                    } else {
+                        max_travel = 500;
+                    }
+                    
+                    # scale down if the total travel is larger than maximum
                     slider_total_travel = abs(UI_data[clicked_element+6]-UI_data[clicked_element+5])/delta_per_px;
-                    if (slider_total_travel > 500) {
-                        delta_per_px *= (slider_total_travel/500);
-                        slider_total_travel = 500;
+                    if (slider_total_travel > max_travel) {
+                        delta_per_px *= (slider_total_travel/max_travel);
+                        slider_total_travel = max_travel;
                     }
                     delta_per_px *= PS_slider_sensitivity/100;
                     if key_pressed("shift") {
@@ -618,7 +724,7 @@ on "stage clicked" {
 
         } elif (UI_data[clicked_element] == "COLOR") {
             # open the picker
-            create_popup "color picker", round(mouse_x()+10), round(mouse_y()-10), 110, 120;
+            create_popup "color picker", round(mouse_x()+10), round(mouse_y()-10), 130, 186;
             add clicked_element to UI_popup; # 7. index
             
             set_setting_from_id "popup.color_picker.color", UI_data[clicked_element+3];
@@ -669,6 +775,8 @@ on "stage clicked" {
                 UI_sidebar_width = 160;
                 require_viewport_refresh = true;
             }
+        } elif (clicked_element == "info") {
+            UI_current_panel = "project.info";
         }
     }
 }
@@ -936,10 +1044,29 @@ proc draw_rect x, y, width, height, radius, fill_col {
 }
 
 
+# Draw a rectangle from corner point, width and height
+proc draw_rectangle_corner_wh x, y, width, height {
+    goto $x, $y;
+    pen_down;
+    goto $x+$width, $y;
+    goto $x+$width, $y+$height;
+    goto $x, $y+$height;
+    goto $x, $y;
+    pen_up;
+}
+
+
 ################################
 #            Utils             #
 ################################
 
+
+func rotate_world_space_to_cam_space(x, y, z) XYZ {
+    # rotate point around Z
+    local XYZ r1 = XYZ {x:$x*cos(-cam_azi)-$y*sin(-cam_azi), y:$x*sin(-cam_azi)+$y*cos(-cam_azi), z:$z};
+    # rotate point around X
+    return XYZ {x:r1.x, y:r1.y*cos(-cam_elev)-r1.z*sin(-cam_elev), z:r1.y*sin(-cam_elev)+r1.z*cos(-cam_elev)};
+}
 
 proc get_unfenced_mouse {
     if abs(mouse_x()) < 240 {

@@ -76,10 +76,13 @@ on "initalise" {
     depositor_template_index = 0; # which template to use, 1-indexed
     XYZ depositor_template_origin = XYZ {x:0, y:0, z:0}; # origin of the template in canvas space
 
-    UI_hovered_group = "";
-    UI_hovered_element = "";
+    UI_hovered_group = ""; # panel
+    UI_hovered_element = ""; # element of panel
+    #UI_hovered_subelement = ""; # component of element (not used but is an option if needed)
+
     UI_last_hovered_group = "";
     UI_last_hovered_element = "";
+    #UI_last_hovered_subelement = "";
 
     if (PS_reset_render_on_flag) { UI_sidebar_width = 160; }; # set to 0 to hide
     

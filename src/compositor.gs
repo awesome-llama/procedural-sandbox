@@ -71,7 +71,7 @@ on "composite" {
     if (viewport_mode == ViewportMode.ALIGNED) {
         render_size_x = canvas_size_x;
         render_size_y = canvas_size_y;
-        resize_render_cache;
+        resize_render_buffer;
 
         if (compositor_mode == CompositorMode.COLOR) {
             cmp_aligned_color;
@@ -102,7 +102,7 @@ on "composite" {
         # there is only 1 rendering mode in orbit view, raytraced
         render_size_x = ceil((480-UI_sidebar_width) / render_resolution);
         render_size_y = ceil((360-20) / render_resolution);
-        resize_render_cache;
+        resize_render_buffer;
         
         if (compositor_mode == CompositorMode.COLOR) {
             init_orbit_raytracer;
@@ -140,6 +140,10 @@ on "composite" {
 
 
 on "iterative compositor" {
+    if (UI_popup[1]) {
+        stop_this_script; # pause rendering whilst a popup is open (prioritise UI performance)
+    }
+
     if (viewport_mode == ViewportMode.ALIGNED) {
         if (compositor_mode == CompositorMode.SHADED) {
             iterate_aligned_ao PS_max_samples, PS_max_iteration_time, 1; # use 1 because it is composited with color
@@ -164,7 +168,6 @@ on "iterative compositor" {
 
         }
     }
-
 
     if (counted_samples >= PS_max_samples) {
         require_iterative_compositor = false;
@@ -1092,8 +1095,8 @@ proc random_lambertian_vector nx, ny, nz {
 }
 
 
-# resize the render cache (final col only)
-proc resize_render_cache {
+# resize the render buffer (final col only)
+proc resize_render_buffer {
     if ((length render_buffer_final_col) != (render_size_x * render_size_y)) {
         delete render_buffer_final_col;
         repeat (render_size_x * render_size_y) {
@@ -1102,7 +1105,7 @@ proc resize_render_cache {
     }
 }
 
-# set the render cache to 0, required by raytracers as these are used additively.
+# set the render buffer to 0, required by raytracers as these are used additively.
 proc reset_render_RGB {
     delete buffer_r;
     delete buffer_g;
