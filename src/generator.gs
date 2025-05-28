@@ -142,19 +142,68 @@ on "gen.control_panel.run" {
     generate_control_panel UI_return[1], UI_return[2], UI_return[3], UI_return[4]; 
 }
 proc generate_control_panel cells_x, cells_y, cell_size, panel_color {
-    # template
+    # template 1: mesh
     reset_canvas true, 2, 2, 1;
     set_depositor_from_number $panel_color;
     set_voxel 0, 0, 0;
     set_voxel 1, 1, 0;
-    add_canvas_as_template; # template 1
+    add_canvas_as_template;
+
+    # template 2: louvres
+    reset_canvas false, 1, 2, 1;
+    set_depositor_from_number $panel_color;
+    set_voxel 0, 0, 0;
+    add_canvas_as_template;
+
+    # template 3: text
+    reset_canvas false, 48, 12, 1;
+    set_depositor_from_sRGB_value 0.8;
+    draw_base_layer;
+    iy = 0;
+    repeat canvas_size_y {
+        ix = 0;
+        repeat canvas_size_x {
+            if (RANDOM_0_1() < 0.5) {
+                set_depositor_from_sRGB_value random("0.2"+(iy%2)*0.5, "0.8");
+                set_voxel ix, iy, 0;
+            }
+            ix++;
+        }
+        iy++;
+    }
+    add_canvas_as_template;
+
+    # template 4: gauge
+    reset_canvas false, 10, 6, 2;
+    set_depositor_from_sRGB_value 0.75;
+    draw_base_layer;
+    set_depositor_from_sRGB_value 0.6;
+    draw_cuboid_corner_size 1, 0, 0, 1, 2, 1;
+    draw_cuboid_corner_size 3, 0, 0, 1, 2, 1;
+    draw_cuboid_corner_size 5, 0, 0, 1, 2, 1;
+    draw_cuboid_corner_size 7, 0, 0, 1, 2, 1;
+    set_depositor_from_sRGB_value 0.4;
+    draw_cuboid_corner_size 9, 0, 0, 1, 4, 1;
+    add_canvas_as_template;
+
+    # template 5: slider grip
+    reset_canvas false, 1, 2, 1;
+    set_depositor_from_sRGB_value 0.8;
+    set_voxel 0, 0, 0;
+    set_depositor_from_sRGB_value 0.75;
+    set_voxel 0, 1, 0;
+    add_canvas_as_template;
+
+
 
     local cell_size = MAX(4, $cell_size);
     
     reset_canvas false, $cells_x*cell_size, $cells_y*cell_size, cell_size;
 
+    set_depositor_from_number_lerp 0, $panel_color, 0.5;
+    draw_cuboid_corner_size 0, 0, 0, canvas_size_x, canvas_size_y, (cell_size*0.2)-1;
     set_depositor_from_number $panel_color;
-    draw_cuboid_corner_size 0, 0, 0, canvas_size_x, canvas_size_y, cell_size*0.2;
+    draw_cuboid_corner_size 0, 0, (cell_size*0.2)-1, canvas_size_x, canvas_size_y, 1;
     
     delete custom_grid; # a list of rectangles
     create_custom_grid_recursive_rectangles 0, 0, $cells_x, $cells_y;
@@ -190,7 +239,7 @@ proc control_panel_draw_element cell_size, grid_x, grid_y, grid_size_x, grid_siz
             # Push button
             set_depositor_from_sRGB_value 0.3;
             draw_cylinder center_x, center_y, 0, CSZ(0.4), CSZ(0.5);
-            set_depositor_from_HSV random(0,5)/6, random(3,5)/6, random(3,5)/6;
+            set_depositor_from_HSV random(0,5)/6, random(0,5)/6, random(3,5)/6;
             draw_cylinder_chamfered center_x, center_y, 0, CSZ(0.3), CSZ(0.6), CSZ(0.1);
             stop_this_script;
         }
@@ -198,20 +247,24 @@ proc control_panel_draw_element cell_size, grid_x, grid_y, grid_size_x, grid_siz
             # Light bulb
             set_depositor_from_sRGB_value 0.3;
             draw_cylinder center_x, center_y, 0, CSZ(0.3), CSZ(0.3);
-            set_depositor_from_HSV random(0,5)/6, random(3,5)/6, random(3,5)/6;
-            depositor_voxel.emission = random("0.5", "0.8");
+            if (RANDOM_0_1() < 0.5) {
+                set_depositor_from_HSV random(0,5)/6, random(3,5)/6, random(3,5)/6;
+                depositor_voxel.emission = 1;
+            } else {
+                set_depositor_from_HSV random(0,5)/6, random(1,3)/12, random(1,3)/6;
+            }
             draw_sphere center_x, center_y, CSZ(0.3), CSZ(0.2);
             stop_this_script;
         }
+
     } elif ($grid_size_x == 1 and $grid_size_y > 1) {
         if (PROBABILITY(0.2)) {
             # vertical slider
             set_depositor_to_air;
             draw_cuboid_centered_XY center_x, center_y, 1, CSZ(0.2), (radius_y*2)-CSZ(0.4), 1;
-            # object
-            set_depositor_from_sRGB_value 0.8;
+            # grip
+            set_depositor_to_template 5, 0, 0, 0;
             draw_cuboid_centered_XY center_x, center_y+random(-0.5, 0.5)*(radius_y-CSZ(0.4)), 2, CSZ(0.4), CSZ(0.6), 2;
-
             stop_this_script;
         }
     }
@@ -239,23 +292,62 @@ proc control_panel_draw_element cell_size, grid_x, grid_y, grid_size_x, grid_siz
         draw_cuboid_centered_XY center_x, center_y, 1, (radius_x*2)-CSZ(0.2), (radius_y*2)-CSZ(0.2), 1;
         stop_this_script;
     }
-    if (PROBABILITY(0.3)) {
+    if (PROBABILITY(0.1)) {
         # create mesh
         set_depositor_to_template 1, center_x, center_y, 0;
+        draw_cuboid_centered_XY center_x, center_y, 1, (radius_x*2)-CSZ(0.2), (radius_y*2)-CSZ(0.2), 1;
+        stop_this_script;
+    }
+    if (PROBABILITY(0.1)) {
+        # create louvres
+        set_depositor_to_template 2, center_x, center_y, 0;
+        draw_cuboid_centered_XY center_x, center_y, 1, (radius_x*2)-CSZ(0.2), (radius_y*2)-CSZ(0.2), 1;
+        stop_this_script;
+    }
+
+    if ($grid_size_x > 1 and $grid_size_y == 1) {
+        if (PROBABILITY(0.1)) {
+            # create text plate
+            set_depositor_to_template 3, center_x, center_y, 0;
+            draw_cuboid_centered_XY center_x, center_y, 1, (radius_x*2)-CSZ(0.4), (radius_y*2)-CSZ(0.4), 1;
+            stop_this_script;
+        }
+        if (PROBABILITY(0.15)) {
+            # create horizontal gauge
+            set_depositor_to_template 4, center_x, ($grid_y+0.3)*$cell_size, 0; # TODO set origin
+            draw_cuboid_centered_XY center_x, center_y, 0, (radius_x*2)-CSZ(0.3), (radius_y*2)-CSZ(0.3), 2;
+            stop_this_script;
+        }
+    }
+
+    if ($grid_size_x > 1 and $grid_size_y > 1) {
+        if (PROBABILITY(0.3)) {
+            # screen
+            set_depositor_to_air;
+            draw_cuboid_centered_XY center_x, center_y, 1, (radius_x*2)-CSZ(0.05), (radius_y*2)-CSZ(0.05), 1;
+
+            set_depositor_from_sRGB_value 0.3;
+            draw_cuboid_centered_XY center_x, center_y, 1, (radius_x*2)-CSZ(0.2), (radius_y*2)-CSZ(0.2), 1;
+            stop_this_script;
+        }
+    }
+
+    if (PROBABILITY(0.3)) {
+        # coloured panel
+        set_depositor_to_air;
+        draw_cuboid_centered_XY center_x, center_y, 1, (radius_x*2)-CSZ(0.05), (radius_y*2)-CSZ(0.05), 1;
+
+        set_depositor_from_sRGB_value random(0.3, 0.8);
         draw_cuboid_centered_XY center_x, center_y, 1, (radius_x*2)-CSZ(0.2), (radius_y*2)-CSZ(0.2), 1;
         stop_this_script;
     }
 }
 
 
+# create a recursively subdivided grid of rectangles, outputted to the list `custom_grid`
 proc create_custom_grid_recursive_rectangles x, y, size_x, size_y {
     delete stack;
-    add $x to stack;
-    add $y to stack;
-    add $size_x to stack;
-    add $size_y to stack;
-    add RANDOM_0_1() to stack;
-    add 0 to stack;
+    add_custom_grid_rect $x, $y, $size_x, $size_y, RANDOM_0_1(), 0;
 
     until (length stack == 0) {
         if (RANDOM_0_1() < POW(stack[6]/18, 2)) {
@@ -1018,7 +1110,7 @@ proc set_depositor_from_number number {
     depositor_voxel = VOXEL_SOLID((($number//65536)%256/255), (($number//256)%256/255), (($number%256)/255));
 }
 
-# random blend between 2 colors
+# blend between 2 colors
 proc set_depositor_from_number_lerp number1, number2, t {
     # number assumed to be 0-16777215
     depositor_mode = DepositorMode.DRAW;
@@ -1109,6 +1201,9 @@ proc reset_canvas full_reset, size_x, size_y, size_z {
     canvas_size_x = floor($size_x) * ($size_x > 0); # positive clamp
     canvas_size_y = floor($size_y) * ($size_y > 0);
     canvas_size_z = floor($size_z) * ($size_z > 0);
+
+    cam_x = canvas_size_x/2;
+    cam_y = canvas_size_x/2;
 
     delete canvas;
     repeat (canvas_size_x * canvas_size_y * canvas_size_z) {
