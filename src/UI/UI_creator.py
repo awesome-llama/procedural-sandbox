@@ -223,9 +223,10 @@ panels['menu.fx'] = Container([
     btn_menu_set_page('Translate', 'fx.translate'),
     btn_menu_set_page('Rotate', 'fx.rotate'),
     btn_menu_set_page('Scale', 'fx.scale'),
+    btn_menu_set_page('Mirror', 'fx.mirror'),
+    btn_menu_set_page('Repeated Symmetry', 'fx.repeated_symmetry'),
     Separator(0, 5),
     btn_menu_set_page('Crop XY', 'fx.crop_xy'),
-    btn_menu_set_page('Mirror', 'fx.mirror'),
     Separator(0, 5),
     btn_menu_set_page('Gradient recolor', 'fx.recolor'),
     Separator(0, 5),
@@ -608,17 +609,6 @@ panels['fx.rotate'] = Container([
     ]),
 ])
 
-panels['fx.crop_xy'] = Container([
-    Label.title('Crop XY'),
-    Separator(),
-    Expander('Dimensions', '', True, [
-        Value.canvas_size('Size X', 'fx.crop_xy.size_x', 64),
-        Value.canvas_size('Size Y', 'fx.crop_xy.size_y', 64),
-        Checkbox('Centered', 'fx.crop_xy.centered', True),
-    ]),
-    Button('Crop', 'fx.crop_xy.run'),
-])
-
 panels['fx.mirror'] = Container([
     Label.title('Mirror'),
     Separator(),
@@ -630,6 +620,28 @@ panels['fx.mirror'] = Container([
         Button('Mirror X', 'fx.mirror.mirror_x'),
         Button('Mirror Y', 'fx.mirror.mirror_y'),
     ]),
+])
+
+panels['fx.repeated_symmetry'] = Container([
+    Label.title('Repeated symmetry'),
+    Separator(),
+    TextBlock('Randomly translate and mirror the canvas, often resulting in panel-like shapes.'),
+    Expander('Settings', '', True, [
+        Value('Steps', 'fx.repeated_symmetry.steps', 3, 1, 20, 1, snap_frac=1),
+        Value.fraction('X:Y bias', 'fx.repeated_symmetry.xy_bias', 0.5),
+    ]),
+    Button('Run', 'fx.repeated_symmetry.run'),
+])
+
+panels['fx.crop_xy'] = Container([
+    Label.title('Crop XY'),
+    Separator(),
+    Expander('Dimensions', '', True, [
+        Value.canvas_size('Size X', 'fx.crop_xy.size_x', 64),
+        Value.canvas_size('Size Y', 'fx.crop_xy.size_y', 64),
+        Checkbox('Centered', 'fx.crop_xy.centered', True),
+    ]),
+    Button('Crop', 'fx.crop_xy.run'),
 ])
 
 panels['fx.recolor'] = Container([

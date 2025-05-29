@@ -36,6 +36,7 @@ on "fx.translate.run" {
     setting_from_id "fx.translate.dz";
 
     translate UI_return[1], UI_return[2], UI_return[3];
+    require_composite = true;
 }
 # translate with wrapping
 proc translate dx, dy, dz {
@@ -56,7 +57,6 @@ proc translate dx, dy, dz {
         iz++;
     }
     _write_temp_lists_to_canvas;
-    require_composite = true;
 }
 
 
@@ -85,6 +85,7 @@ on "fx.scale.run" {
     setting_from_id "fx.scale.dz";
 
     scale UI_return[1], UI_return[2], UI_return[3];
+    require_composite = true;
 }
 # scale independently along x, y, z, axes
 proc scale scale_x, scale_y, scale_z {
@@ -112,15 +113,16 @@ proc scale scale_x, scale_y, scale_z {
     canvas_size_z = round(canvas_size_z * $scale_z);
 
     _write_temp_lists_to_canvas;
-    require_composite = true;
 }
 
 
 on "fx.rotate.rotate_-90" {
     resample_xy canvas_size_x-1, 0, 0, 1, canvas_size_y, -1, 0, canvas_size_x;
+    require_composite = true;
 }
 on "fx.rotate.rotate_+90" {
     resample_xy 0, canvas_size_y-1, 0, -1, canvas_size_y, 1, 0, canvas_size_x;
+    require_composite = true;
 }
 
 
@@ -151,9 +153,11 @@ proc rotate_around ox, oy, angle {
 
 on "fx.mirror.flip_x" {
     resample_xy canvas_size_x-1, 0, -1, 0, canvas_size_x, 0, 1, canvas_size_y;
+    require_composite = true;
 }
 on "fx.mirror.flip_y" {
     resample_xy 0, canvas_size_y-1, 1, 0, canvas_size_x, 0, -1, canvas_size_y;
+    require_composite = true;
 }
 
 # iterate over the canvas using start, stop, step for the x and y axes. 
@@ -182,8 +186,60 @@ proc resample_xy origin_x, origin_y, ax, ay, a_size, bx, by, b_size {
     canvas_size_y = $b_size;
 
     _write_temp_lists_to_canvas;
+}
+
+# copy a portion of the canvas to another location. Does not use a temp list.
+proc clone_xy src_origin_x, src_origin_y, src_ax, src_ay, src_bx, src_by, dest_origin_x, dest_origin_y, dest_ax, dest_ay, dest_bx, dest_by, size_a, size_b {
+    layer_size = (canvas_size_x * canvas_size_y);
+    
+    iy = 0;
+    repeat ($size_b) {
+        ix = 0;
+        repeat ($size_a) {
+            local src_index = INDEX_FROM_2D(($src_origin_x + ix*$src_ax + iy*$src_bx), ($src_origin_y + ix*$src_ay + iy*$src_by), canvas_size_x, canvas_size_y);
+            local dest_index = INDEX_FROM_2D(($dest_origin_x + ix*$dest_ax + iy*$dest_bx), ($dest_origin_y + ix*$dest_ay + iy*$dest_by), canvas_size_x, canvas_size_y);
+
+            repeat (canvas_size_z) { # it is ok to iterate z last because item replacement can be done in any order
+                canvas[dest_index] = canvas[src_index];
+                src_index += layer_size;
+                dest_index += layer_size;
+            }
+
+            ix++;
+        }
+        iy++;
+    }
+}
+
+on "fx.repeated_symmetry.run" {
+    delete UI_return;
+    setting_from_id "fx.repeated_symmetry.steps";
+    setting_from_id "fx.repeated_symmetry.xy_bias";
+    repeated_symmetry UI_return[1], UI_return[2];
     require_composite = true;
 }
+proc repeated_symmetry steps, xy_bias {
+    repeat ($steps-1) {
+        # choose a point to cut along
+        if (PROBABILITY($xy_bias)) {
+            local cut = RANDOM_Y();
+            clone_xy 0, cut, 1, 0, 0, 1, 0, cut, 1, 0, 0, -1, canvas_size_x, canvas_size_y/2;
+        } else {
+            local cut = RANDOM_X();
+            clone_xy cut, 0, 1, 0, 0, 1, cut, 0, -1, 0, 0, 1, canvas_size_x/2, canvas_size_y;
+        }
+    }
+    # final mirror center of canvas
+    if (PROBABILITY($xy_bias)) {
+        local cut = canvas_size_y/2;
+        clone_xy 0, cut, 1, 0, 0, 1, 0, cut, 1, 0, 0, -1, canvas_size_x, canvas_size_y/2;
+    } else {
+        local cut = canvas_size_x/2;
+        clone_xy cut, 0, 1, 0, 0, 1, cut, 0, -1, 0, 0, 1, canvas_size_x/2, canvas_size_y;
+    }
+}
+
+
 
 
 on "fx.crop_xy.run" {
@@ -197,6 +253,7 @@ on "fx.crop_xy.run" {
     } else {
         crop 0, 0, 0, UI_return[2], UI_return[3], canvas_size_z;
     }
+    require_composite = true;
 }
 
 # crop using origin and width
@@ -221,7 +278,6 @@ proc crop x, y, z, size_x, size_y, size_z {
     canvas_size_z = $size_z;
     
     _write_temp_lists_to_canvas;
-    require_composite = true;
 }
 
 
