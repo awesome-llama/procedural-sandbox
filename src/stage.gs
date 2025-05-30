@@ -115,6 +115,8 @@ on "hard reset" {
     delete TI_4_a;
     delete TI_header;
 
+    ###
+
     delete depositor_template_metadata;
     delete depositor_template_voxels;
 
@@ -126,6 +128,13 @@ on "hard reset" {
     UI_clipboard_source = 0;
     
     cmd_string = "";
+
+    stage_max_x = 240;
+    stage_max_y = 180;
+    stage_size_x = stage_max_x * 2;
+    stage_size_y = stage_max_y * 2;
+    stage_min_x = -stage_max_x;
+    stage_min_y = -stage_max_y;
     
     # project settings
     PS_slider_sensitivity = 200;
@@ -155,8 +164,9 @@ onflag {
         broadcast_and_wait "hard reset";
         not_first_time = 1;
     }
+    broadcast "get_stage_size"; # this happens before init just in case anything needs stage size
     broadcast "initalise"; # all receivers must complete within the frame, no loops allowed to start. Think of it as a soft reset.
-    broadcast "start main loop";
+    broadcast "start main loop"; # schedule main loop start after init
 }
 
 onclick {

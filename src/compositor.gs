@@ -100,8 +100,8 @@ on "composite" {
         }
     } elif (viewport_mode == ViewportMode.ORBIT) {
         # there is only 1 rendering mode in orbit view, raytraced
-        render_size_x = ceil((480-UI_sidebar_width) / render_resolution);
-        render_size_y = ceil((360-20) / render_resolution);
+        render_size_x = ceil((stage_size_x-UI_sidebar_width) / render_resolution);
+        render_size_y = ceil((stage_size_y-20) / render_resolution);
         resize_render_buffer;
         
         if (compositor_mode == CompositorMode.COLOR) {

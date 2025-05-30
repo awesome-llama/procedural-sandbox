@@ -9,10 +9,10 @@ on "initalise" {
 
 on "render viewport" {
     if (viewport_mode == ViewportMode.ALIGNED) {
-        render_edge_lines 240, 180;
+        render_edge_lines stage_max_x, stage_max_y;
         render_canvas_2D;
     } elif (viewport_mode == ViewportMode.ORBIT) {
-        render_image -240+UI_sidebar_width, -180, render_size_x, render_size_y, render_resolution;
+        render_image stage_min_x+UI_sidebar_width, stage_min_y, render_size_x, render_size_y, render_resolution;
     }
 }
 
@@ -30,22 +30,22 @@ proc render_canvas_2D {
     local repeat_y = render_size_y//render_resolution;
 
     # clip to the available screen
-    local border = (((((UI_sidebar_width/2)-240)/cam_scale)+cam_x)//render_resolution)*render_resolution;
+    local border = (((((UI_sidebar_width/2)-stage_max_x)/cam_scale)+cam_x)//render_resolution)*render_resolution;
     if (border > min_x) {
         min_x = border;
         repeat_x -= border/render_resolution;
     }
-    local border = ((((240-(UI_sidebar_width/2))/cam_scale)+cam_x)//render_resolution)*render_resolution;
+    local border = ((((stage_max_x-(UI_sidebar_width/2))/cam_scale)+cam_x)//render_resolution)*render_resolution;
     if ((border - min_x)/render_resolution+1 < repeat_x) {
         repeat_x = (border - min_x)/render_resolution+1; # add 1 to extend 1 px offscreen
     }
 
-    local border = (((-170/cam_scale)+cam_y)//render_resolution)*render_resolution;
+    local border = ((((stage_min_y+10)/cam_scale)+cam_y)//render_resolution)*render_resolution;
     if (border > min_y) {
         min_y = border;
         repeat_y -= border/render_resolution;
     }
-    local border = (((170/cam_scale)+cam_y)//render_resolution)*render_resolution;
+    local border = ((((stage_max_y-10)/cam_scale)+cam_y)//render_resolution)*render_resolution;
     if ((border - min_y)/render_resolution+1 < repeat_y) {
         repeat_y = (border - min_y)/render_resolution+1; # add 1 to extend 1 px offscreen
     }

@@ -71,26 +71,26 @@ on "render ui" {
     set_size 100;
 
     # TOP BAR
-    draw_rect -240+UI_sidebar_width, 180-TOP_BAR_HEIGHT, 480-UI_sidebar_width, TOP_BAR_HEIGHT, 1, "#505050";
+    draw_rect stage_min_x+UI_sidebar_width, stage_max_y-TOP_BAR_HEIGHT, stage_size_x-UI_sidebar_width, TOP_BAR_HEIGHT, 1, "#505050";
     set_pen_color "#ffffff";
-    render_top_bar -240+UI_sidebar_width, 180;
+    render_top_bar stage_min_x+UI_sidebar_width, stage_max_y;
 
     # SIDE BAR
     if (UI_sidebar_width > 8) {
         if (UI_current_panel == "menu.io" or UI_current_panel == "menu.gen" or UI_current_panel == "menu.fx" or UI_current_panel == "menu.draw") {
-            draw_rect -240, -180, UI_sidebar_width, 360, 0, "#423C4F";
+            draw_rect stage_min_x, stage_min_y, UI_sidebar_width, stage_size_y, 0, "#423C4F";
         } else {
-            draw_rect -240, -180, UI_sidebar_width, 360, 0, THEME_COL_BG;
+            draw_rect stage_min_x, stage_min_y, UI_sidebar_width, stage_size_y, 0, THEME_COL_BG;
         }
         
-        UI_check_touching_mouse -240, 180, UI_sidebar_width, 360, "side bar", "";
+        UI_check_touching_mouse stage_min_x, stage_max_y, UI_sidebar_width, stage_size_y, "side bar", "";
 
-        render_side_bar -236, 180-TOP_BAR_HEIGHT, UI_sidebar_width-8, 360-TOP_BAR_HEIGHT; # scroll bar might be needed
+        render_side_bar stage_min_x+4, stage_max_y-TOP_BAR_HEIGHT, UI_sidebar_width-8, stage_size_y-TOP_BAR_HEIGHT; # scroll bar might be needed
 
         # tabs
-        draw_rect -240, 180-TOP_BAR_HEIGHT, UI_sidebar_width, TOP_BAR_HEIGHT, 0, "#271D33";
+        draw_rect stage_min_x, stage_max_y-TOP_BAR_HEIGHT, UI_sidebar_width, TOP_BAR_HEIGHT, 0, "#271D33";
         # custom implementation for buttons is fine
-        tab_offset = -240;
+        tab_offset = stage_min_x;
         tab_button tab_offset, 34, "I/O", "menu.io";
         tab_button tab_offset, 37, "Gen", "menu.gen";
         tab_button tab_offset, 31, "FX", "menu.fx";
@@ -224,29 +224,29 @@ proc set_color_picker_sliders_from_color {
 # create a new popup with the common properties. Add extra list items after calling this for any custom data.
 proc create_popup type, x, y, width, height {
     delete UI_popup;
-    add true to UI_popup; # 1. truthy first item means the popup is showing
-    add $type to UI_popup; # 2.
+    add true to UI_popup; # item 1, truthy first item means the popup is showing
+    add $type to UI_popup; # item 2
 
-    # fence x
-    if ($x < -240) {
-        add -240 to UI_popup;
-    } elif ($x+$width > 240) {
-        add 240-$width to UI_popup;
+    # item 3, fence x
+    if ($x < stage_min_x) {
+        add stage_min_x to UI_popup;
+    } elif ($x+$width > stage_max_x) {
+        add stage_max_x-$width to UI_popup;
     } else {
         add round($x) to UI_popup;
     }
 
-    # fence y
-    if ($y > 180) {
-        add 180 to UI_popup;
-    } elif ($y-$height < -180) {
-        add -180+$height to UI_popup;
+    # item 4, fence y
+    if ($y > stage_max_y) {
+        add stage_max_y to UI_popup;
+    } elif ($y-$height < stage_min_y) {
+        add stage_min_y+$height to UI_popup;
     } else {
         add round($y) to UI_popup;
     }
 
-    add $width to UI_popup; # 5.
-    add $height to UI_popup; # 6.
+    add $width to UI_popup; # item 5
+    add $height to UI_popup; # item 6
 }
 
 
@@ -263,19 +263,19 @@ proc render_project_messages {
             delete project_messages[msg_i];
             require_viewport_refresh = true;
         } else {
-            local msg_bottom_y = 160-msg_i*10 - 6;
+            local msg_bottom_y = (stage_max_y-20)-msg_i*10 - 6;
 
-            UI_check_touching_mouse -230, msg_bottom_y+20, 460, 20, "message", msg_i;
+            UI_check_touching_mouse (stage_min_x+10), msg_bottom_y+20, (stage_size_x-20), 20, "message", msg_i;
             if (UI_last_hovered_group == "message") and (UI_last_hovered_element == msg_i) {
-                draw_rect -230, msg_bottom_y + 1, 460, 18, 3, "#202020"; # background
+                draw_rect (stage_min_x+10), msg_bottom_y + 1, (stage_size_x-20), 18, 3, "#202020"; # background
                 set_pen_color "#a03030";
-                plainText 215, msg_bottom_y + 7, 1, "x"; # close indicator
+                plainText (stage_max_x-25), msg_bottom_y + 7, 1, "x"; # close indicator
             } else {
-                draw_rect -230, msg_bottom_y + 1, 460, 18, 3, "#000000"; # background
+                draw_rect (stage_min_x+10), msg_bottom_y + 1, (stage_size_x-20), 18, 3, "#000000"; # background
             }
             
             set_pen_color "#00ffff";
-            plainText -220, msg_bottom_y + 6, 1, project_messages[msg_i];
+            plainText (stage_min_x+20), msg_bottom_y + 6, 1, project_messages[msg_i];
 
             msg_i += 2;
         }
@@ -285,19 +285,19 @@ proc render_project_messages {
 
 # custom implementation, not general-purpose
 proc tab_button x, width, text, hover_id {
-    if abs(mouse_x()) < 240 and abs(mouse_y()) < 180 {
-        UI_check_touching_mouse $x, 180, $width, TOP_BAR_HEIGHT, "tabs", $hover_id;
+    if (abs(mouse_x()) < stage_max_x) and (abs(mouse_y()) < stage_max_y) {
+        UI_check_touching_mouse $x, stage_max_y, $width, TOP_BAR_HEIGHT, "tabs", $hover_id;
     }
     if (UI_last_hovered_group == "tabs") and (UI_last_hovered_element == $hover_id) {
-        draw_rect $x, 180-TOP_BAR_HEIGHT, $width, TOP_BAR_HEIGHT, 0, "#BD91FF";
+        draw_rect $x, stage_max_y-TOP_BAR_HEIGHT, $width, TOP_BAR_HEIGHT, 0, "#BD91FF";
         set_pen_color "#000000";
     } else {
         if (UI_current_panel == $hover_id) {
-            draw_rect $x, 180-TOP_BAR_HEIGHT, $width, TOP_BAR_HEIGHT, 0, "#423C4F";
+            draw_rect $x, stage_max_y-TOP_BAR_HEIGHT, $width, TOP_BAR_HEIGHT, 0, "#423C4F";
         }
         set_pen_color "#ffffff";
     }
-    plainText $x+10, 166, 1, $text;
+    plainText $x+10, (stage_max_y-TOP_BAR_HEIGHT)+6, 1, $text;
     tab_offset += $width;
 }
 
@@ -307,7 +307,7 @@ proc tab_button x, width, text, hover_id {
 proc render_top_bar x, y {
     set_pen_color "#ffffff";
 
-    UI_check_touching_mouse $x, $y, 480-UI_sidebar_width, TOP_BAR_HEIGHT, "top bar", "";
+    UI_check_touching_mouse $x, $y, stage_size_x-UI_sidebar_width, TOP_BAR_HEIGHT, "top bar", "";
 
     # arrow
     if (UI_sidebar_width < 8) {
@@ -328,8 +328,8 @@ proc render_top_bar x, y {
     top_bar_button "zoom in", "zoom in", TOP_BAR_OFFSET(10), $y-10, false;
 
     # right-aligned settings cog
-    top_bar_button "settings", "settings", 240-30, $y-10, false;
-    top_bar_button "info", "info", 240-10, $y-10, false;
+    top_bar_button "settings", "settings", stage_max_x-30, $y-10, false;
+    top_bar_button "info", "info", stage_max_x-10, $y-10, false;
 }
 
 # custom implementation, not general-purpose
@@ -362,13 +362,13 @@ on "render viewport overlay" { render_viewport_overlay; }
 proc render_viewport_overlay {
     # Text
     set_pen_color THEME_COL_TEXT;
-    plainText UI_sidebar_width-235, 150, 1, ("canvas size: " & ((((canvas_size_x & ", ") & canvas_size_y) & ", ") & canvas_size_z));
-    plainText UI_sidebar_width-235, 140, 1, (compositor_mode);
-    plainText UI_sidebar_width-235, 130, 1, ("cam scale: " & round(cam_scale*100)/100);
-    plainText UI_sidebar_width-235, 120, 1, ("timer: " & floor(( 100 * ((86400 * days_since_2000()) % 1))) & ", " & counted_samples & "/" & PS_max_samples);
-
+    plainText stage_min_x+UI_sidebar_width+5, stage_max_y-TOP_BAR_HEIGHT-10, 1, ("canvas size: " & ((((canvas_size_x & ", ") & canvas_size_y) & ", ") & canvas_size_z));
+    plainText stage_min_x+UI_sidebar_width+5, stage_max_y-TOP_BAR_HEIGHT-20, 1, (compositor_mode);
+    plainText stage_min_x+UI_sidebar_width+5, stage_max_y-TOP_BAR_HEIGHT-30, 1, ("cam scale: " & round(cam_scale*100)/100);
+    plainText stage_min_x+UI_sidebar_width+5, stage_max_y-TOP_BAR_HEIGHT-40, 1, ("timer: " & floor(( 100 * ((86400 * days_since_2000()) % 1))) & ", " & counted_samples & "/" & PS_max_samples);
+  
     # Axes
-    draw_axes UI_sidebar_width+15-240, -165, 10;
+    draw_axes stage_min_x+UI_sidebar_width+15, stage_min_y+15, 10;
 }
 
 proc draw_axes ox, oy, size {
@@ -762,7 +762,7 @@ on "stage clicked" {
             requested_render_resolution = PS_render_resolution_default_orbit;
             require_composite = true;
         } elif (clicked_element == "compositor mode") {
-            create_popup "compositor mode", 0, 160, 100, 116;
+            create_popup "compositor mode", stage_min_x+UI_sidebar_width+80, stage_max_y-TOP_BAR_HEIGHT, 100, 116;
         } elif (clicked_element == "zoom in") {
             broadcast "zoom in";
         } elif (clicked_element == "zoom out") {
@@ -1069,7 +1069,7 @@ func rotate_world_space_to_cam_space(x, y, z) XYZ {
 }
 
 proc get_unfenced_mouse {
-    if abs(mouse_x()) < 240 {
+    if abs(mouse_x()) < stage_max_x {
         unfenced_mouse_x = mouse_x(); # trust the mouse x block in the stage
 
     } else {

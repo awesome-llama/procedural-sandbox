@@ -28,7 +28,7 @@ on "start main loop" {
             # the hats do not run after the main loop.
             UI_last_hovered_group = UI_hovered_group;
             UI_last_hovered_element = UI_hovered_element;
-            if abs(mouse_x()) < 240 and abs(mouse_y()) < 180 {
+            if abs(mouse_x()) < stage_max_x and abs(mouse_y()) < stage_max_y {
                 UI_hovered_group = "viewport"; # default hover is viewport (if mouse is in bounds)
             } else {
                 UI_hovered_group = "";
@@ -199,8 +199,8 @@ proc limit_scroll  {
 on "zoom extents" { zoom_extents; }
 proc zoom_extents {
     # first get avail width and height of viewport
-    local viewport_width = 480-UI_sidebar_width;
-    local viewport_height = 340;
+    local viewport_width = stage_size_x-UI_sidebar_width;
+    local viewport_height = stage_size_y-20;
 
     cam_x = (canvas_size_x/2);
     cam_y = (canvas_size_y/2);
