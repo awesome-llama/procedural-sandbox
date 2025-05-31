@@ -8,7 +8,7 @@
 			"args": [
 				"build",
 				"-i", "src",
-				"-o", "Procedural Sandbox.sb3"
+				"-o", "Procedural Sandbox goboscript.sb3"
 			],
 			"group": {
 				"kind": "build",
@@ -40,10 +40,23 @@
 			}
 		},
 		{
+			"label": "post-process",
+			"type": "shell",
+			"command": "python",
+			"args": [
+				"src/post-processing/main.py",
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": false
+			}
+		},
+		{
 			"label": "Build",
+			"dependsOrder": "sequence",
 			"dependsOn": [
-				"create UI data",
-				"goboscript: build project"
+				"goboscript: build project",
+				"post-process"
 			],
 			"group": {
 				"kind": "build",
@@ -52,10 +65,12 @@
 		},
 		{
 			"label": "Build (full)",
+			"dependsOrder": "sequence",
 			"dependsOn": [
 				"create UI data",
 				"create data URL lists",
-				"goboscript: build project"
+				"goboscript: build project",
+				"post-process"
 			],
 			"group": {
 				"kind": "build",

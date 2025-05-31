@@ -4,8 +4,6 @@
 costumes "costumes/stage_size/probe.png" as "probe";
 hide;
 
-# "rotationCenterX":2,"rotationCenterY":0
-
 on "get_stage_size" { get_stage_size; }
 proc get_stage_size {
     switch_costume "probe";
@@ -17,7 +15,7 @@ proc get_stage_size {
     step_size = 256;
     stage_max_x = 0;
     until (step_size < 1 or stage_max_x > 65536) {
-        set_x stage_max_x-1; # TODO: this is off by 1 because goboscript doesn't generate costume centers
+        set_x stage_max_x;
         if touching_edge() {
             stage_max_x -= step_size;
             step_size /= 2;
