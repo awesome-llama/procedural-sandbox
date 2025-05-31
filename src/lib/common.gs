@@ -54,7 +54,6 @@ enum CompositorMode {
     PATHTRACED = "PATHTRACED", # realistic rendering
     HEIGHT = "HEIGHT", # heightmap, topmost voxel elevation
     AO = "AO", # ambient occlusion
-    DENSITY = "DENSITY", # number of voxels in the column, weighted by opacity
     NORMAL = "NORMAL" # heightmap converted to normal map
 }
 
@@ -119,6 +118,9 @@ struct template_metadata {
 
 # Clamp between 0 and 1
 %define CLAMP_0_1(VAL) (1 - (((VAL)<1) * (1-POSITIVE_CLAMP(VAL))) )
+
+# Clamp between any two values
+%define CLAMP(MIN,MAX,VAL) ((MAX) - (((MAX) - ((((VAL) - (MIN)) * ((VAL) > (MIN))) + (MIN))) * ((VAL) < (MAX))))
 
 
 # Arithmetic mean of 2 numbers

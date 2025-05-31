@@ -91,9 +91,6 @@ on "composite" {
             init_aligned_ao_pass;
             require_iterative_compositor = true;
 
-        } elif (compositor_mode == CompositorMode.DENSITY) {
-            cmp_aligned_density;
-
         } elif (compositor_mode == CompositorMode.NORMAL) {
             cmp_aligned_normal;
 
@@ -123,10 +120,6 @@ on "composite" {
         } elif (compositor_mode == CompositorMode.AO) {
             init_orbit_raytracer;
             require_iterative_compositor = true;
-
-        } elif (compositor_mode == CompositorMode.DENSITY) {
-            init_orbit_raytracer;
-            # not implemented
 
         } elif (compositor_mode == CompositorMode.NORMAL) {
             init_orbit_raytracer;
@@ -234,6 +227,7 @@ proc cmp_aligned_color {
     require_viewport_refresh = true;
 }
 
+
 # heightmap of the topmost non-transparent voxel, normalised to greyscale 0-1
 proc cmp_aligned_heightmap {
     generate_pass_topmost;
@@ -246,23 +240,6 @@ proc cmp_aligned_heightmap {
     require_viewport_refresh = true;
 }
 
-# sum of opacity, normalised to greyscale 0-1
-proc cmp_aligned_density {
-    layer_size = (canvas_size_x * canvas_size_y);
-    i = 1;
-    repeat layer_size {
-        local density = 0;
-        local zoffset = 0;
-        repeat canvas_size_z {
-            density += canvas[i + zoffset].opacity;
-            zoffset += layer_size;
-        }
-        density = density / canvas_size_z;
-        render_buffer_final_col[i] = COMBINE_RGB_CHANNELS(density, density, density);
-        i++;
-    }
-    require_viewport_refresh = true;
-}
 
 # heightmap of the topmost non-transparent voxel, normalised to greyscale 0-1
 %define NRM_KERNEL_X(DX,DY,WX) \
