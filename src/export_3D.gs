@@ -1,6 +1,8 @@
 %include lib/common
 
-costumes "costumes/blank.svg" as "",
+costumes 
+"costumes/export_3D/icon.svg" as "icon",
+"costumes/blank.svg" as "",
 "costumes/blank.svg" as "@ascii/";
 hide;
 
@@ -255,7 +257,7 @@ proc text_buffer_to_byte_buffer {
         repeat (length line) {
             switch_costume " "; # fallback
             switch_costume line[i];
-            add costume_number()+30 to byte_buffer; # note this counts from 0
+            add costume_number()+29 to byte_buffer; # note this counts from 0
             i++;
         }
         add 10 to byte_buffer; # Line feed

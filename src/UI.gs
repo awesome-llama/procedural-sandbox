@@ -21,8 +21,7 @@ costumes
 "costumes/UI/icons/info.svg",
 "costumes/UI/hsv0.png",
 "costumes/UI/hsv1.png",
-"costumes/UI/mouse detect.svg" as "mouse detect",
-;
+"costumes/UI/mouse detect.svg" as "mouse detect";
 hide;
 
 

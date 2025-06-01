@@ -2,7 +2,7 @@
 
 # User-invoked transformations. Any transformations needed in the generator should be implemented there only.
 
-costumes "costumes/transform canvas/icon.svg" as "icon";
+costumes "costumes/transform_canvas/icon.svg" as "icon";
 hide;
 
 # lists used to store the canvas temporarily

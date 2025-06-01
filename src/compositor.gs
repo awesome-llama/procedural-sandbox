@@ -1,6 +1,6 @@
 %include lib/common
 
-costumes "costumes/compositor/compositor.svg" as "compositor";
+costumes "costumes/compositor/icon.svg" as "icon";
 hide;
 
 list buffer_ao; # ambient occlusion

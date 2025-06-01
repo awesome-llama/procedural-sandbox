@@ -1,6 +1,6 @@
 %include lib/common
 
-costumes "costumes/cmd/icon.svg" as "icon", "costumes/cmd/dev.svg" as "dev";
+costumes "costumes/cmd/icon.svg" as "icon";
 hide;
 
 list command;

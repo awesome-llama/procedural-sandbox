@@ -1,6 +1,6 @@
 %include lib/common
 
-costumes "costumes/blank.svg" as "blank";
+costumes "costumes/generator/icon.svg" as "icon";
 hide;
 
 # The following lists are named by purpose and can be shared by any generator procedure.

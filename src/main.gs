@@ -1,6 +1,6 @@
 %include lib/common
 
-costumes "costumes/main/main.svg" as "main";
+costumes "costumes/main/icon.svg" as "icon";
 hide;
 
 
