@@ -64,6 +64,23 @@ if monitor is None:
 
 
 
+# move the blocks so they don't overlap
+
+for target in project_data['targets']:
+    clean_up_blocks.clean_target(target)
+
+
+
+# remove field text
+
+for target in project_data['targets']:
+    for block in target['blocks'].values():
+        for field in block.get('fields', {}).values():
+            if isinstance(field, list) and field[0] == 'make gh issue if this bothers u':
+                field[0] = ''
+
+
+
 # add a comment to the thumbnail containing project info
 
 target = utils.get_target_by_name(project_data, '_')
@@ -83,15 +100,6 @@ utils.add_comment_to_target(target, "\n".join([
     f'gs_ver: {gs_ver}',
     f'py_ver: {sys.version_info.major}.{sys.version_info.minor}',
 ]), x=500, width=500, height=600)
-
-
-
-# move the blocks so they don't overlap
-
-for target in project_data['targets']:
-    clean_up_blocks.clean_target(target)
-
-
 
 
 
