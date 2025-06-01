@@ -40,7 +40,7 @@ class Button(Element):
     def __init__(self, label, id='', action='broadcast', action_data=''):
         # id needs to be unique
         super().__init__()
-        self.items = ['BUTTON', label, id, action, action_data, 0] # 0 is default false (unclicked)
+        self.items = ['BUTTON', label, id, action, action_data]
 
     def to_flat_list(self, ids_list):
         add_id(ids_list, self.items[2], -2)

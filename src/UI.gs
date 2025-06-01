@@ -469,7 +469,7 @@ proc render_modular_element index, x, y, width, panel_id {
         set_pen_color THEME_COL_TEXT;
         plainText $x+8, $y-TXT_Y_OFFSET, 1, UI_data[$index+1];
         UI_y -= (LINEHIGHT+2);
-        render_modular_element $index+6, $x, UI_y, $width, $panel_id;
+        render_modular_element $index+5, $x, UI_y, $width, $panel_id;
 
     } elif (elem_type == "CHECKBOX") {
         # [type, label, id, checked, default]
