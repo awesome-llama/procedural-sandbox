@@ -776,10 +776,12 @@ on "io.save_canvas.run" {
 proc save_canvas include_opacity, include_emission {
     write_TextImage_begin canvas_size_x, (canvas_size_y * canvas_size_z);
 
+    voxel_count = canvas_size_x * canvas_size_y * canvas_size_z;
+
     # RGB8 main layer
     delete image_buffer;
     i = 1;
-    repeat (canvas_size_x * canvas_size_y * canvas_size_z) {
+    repeat (voxel_count) {
         local channel = canvas[i].r;
         add floor(CLAMP_0_1(channel)*255) to image_buffer;
         local channel = canvas[i].g;
@@ -788,6 +790,7 @@ proc save_canvas include_opacity, include_emission {
         add floor(CLAMP_0_1(channel)*255) to image_buffer;
         i++;
     }
+    check_buffer_size 3*voxel_count; # the buffer is the largest here as each pixel takes 3 items
     _data_stream_compress_RGB8_from_buffer TI_image_size_x;
     add_layer "main", "RGB8", 0, data_stream;
 
@@ -796,7 +799,7 @@ proc save_canvas include_opacity, include_emission {
         delete image_buffer;
         local include_layer = false;
         i = 1;
-        repeat (canvas_size_x * canvas_size_y * canvas_size_z) {
+        repeat (voxel_count) {
             local channel = canvas[i].opacity;
             channel = floor(CLAMP_0_1(channel)*255);
             add channel to image_buffer;
@@ -814,7 +817,7 @@ proc save_canvas include_opacity, include_emission {
         delete image_buffer;
         local include_layer = false; # default
         i = 1;
-        repeat (canvas_size_x * canvas_size_y * canvas_size_z) {
+        repeat (voxel_count) {
             local channel = canvas[i].emission;
             channel = floor(CLAMP_0_1(channel)*255);
             add channel to image_buffer;
@@ -993,4 +996,11 @@ proc clear_canvas  {
 }
 
 
-
+proc check_buffer_size desired_size {
+    if ($desired_size != length image_buffer) {
+        error "canvas does not contain all requested voxels";
+        if (length image_buffer == 200000) {
+            print "Error: Scratch's 200k list limit has been reached, canvas is malformed", 6;
+        }
+    }
+}
