@@ -200,6 +200,7 @@ panels['menu.io'] = Container([
 panels['menu.gen'] = Container([
     Label.title('Generate'),
     Separator(),
+    btn_menu_set_page('Circuit Board', 'gen.pcb'),
     btn_menu_set_page('City', 'gen.city'),
     btn_menu_set_page('Control Panel', 'gen.control_panel'),
     btn_menu_set_page('Nucleus', 'gen.nucleus'),
@@ -209,7 +210,7 @@ panels['menu.gen'] = Container([
     btn_menu_set_page('Fibres', 'gen.fibres'),
     btn_menu_set_page('Value Noise', 'gen.value_noise'),
     Separator(0, 5),
-    btn_menu_set_page('Ballpit', 'gen.ballpit'),
+    btn_menu_set_page('Ball Pit', 'gen.ballpit'),
     btn_menu_set_page('Elem. cellular automata', 'gen.eca'),
     btn_menu_set_page('Extruded grid', 'gen.extruded_grid'),
     btn_menu_set_page('Maze', 'gen.maze'),
@@ -363,7 +364,7 @@ panels['gen.fibres'] = Container([
 ])
 
 panels['gen.ballpit'] = Container([
-    Label.title('Generate ballpit'),
+    Label.title('Generate Ball Pit'),
     Separator(),
     Expander('Canvas', '', True, [
         Value.canvas_size('Size X', 'gen.ballpit.size_x', 64),
@@ -385,6 +386,20 @@ panels['gen.ballpit'] = Container([
         ]),
     ]),
     Button('Generate', 'gen.ballpit.run'),
+])
+
+panels['gen.pcb'] = Container([
+    Label.title('Generate PCB'),
+    Separator(),
+    Expander('Canvas', '', True, [
+        Value.canvas_size('Size X', 'gen.pcb.size_x', 64),
+        Value.canvas_size('Size Y', 'gen.pcb.size_y', 64),
+    ]),
+    Expander('Color', '', True, [
+        Color('Traces', 'gen.pcb.trace_col', '#07892D'),
+        Color('Substrate', 'gen.pcb.substrate_col', '#005225'),
+    ]),
+    Button('Generate', 'gen.pcb.run'),
 ])
 
 panels['gen.city'] = Container([

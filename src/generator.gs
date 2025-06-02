@@ -3,25 +3,27 @@
 costumes "costumes/generator/icon.svg" as "icon";
 hide;
 
-# The following lists are named by purpose and can be shared by any generator procedure.
-list maze_graph;
+# The following lists are named by purpose and can be used by any generator procedure.
+list custom_graph;
 list custom_grid;
 list eca_lut;
 list temp_canvas_mono; # temporary single channel canvas
 list voxel temp_canvas; # temporary voxel canvas
-list stack; # stack for recursion
+list stack;
+list agents;
 
 on "initalise" {
     hide;
 }
 
 on "hard reset" {
-    delete maze_graph;
+    delete custom_graph;
     delete custom_grid;
     delete eca_lut;
     delete temp_canvas_mono;
     delete temp_canvas;
     delete stack;
+    delete agents;
 }
 
 on "*" {
@@ -87,13 +89,109 @@ proc generate_ballpit size_x, size_y, size_z, ground_col, rad_min, rad_max, dens
 }
 
 
+on "gen.pcb.run" {
+    delete UI_return;
+    setting_from_id "gen.pcb.size_x";
+    setting_from_id "gen.pcb.size_y";
+    setting_from_id "gen.pcb.trace_col";
+    setting_from_id "gen.pcb.substrate_col";
+    generate_pcb UI_return[1], UI_return[2], UI_return[3], UI_return[4];
+}
+proc generate_pcb size_x, size_y, trace_col, substrate_col {
+    reset_canvas true, $size_x, $size_y, 4; # todo could be taller
+    set_depositor_from_number $trace_col; # unetched copper
+    draw_base_layer;
+
+    # create bitmap for tracking where the etch is. First place components on unetched surface, etching for each. Also spawn in a bunch of traces to random walk.
+    delete custom_grid;
+    repeat (canvas_size_x * canvas_size_y) {
+        add 0 to custom_grid;
+    }
+    delete agents; # traces storing: x, y, direction, steps left
+
+    # place the large IC components
+    repeat (canvas_size_x*0.5) {
+        try_place_IC RANDOM_X(), RANDOM_Y(), random(2, 8), PROBABILITY(0.5), random(2, 8), PROBABILITY(0.5), $substrate_col;
+    }
+
+
+    # now increment the random walk traces simultaneously
+    # etch as it goes until it can no longer go further, etch its finish and add a via. If it collides with another trace without passing through already etched sides, connect them together.
+
+    # finally do a flood fill and remove small areas if they aren't traces. This also requires tracking where the traces were placed in another bitmap.
+
+
+    delete custom_grid;
+    delete agents;
+
+    require_composite = true;
+}
+proc try_place_IC x, y, size_x, has_legs_x, size_y, has_legs_y, substrate_col {
+    if (($has_legs_x + $has_legs_y) == 0) {
+        # try again, no legs
+        try_place_IC $x, $y, $size_x, PROBABILITY(0.5), $size_y, PROBABILITY(0.5), $substrate_col;
+        stop_this_script;
+    }
+
+    # check if the grid is vacant (all cells have copper plus 1 cell margin, plus 2 cells either side if needed for traces)
+    iy = $y+($has_legs_y*-2);
+    repeat (($size_y*2)+3+($has_legs_y*4)) {
+        ix = $x+($has_legs_x*-2);
+        repeat (($size_x*2)+3+($has_legs_x*4)) {
+            if (custom_grid[INDEX_FROM_2D(ix, iy, canvas_size_x, canvas_size_y)] > 0) {
+                stop_this_script; # not vacant
+            }
+            ix++;
+        }
+        iy++;
+    }
+
+    # fill grid
+    iy = $y+($has_legs_y*-2);
+    repeat (($size_y*2)+3+($has_legs_y*4)) {
+        ix = $x+($has_legs_x*-2);
+        repeat (($size_x*2)+3+($has_legs_x*4)) {
+            custom_grid[INDEX_FROM_2D(ix, iy, canvas_size_x, canvas_size_y)] = 1;
+            ix++;
+        }
+        iy++;
+    }
+
+    # vacant, draw component and spawn in the traces
+    set_depositor_from_number $substrate_col;
+    draw_cuboid_corner_size $x, $y, 0, ($size_x*2)+3, ($size_y*2)+3, 1;
+    set_depositor_from_sRGB_value 0.2; # plastic housing
+    draw_cuboid_corner_size $x+1, $y+1, 1, ($size_x*2)+1, ($size_y*2)+1, 2;
+    
+    set_depositor_from_sRGB_value 0.7; # solder
+    if ($has_legs_x) {
+        iy = $y+2;
+        repeat ($size_y) {
+            set_voxel $x, iy, 1;
+            set_voxel $x+($size_x*2)+2, iy, 1;
+            # TODO add agents
+            iy += 2;
+        }
+    }
+    if ($has_legs_y) {
+        ix = $x+2;
+        repeat ($size_x) {
+            set_voxel ix, $y, 1;
+            set_voxel ix, $y+($size_y*2)+2, 1;
+            # TODO add agents
+            ix += 2;
+        }
+    }
+}
+
+
 on "gen.city.run" {
     delete UI_return;
     setting_from_id "gen.city.size_x";
     setting_from_id "gen.city.size_y";
     setting_from_id "gen.city.size_z";
     setting_from_id "gen.city.ground_col";
-    generate_city UI_return[1], UI_return[2], UI_return[3], UI_return[4]; 
+    generate_city UI_return[1], UI_return[2], UI_return[3], UI_return[4];
 }
 proc generate_city size_x, size_y, size_z, ground_col {
     reset_canvas true, $size_x, $size_y, $size_z;
@@ -163,7 +261,7 @@ proc generate_control_panel cells_x, cells_y, cell_size, panel_color {
     repeat canvas_size_y {
         ix = 0;
         repeat canvas_size_x {
-            if (RANDOM_0_1() < 0.5) {
+            if (PROBABILITY(0.5)) {
                 set_depositor_from_sRGB_value random("0.2"+(iy%2)*0.5, "0.8");
                 set_voxel ix, iy, 0;
             }
@@ -247,7 +345,7 @@ proc control_panel_draw_element cell_size, grid_x, grid_y, grid_size_x, grid_siz
             # Light bulb
             set_depositor_from_sRGB_value 0.3;
             draw_cylinder center_x, center_y, 0, CSZ(0.3), CSZ(0.3);
-            if (RANDOM_0_1() < 0.5) {
+            if (PROBABILITY(0.5)) {
                 set_depositor_from_HSV random(0,5)/6, random(3,5)/6, random(3,5)/6;
                 depositor_voxel.emission = 1;
             } else {
@@ -359,7 +457,7 @@ proc create_custom_grid_recursive_rectangles x, y, size_x, size_y {
             add stack[5] to custom_grid;
         } else {
             # try splitting (must be run in a loop in the root rect)
-            if (RANDOM_0_1() < 0.5) {
+            if (PROBABILITY(0.5)) {
                 # split x
                 local split_position = round(stack[3] * random("0.25", "0.75"));
                 add_custom_grid_rect stack[1], stack[2], split_position, stack[4], RANDOM_0_1(), stack[6]+1;
@@ -426,7 +524,7 @@ proc generate_elementary_cellular_automata size_x, size_y, extrude_z, rule, rand
     ix = 0;
     if $random_start {
         repeat canvas_size_x {
-            if random(0,1) {
+            if (PROBABILITY(0.5)) {
                 add 1 to custom_grid;
                 #set_voxel ix, (canvas_size_y-1), 0;
                 draw_column ix, (canvas_size_y-2)-iy, 0, canvas_size_z;
@@ -584,23 +682,23 @@ on "gen.maze.run" {
     generate_maze UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6], UI_return[7]; 
 }
 
-%define MGSOFFSET(DX,DY,SIDE) (maze_graph[(((edit_x+(DX))%$cell_count) + ((edit_y+(DY))%$cell_count)*$cell_count)*2+(SIDE)])
-%define MGSOFFSETX(DX,SIDE) (maze_graph[(((edit_x+(DX))%$cell_count) + (edit_y*$cell_count))*2+(SIDE)])
-%define MGSOFFSETY(DY,SIDE) (maze_graph[(edit_x + ((edit_y+(DY))%$cell_count)*$cell_count)*2+(SIDE)])
-%define MGS(SIDE) (maze_graph[(edit_x + (edit_y*$cell_count))*2+(SIDE)])
+%define MGSOFFSET(DX,DY,SIDE) (custom_graph[(((edit_x+(DX))%$cell_count) + ((edit_y+(DY))%$cell_count)*$cell_count)*2+(SIDE)])
+%define MGSOFFSETX(DX,SIDE) (custom_graph[(((edit_x+(DX))%$cell_count) + (edit_y*$cell_count))*2+(SIDE)])
+%define MGSOFFSETY(DY,SIDE) (custom_graph[(edit_x + ((edit_y+(DY))%$cell_count)*$cell_count)*2+(SIDE)])
+%define MGS(SIDE) (custom_graph[(edit_x + (edit_y*$cell_count))*2+(SIDE)])
 
 proc generate_maze cell_count, cell_size, wall_thickness, wall_height, pertubation, ground_col, wall_col {
     local total_cell_size = ($cell_size+$wall_thickness);
 
     # first generate the maze graph, 2 items per cell for the 2 walls (they make an L shape in the cell)
-    delete maze_graph;
+    delete custom_graph;
     repeat ($cell_count*$cell_count) {
-        if random(0, 1) {
-            add 0 to maze_graph;
-            add 1 to maze_graph;
+        if (PROBABILITY(0.5)) {
+            add 0 to custom_graph;
+            add 1 to custom_graph;
         } else {
-            add 1 to maze_graph;
-            add 0 to maze_graph;
+            add 1 to custom_graph;
+            add 0 to custom_graph;
         }
     }
 
@@ -610,24 +708,24 @@ proc generate_maze cell_count, cell_size, wall_thickness, wall_height, pertubati
         local edit_x = random(1,$cell_count);
         local edit_y = random(1,$cell_count);
 
-        if random(0,1) {
+        if (PROBABILITY(0.5)) {
             # vertical toggle
             local index_to_edit = (edit_x + (edit_y*$cell_count))*2+2;
-            local req_state = maze_graph[index_to_edit];
+            local req_state = custom_graph[index_to_edit];
             # check if there is still another of the same state as the original
             if req_state == MGSOFFSETY(1,1) or req_state == MGSOFFSETY(1,2) or MGSOFFSET(-1,1,1) {
                 if req_state == MGS(1) or req_state == MGSOFFSETX(-1,1) or req_state == MGSOFFSETY(-1,2) {
-                    maze_graph[index_to_edit] = 1 - maze_graph[index_to_edit];
+                    custom_graph[index_to_edit] = 1 - custom_graph[index_to_edit];
                 }
             }
         } else {
             # horizontal
             local index_to_edit = (edit_x + (edit_y*$cell_count))*2+1;
-            local req_state = maze_graph[index_to_edit];
+            local req_state = custom_graph[index_to_edit];
             # check if there is still another of the same state as the original
             if req_state == MGSOFFSETX(1,1) or req_state == MGSOFFSETX(1,2) or MGSOFFSET(1,-1,2) {
                 if req_state == MGS(2) or req_state == MGSOFFSETY(-1,2) or req_state == MGSOFFSETX(-1,1) {
-                    maze_graph[index_to_edit] = 1 - maze_graph[index_to_edit];
+                    custom_graph[index_to_edit] = 1 - custom_graph[index_to_edit];
                 }
             }
         }
@@ -644,11 +742,11 @@ proc generate_maze cell_count, cell_size, wall_thickness, wall_height, pertubati
     repeat $cell_count {
         ix = 0;
         repeat $cell_count {
-            if maze_graph[2*(ix+iy*$cell_count)+1] {
+            if (custom_graph[2*(ix+iy*$cell_count)+1]) {
                 # horz
                 draw_cuboid_corner_size ix*total_cell_size, iy*total_cell_size, 0, total_cell_size+$wall_thickness, $wall_thickness, canvas_size_z;
             }
-            if maze_graph[2*(ix+iy*$cell_count)+2] {
+            if (custom_graph[2*(ix+iy*$cell_count)+2]) {
                 # vert
                 draw_cuboid_corner_size ix*total_cell_size, iy*total_cell_size, 0, $wall_thickness, total_cell_size+$wall_thickness, canvas_size_z;
             }
@@ -657,7 +755,7 @@ proc generate_maze cell_count, cell_size, wall_thickness, wall_height, pertubati
         iy++;
     }
 
-    delete maze_graph;
+    delete custom_graph;
     require_composite = true;
 }
 
@@ -762,7 +860,7 @@ on "gen.fibres.run" {
 proc generate_fibres size_x, size_y, size_z, density, cl_count, cl_rad, seg_len, seg_count, seg_angle, col1, col2, col3 {
     reset_canvas true, $size_x, $size_y, $size_z;
 
-    if RANDOM_0_1() < 0.5 {
+    if (PROBABILITY(0.5)) {
         set_depositor_from_number_lerp $col1, $col2, RANDOM_0_1();
     } else {
         set_depositor_from_number_lerp $col2, $col3, RANDOM_0_1();
@@ -770,7 +868,7 @@ proc generate_fibres size_x, size_y, size_z, density, cl_count, cl_rad, seg_len,
     draw_base_layer;
 
     repeat ($density) * (canvas_size_x*canvas_size_y) {
-        if RANDOM_0_1() < 0.5 {
+        if (PROBABILITY(0.5)) {
             set_depositor_from_number_lerp $col1, $col2, RANDOM_0_1();
         } else {
             set_depositor_from_number_lerp $col2, $col3, RANDOM_0_1();
@@ -917,7 +1015,6 @@ on "gen.sphere.run" {
     setting_from_id "gen.sphere.sphere_color";
     setting_from_id "gen.sphere.sphere_emission";
     generate_sphere UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6];
-    require_composite = true;
 }
 proc generate_sphere canvas_size, include_ground, ground_col, sphere_radius, sphere_color, sphere_emission {
     reset_canvas true, $canvas_size*2, $canvas_size*2, $sphere_radius*2;
@@ -928,6 +1025,7 @@ proc generate_sphere canvas_size, include_ground, ground_col, sphere_radius, sph
     set_depositor_from_number $sphere_color;
     depositor_voxel.emission = $sphere_emission;
     draw_sphere $canvas_size, $canvas_size, $sphere_radius, $sphere_radius;
+    require_composite = true;
 }
 
 
@@ -1198,7 +1296,7 @@ proc reset_canvas full_reset, size_x, size_y, size_z {
     }
     reset_depositor;
 
-    canvas_size_x = floor($size_x) * ($size_x > 0); # positive clamp
+    canvas_size_x = floor($size_x) * ($size_x > 0); # positive clamp and floor
     canvas_size_y = floor($size_y) * ($size_y > 0);
     canvas_size_z = floor($size_z) * ($size_z > 0);
 
@@ -1210,10 +1308,12 @@ proc reset_canvas full_reset, size_x, size_y, size_z {
         add VOXEL_NONE to canvas;
     }
 
-    if ((canvas_size_x * canvas_size_y * canvas_size_z) != length canvas) {
-        error "canvas does not contain all requested voxels";
-        if (length canvas == 200000) {
-            print "Error: Scratch's 200k list limit is reached, canvas is malformed", 6;
+    if $full_reset { # only check it the first time
+        if ((canvas_size_x * canvas_size_y * canvas_size_z) != length canvas) {
+            error "canvas does not contain all requested voxels";
+            if (length canvas == 200000) {
+                print "Error: Scratch's 200k list limit has been reached, canvas is malformed", 6;
+            }
         }
     }
 }
@@ -1318,7 +1418,6 @@ proc draw_sphere x, y, z, radius {
 }
 
 
-
 # rectangular prism between from minimum corner
 proc draw_cuboid_corner_size x, y, z, size_x, size_y, size_z {
     local px_z = $z;
@@ -1353,8 +1452,8 @@ proc random_walk_taxicab x, y, z, turns, steps {
     local agent_y = $y;
 
     repeat $turns {
-        if (random(0, 1) == 0) {
-            if (random(0, 1) == 0) {
+        if (PROBABILITY(0.5)) {
+            if (PROBABILITY(0.5)) {
                 repeat random(1, $steps) {
                     agent_x += 1;
                     set_voxel agent_x, agent_y, $z;
@@ -1366,7 +1465,7 @@ proc random_walk_taxicab x, y, z, turns, steps {
                 }
             }
         } else {
-            if (random(0, 1) == 0) {
+            if (PROBABILITY(0.5)) {
                 repeat random(1, $steps) {
                     agent_y += 1;
                     set_voxel agent_x, agent_y, $z;
@@ -1537,9 +1636,9 @@ proc glbfx_jitter coverage, probability_z {
         local jitter_z = random(0, canvas_size_z-2); # Do not cross upper boundary
 
         local jitter_i1 = INDEX_FROM_3D_CANVAS_INTS(jitter_x, jitter_y, jitter_z, canvas_size_x, canvas_size_y);
-        if PROBABILITY($probability_z) {
+        if (PROBABILITY($probability_z)) {
             local jitter_i2 = jitter_i1 + (canvas_size_x * canvas_size_y); # z
-        } elif random(0,1) == 0 {
+        } elif (PROBABILITY(0.5)) {
             local jitter_i2 = INDEX_FROM_3D_CANVAS_INTS(jitter_x+1, jitter_y, jitter_z, canvas_size_x, canvas_size_y); # x
         } else {
             local jitter_i2 = INDEX_FROM_3D_CANVAS_INTS(jitter_x, jitter_y+1, jitter_z, canvas_size_x, canvas_size_y); # y
@@ -1569,9 +1668,9 @@ proc glbfx_smudge coverage, probability_z {
         local jitter_z = random(0, canvas_size_z-2); # Do not cross upper boundary
 
         local jitter_i1 = INDEX_FROM_3D_CANVAS_INTS(jitter_x, jitter_y, jitter_z, canvas_size_x, canvas_size_y);
-        if PROBABILITY($probability_z) {
+        if (PROBABILITY($probability_z)) {
             local jitter_i2 = jitter_i1 + (canvas_size_x * canvas_size_y); # z
-        } elif random(0,1) == 0 {
+        } elif (PROBABILITY(0.5)) {
             local jitter_i2 = INDEX_FROM_3D_CANVAS_INTS(jitter_x+1, jitter_y, jitter_z, canvas_size_x, canvas_size_y); # x
         } else {
             local jitter_i2 = INDEX_FROM_3D_CANVAS_INTS(jitter_x, jitter_y+1, jitter_z, canvas_size_x, canvas_size_y); # y
@@ -1594,16 +1693,16 @@ proc glbfx_color_noise min, max {
     local i = 1;
     repeat (canvas_size_x * canvas_size_y * canvas_size_z) {
         canvas[i].r *= random($min, $max);
-        if canvas[i].r < 0 { canvas[i].r = 0; }
-        if canvas[i].r > 1 { canvas[i].r = 1; }
+        if (canvas[i].r < 0) { canvas[i].r = 0; }
+        if (canvas[i].r > 1) { canvas[i].r = 1; }
 
         canvas[i].g *= random($min, $max);
-        if canvas[i].g < 0 { canvas[i].g = 0; }
-        if canvas[i].g > 1 { canvas[i].g = 1; }
+        if (canvas[i].g < 0) { canvas[i].g = 0; }
+        if (canvas[i].g > 1) { canvas[i].g = 1; }
 
         canvas[i].b *= random($min, $max);
-        if canvas[i].b < 0 { canvas[i].b = 0; }
-        if canvas[i].b > 1 { canvas[i].b = 1; }
+        if (canvas[i].b < 0) { canvas[i].b = 0; }
+        if (canvas[i].b > 1) { canvas[i].b = 1; }
         
         i++;
     }
