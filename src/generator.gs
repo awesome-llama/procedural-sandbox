@@ -98,7 +98,7 @@ on "gen.pcb.run" {
     generate_pcb UI_return[1], UI_return[2], UI_return[3], UI_return[4];
 }
 proc generate_pcb size_x, size_y, trace_col, substrate_col {
-    reset_canvas true, $size_x, $size_y, 4; # todo could be taller
+    reset_canvas true, $size_x, $size_y, 3;
     set_depositor_from_number $trace_col; # unetched copper
     draw_base_layer;
 
@@ -111,7 +111,7 @@ proc generate_pcb size_x, size_y, trace_col, substrate_col {
 
     # place the large IC components
     repeat (canvas_size_x*0.5) {
-        _try_place_IC RANDOM_X(), RANDOM_Y(), random(2, 8), PROBABILITY(0.5), random(2, 8), PROBABILITY(0.5), $substrate_col;
+        _try_place_IC RANDOM_X(), RANDOM_Y(), random(2, 8), PROBABILITY(0.5), random(2, 8), PROBABILITY(0.5);
     }
 
     
@@ -124,18 +124,30 @@ proc generate_pcb size_x, size_y, trace_col, substrate_col {
         i += 4;
     }
 
-    # finally do a flood fill and remove small areas if they aren't traces. This also requires tracking where the traces themselves were placed in another bitmap so the flood fill doesn't start on them.
 
+    # copy custom grid etch to canvas
+    set_depositor_from_number $substrate_col;
+    i = 1;
+    repeat (canvas_size_x * canvas_size_y) {
+        if (custom_grid[i] == 1) {
+            canvas[i].r = depositor_voxel.r;
+            canvas[i].g = depositor_voxel.g;
+            canvas[i].b = depositor_voxel.b;
+        }
+        # only draw etch, not any of the other states as they are assumed drawn already
+        i++;
+    }
 
+    # done
     delete custom_grid;
     delete agents;
 
     require_composite = true;
 }
-proc _try_place_IC x, y, size_x, has_legs_x, size_y, has_legs_y, substrate_col {
+proc _try_place_IC x, y, size_x, has_legs_x, size_y, has_legs_y {
     if (($has_legs_x + $has_legs_y) == 0) {
-        # try again, no legs
-        _try_place_IC $x, $y, $size_x, PROBABILITY(0.5), $size_y, PROBABILITY(0.5), $substrate_col;
+        # try again because there were no legs
+        _try_place_IC $x, $y, $size_x, PROBABILITY(0.5), $size_y, PROBABILITY(0.5);
         stop_this_script;
     }
 
@@ -174,19 +186,17 @@ proc _try_place_IC x, y, size_x, has_legs_x, size_y, has_legs_y, substrate_col {
     }
 
     # vacant, draw component and spawn in the traces
-    set_depositor_from_number $substrate_col;
-    draw_cuboid_corner_size $x, $y, 0, ($size_x*2)+3, ($size_y*2)+3, 1;
     set_depositor_from_sRGB_value 0.2; # plastic housing
     draw_cuboid_corner_size $x+1, $y+1, 1, ($size_x*2)+1, ($size_y*2)+1, 2;
     
-    set_depositor_from_sRGB_value 0.7; # solder
+    set_depositor_from_sRGB_value 0.7; # soldered legs
     if ($has_legs_x) {
         iy = $y+2;
         repeat ($size_y) {
             set_voxel $x, iy, 1;
             set_voxel $x+($size_x*2)+2, iy, 1;
-            _add_agent $x, iy, 4, random(3,7);
-            _add_agent $x+($size_x*2)+2, iy, 0, random(3,7);
+            _add_agent $x, iy, 4, random(3,10);
+            _add_agent $x+($size_x*2)+2, iy, 0, random(1,10);
             iy += 2;
         }
     }
@@ -195,8 +205,8 @@ proc _try_place_IC x, y, size_x, has_legs_x, size_y, has_legs_y, substrate_col {
         repeat ($size_x) {
             set_voxel ix, $y, 1;
             set_voxel ix, $y+($size_y*2)+2, 1;
-            _add_agent ix, $y, 6, random(3,7);
-            _add_agent ix, $y+($size_y*2)+2, 2, random(3,7);
+            _add_agent ix, $y, 6, random(3,10);
+            _add_agent ix, $y+($size_y*2)+2, 2, random(3,10);
             ix += 2;
         }
     }
@@ -221,53 +231,94 @@ proc _add_agent x, y, dir, len {
     insert $x at agents[agent_i];
 }
 
-proc _trace x, y, dir, len {
+proc _trace x, y, dir, no_turn_len {
     set_depositor_from_sRGB RANDOM_0_1(), RANDOM_0_1(), 1; # TESTING
+    local steps = 0; # counted steps
     ix = $x;
     iy = $y;
-    # check if current location begins with a trace already
+    
     local agent_dir = $dir;
     local agent_dx = round(cos(agent_dir*45));
     local agent_dy = round(sin(agent_dir*45));
+    local can_place_smc = true;
     
-    repeat $len { # the required length before considering a turn
+    repeat 1000 {
         local trace_i = INDEX_FROM_2D(ix+agent_dx, iy+agent_dy, canvas_size_x, canvas_size_y);
-        if (custom_grid[trace_i] > 0) {
-            # blocked
-            set_depositor_from_sRGB 0.75, 0.55, 0.25; # via
-            set_voxel ix, iy, 0;
-            stop_this_script; # no turning allowed
-        }
-        custom_grid[trace_i] = 2;
-        ix += agent_dx;
-        iy += agent_dy;
-        set_voxel ix, iy, 0;
-    }
-    # check if next location is vacant, if so, move there and update grid
-    if (PROBABILITY(0.4) and custom_grid[INDEX_FROM_2D(ix+agent_dx, iy+agent_dy, canvas_size_x, canvas_size_y)] == 0) {
-        _trace ix, iy, $dir, $len; # continue, no obstruction
-
-    } else {
-        # obstruction, try turning
-        local attempted_turn = (random(0,1)*2-1);
-        if (custom_grid[INDEX_FROM_2D(ix+round(cos((agent_dir+attempted_turn)*45)), iy+round(sin((agent_dir+attempted_turn)*45)), canvas_size_x, canvas_size_y)] == 0) {
-            _trace ix, iy, $dir+attempted_turn, $len;
-
-        } else {
-            attempted_turn *= -1;
-            if (custom_grid[INDEX_FROM_2D(ix+round(cos((agent_dir+attempted_turn)*45)), iy+round(sin((agent_dir+attempted_turn)*45)), canvas_size_x, canvas_size_y)] == 0) {
-                _trace ix, iy, $dir+attempted_turn, $len;
-                
-            } else {
-                # completely blocked
-                set_depositor_from_sRGB 0.75, 0.55, 0.25; # via
+        if (steps < $no_turn_len) {
+            if (custom_grid[trace_i] > 0) {
+                # blocked, add via
+                set_depositor_from_sRGB 0.75, 0.55, 0.25;
                 set_voxel ix, iy, 0;
+                custom_grid[INDEX_FROM_2D(ix, iy, canvas_size_x, canvas_size_y)] = 2;
+                stop_this_script; # no turning allowed
+            }
+        } else {
+            # typical movement, check for blockage or chance of change in direction
+            if (custom_grid[trace_i] > 0 or PROBABILITY(0.3)) {
+
+                local attempted_turn = (random(0,1)*2-1);
+                if (custom_grid[INDEX_FROM_2D(ix+round(cos((agent_dir+attempted_turn)*45)), iy+round(sin((agent_dir+attempted_turn)*45)), canvas_size_x, canvas_size_y)] == 0) {
+                    _trace ix, iy, agent_dir+attempted_turn, 2;
+
+                } else {
+                    if (custom_grid[INDEX_FROM_2D(ix+round(cos((agent_dir-attempted_turn)*45)), iy+round(sin((agent_dir-attempted_turn)*45)), canvas_size_x, canvas_size_y)] == 0) {
+                        _trace ix, iy, agent_dir-attempted_turn, 2;
+                        
+                    } else {
+                        # completely blocked, add via
+                        set_depositor_from_sRGB 0.75, 0.55, 0.25;
+                        set_voxel ix, iy, 0;
+                        custom_grid[INDEX_FROM_2D(ix, iy, canvas_size_x, canvas_size_y)] = 2;
+                    }
+                }
+                stop_this_script;
             }
         }
+
+        # no blockage, step forward as usual
+        custom_grid[trace_i] = 2;
+
+        ix += agent_dx;
+        iy += agent_dy;
+
+        # add etch along sides
+        _try_etch ix-agent_dy, iy+agent_dx;
+        _try_etch ix+agent_dy, iy-agent_dx;
+
+        #set_voxel ix, iy, 0;
+        steps++;
+
+        # add a small surface mount component (e.g. resistor, capacitor, diode)
+        if (can_place_smc and PROBABILITY(0.05)) {
+            if (steps > 6 and agent_dir % 2 == 0) {
+                set_depositor_from_sRGB_value 0.7; # solder
+                set_voxel ix, iy, 1;
+                set_voxel ix-(agent_dx*3), iy-(agent_dy*3), 1;
+                
+                if (PROBABILITY(0.5)) {
+                    set_depositor_from_sRGB_value 0.3; # grey component
+                } else {
+                    set_depositor_from_sRGB 0.75, 0.65, 0.55; # tan component
+                }
+                set_voxel ix-agent_dx, iy-agent_dy, 1;
+                set_voxel ix-(agent_dx*2), iy-(agent_dy*2), 1;
+                can_place_smc = false;
+            }
+        }
+
     }
+    # too long
+    set_depositor_from_sRGB 0.75, 0.55, 0.25;
+    set_voxel ix, iy, 0;
+    custom_grid[INDEX_FROM_2D(ix, iy, canvas_size_x, canvas_size_y)] = 2;
 }
 
-
+proc _try_etch x, y {
+    local etch_i = INDEX_FROM_2D($x, $y, canvas_size_x, canvas_size_y);
+    if (custom_grid[etch_i] == 0) {
+        custom_grid[etch_i] = 1;
+    }
+}
 
 
 on "gen.city.run" {
