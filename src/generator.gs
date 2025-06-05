@@ -105,20 +105,26 @@ proc generate_pcb size_x, size_y, trace_col, substrate_col {
     # create bitmap for tracking where the etch is. First place components on unetched surface, etching for each. Also spawn in a bunch of traces to random walk.
     delete custom_grid;
     repeat (canvas_size_x * canvas_size_y) {
-        add 0 to custom_grid;
+        add 0 to custom_grid; # 0 = unetched copper, 1 = etched, 2 = unetched trace
     }
     delete agents; # traces storing: x, y, direction, steps left
 
     # place the large IC components
     repeat (canvas_size_x*0.5) {
-        try_place_IC RANDOM_X(), RANDOM_Y(), random(2, 8), PROBABILITY(0.5), random(2, 8), PROBABILITY(0.5), $substrate_col;
+        _try_place_IC RANDOM_X(), RANDOM_Y(), random(2, 8), PROBABILITY(0.5), random(2, 8), PROBABILITY(0.5), $substrate_col;
     }
 
-
+    
     # now increment the random walk traces simultaneously
     # etch as it goes until it can no longer go further, etch its finish and add a via. If it collides with another trace without passing through already etched sides, connect them together.
+    set_depositor_from_number $substrate_col;
+    i = 1;
+    repeat (length agents / 4) {
+        _trace agents[i], agents[i+1], agents[i+2], agents[i+3];
+        i += 4;
+    }
 
-    # finally do a flood fill and remove small areas if they aren't traces. This also requires tracking where the traces were placed in another bitmap.
+    # finally do a flood fill and remove small areas if they aren't traces. This also requires tracking where the traces themselves were placed in another bitmap so the flood fill doesn't start on them.
 
 
     delete custom_grid;
@@ -126,18 +132,28 @@ proc generate_pcb size_x, size_y, trace_col, substrate_col {
 
     require_composite = true;
 }
-proc try_place_IC x, y, size_x, has_legs_x, size_y, has_legs_y, substrate_col {
+proc _try_place_IC x, y, size_x, has_legs_x, size_y, has_legs_y, substrate_col {
     if (($has_legs_x + $has_legs_y) == 0) {
         # try again, no legs
-        try_place_IC $x, $y, $size_x, PROBABILITY(0.5), $size_y, PROBABILITY(0.5), $substrate_col;
+        _try_place_IC $x, $y, $size_x, PROBABILITY(0.5), $size_y, PROBABILITY(0.5), $substrate_col;
         stop_this_script;
     }
 
     # check if the grid is vacant (all cells have copper plus 1 cell margin, plus 2 cells either side if needed for traces)
-    iy = $y+($has_legs_y*-2);
-    repeat (($size_y*2)+3+($has_legs_y*4)) {
-        ix = $x+($has_legs_x*-2);
-        repeat (($size_x*2)+3+($has_legs_x*4)) {
+    
+    local bb_start_y = $y-2;
+    local bb_start_x = $x-2;
+    local bb_size_x = ($size_x*2)+3+4;
+    local bb_size_y = ($size_y*2)+3+4;
+    if (custom_grid[INDEX_FROM_2D(bb_start_y+bb_size_y, bb_start_y+bb_size_y, canvas_size_x, canvas_size_y)] > 0) {
+        # optimisation by checking the opposite corner as a quick way to abandon it
+        stop_this_script; # not vacant
+    }
+
+    iy = bb_start_y;
+    repeat (bb_size_y) {
+        ix = bb_start_x;
+        repeat (bb_size_x) {
             if (custom_grid[INDEX_FROM_2D(ix, iy, canvas_size_x, canvas_size_y)] > 0) {
                 stop_this_script; # not vacant
             }
@@ -147,10 +163,10 @@ proc try_place_IC x, y, size_x, has_legs_x, size_y, has_legs_y, substrate_col {
     }
 
     # fill grid
-    iy = $y+($has_legs_y*-2);
-    repeat (($size_y*2)+3+($has_legs_y*4)) {
-        ix = $x+($has_legs_x*-2);
-        repeat (($size_x*2)+3+($has_legs_x*4)) {
+    iy = $y;
+    repeat (($size_y*2)+3) {
+        ix = $x;
+        repeat (($size_x*2)+3) {
             custom_grid[INDEX_FROM_2D(ix, iy, canvas_size_x, canvas_size_y)] = 1;
             ix++;
         }
@@ -169,7 +185,8 @@ proc try_place_IC x, y, size_x, has_legs_x, size_y, has_legs_y, substrate_col {
         repeat ($size_y) {
             set_voxel $x, iy, 1;
             set_voxel $x+($size_x*2)+2, iy, 1;
-            # TODO add agents
+            _add_agent $x, iy, 4, random(3,7);
+            _add_agent $x+($size_x*2)+2, iy, 0, random(3,7);
             iy += 2;
         }
     }
@@ -178,11 +195,79 @@ proc try_place_IC x, y, size_x, has_legs_x, size_y, has_legs_y, substrate_col {
         repeat ($size_x) {
             set_voxel ix, $y, 1;
             set_voxel ix, $y+($size_y*2)+2, 1;
-            # TODO add agents
+            _add_agent ix, $y, 6, random(3,7);
+            _add_agent ix, $y+($size_y*2)+2, 2, random(3,7);
             ix += 2;
         }
     }
 }
+
+proc _add_agent x, y, dir, len {
+    # binary search insertion
+    local agent_min = 1;
+    local agent_max = length agents + 1;
+    until (agent_min == agent_max) {
+        local agent_i = (agent_min + agent_max) // 2;
+        if ($len < agents[agent_i*4]) {
+            agent_min = agent_i + 1;
+        } else {
+            agent_max = agent_i;
+        }
+    }
+    agent_i = agent_min*4-3;
+    insert $len at agents[agent_i]; # insert backwards to keep correct order
+    insert $dir at agents[agent_i];
+    insert $y at agents[agent_i];
+    insert $x at agents[agent_i];
+}
+
+proc _trace x, y, dir, len {
+    set_depositor_from_sRGB RANDOM_0_1(), RANDOM_0_1(), 1; # TESTING
+    ix = $x;
+    iy = $y;
+    # check if current location begins with a trace already
+    local agent_dir = $dir;
+    local agent_dx = round(cos(agent_dir*45));
+    local agent_dy = round(sin(agent_dir*45));
+    
+    repeat $len { # the required length before considering a turn
+        local trace_i = INDEX_FROM_2D(ix+agent_dx, iy+agent_dy, canvas_size_x, canvas_size_y);
+        if (custom_grid[trace_i] > 0) {
+            # blocked
+            set_depositor_from_sRGB 0.75, 0.55, 0.25; # via
+            set_voxel ix, iy, 0;
+            stop_this_script; # no turning allowed
+        }
+        custom_grid[trace_i] = 2;
+        ix += agent_dx;
+        iy += agent_dy;
+        set_voxel ix, iy, 0;
+    }
+    # check if next location is vacant, if so, move there and update grid
+    if (PROBABILITY(0.4) and custom_grid[INDEX_FROM_2D(ix+agent_dx, iy+agent_dy, canvas_size_x, canvas_size_y)] == 0) {
+        _trace ix, iy, $dir, $len; # continue, no obstruction
+
+    } else {
+        # obstruction, try turning
+        local attempted_turn = (random(0,1)*2-1);
+        if (custom_grid[INDEX_FROM_2D(ix+round(cos((agent_dir+attempted_turn)*45)), iy+round(sin((agent_dir+attempted_turn)*45)), canvas_size_x, canvas_size_y)] == 0) {
+            _trace ix, iy, $dir+attempted_turn, $len;
+
+        } else {
+            attempted_turn *= -1;
+            if (custom_grid[INDEX_FROM_2D(ix+round(cos((agent_dir+attempted_turn)*45)), iy+round(sin((agent_dir+attempted_turn)*45)), canvas_size_x, canvas_size_y)] == 0) {
+                _trace ix, iy, $dir+attempted_turn, $len;
+                
+            } else {
+                # completely blocked
+                set_depositor_from_sRGB 0.75, 0.55, 0.25; # via
+                set_voxel ix, iy, 0;
+            }
+        }
+    }
+}
+
+
 
 
 on "gen.city.run" {
