@@ -333,8 +333,8 @@ proc cmp_orbit_shaded {
         raycast_wrapped_canvas raytracer_ray_origins[i].x+shift.x, raytracer_ray_origins[i].y+shift.y, raytracer_ray_origins[i].z+shift.z, raytracer_ray_direction.x, raytracer_ray_direction.y, raytracer_ray_direction.z;
         
         if (hit_index > 0) {
-            local height = hit_position.z / canvas_size_z;
-            height = 0.5+CLAMP_0_1(height)*0.5;
+            local height = 0.5 + 0.5*(1 - (canvas_size_z-hit_position.z) / MAX(8, canvas_size_z));
+            
             if (side == 2) {
                 local brightness_fac = height;
             } elif (side == 1) {
@@ -989,7 +989,7 @@ proc raycast_wrapped_canvas x, y, z, dx, dy, dz {
         }
 
         # check if the ray is leaving the canvas
-        if (step_z > 0 and ray_iz > canvas_size_z) {
+        if (step_z > 0 and ray_iz > canvas_size_z or ray_iz < 0) {
             hit_index = 0; # no hit
             stop_this_script;
         }
@@ -998,12 +998,9 @@ proc raycast_wrapped_canvas x, y, z, dx, dy, dz {
         hit_index = INDEX_FROM_3D_CANVAS(ray_ix, ray_iy, ray_iz, canvas_size_x, canvas_size_y);
         local alpha = canvas[hit_index].opacity;
         
-        if alpha > 0 {
-            # hit! 
-            # calculate its intersection point and return it.
-            # non-local return variables
+        if (alpha > 0) { # hit! 
+            # calculate intersection point on voxel surface and return it with variables for flexibility
             XYZ hit_position = XYZ {x:$x+$dx*(last_len/vec_len), y:$y+$dy*(last_len/vec_len), z:$z+$dz*(last_len/vec_len)};
-            #XYZ hit_normal = XYZ {x:0, y:0, z:0}
             stop_this_script;
         }
     }
