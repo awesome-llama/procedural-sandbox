@@ -42,13 +42,13 @@ on "io.new_canvas.run"{
     setting_from_id "io.new_canvas.base_col";
     
     # no yield - no custom block needed
-    reset_canvas true, UI_return[1], UI_return[2], UI_return[3];
+    reset_generator UI_return[1], UI_return[2], UI_return[3];
     
     if UI_return[4] {
         set_depositor_from_number UI_return[5];
         draw_base_layer;
     }
-    require_composite = true;
+    generator_finished;
 }
 
 
@@ -71,7 +71,7 @@ on "gen.ballpit.run" {
 }
 %define AVG_VOL_OF_SPHERE(RAD1,RAD2) (1.04719755 * (((RAD2*RAD2*RAD2*RAD2)-(RAD1*RAD1*RAD1*RAD1))/(RAD2*RAD1)))
 proc generate_ballpit size_x, size_y, size_z, ground_col, rad_min, rad_max, density, ball_col, var_hue, var_sat, var_val, var_glow {
-    reset_canvas true, $size_x, $size_y, $size_z;
+    reset_generator $size_x, $size_y, $size_z;
 
     set_depositor_from_number $ground_col;
     draw_base_layer;
@@ -85,7 +85,7 @@ proc generate_ballpit size_x, size_y, size_z, ground_col, rad_min, rad_max, dens
         local height = round(canvas_size_z-1-radius-random(0, canvas_size_z-(2*radius)));
         draw_sphere random(1, canvas_size_x), random(1, canvas_size_y), POSITIVE_CLAMP(height), radius;
     }
-    require_composite = true;
+    generator_finished;
 }
 
 
@@ -98,7 +98,7 @@ on "gen.pcb.run" {
     generate_pcb UI_return[1], UI_return[2], UI_return[3], UI_return[4];
 }
 proc generate_pcb size_x, size_y, trace_col, substrate_col {
-    reset_canvas true, $size_x, $size_y, 3;
+    reset_generator $size_x, $size_y, 4;
     set_depositor_from_number $trace_col; # unetched copper
     draw_base_layer;
 
@@ -114,7 +114,6 @@ proc generate_pcb size_x, size_y, trace_col, substrate_col {
         _try_place_IC RANDOM_X(), RANDOM_Y(), random(2, 8), PROBABILITY(0.5), random(2, 8), PROBABILITY(0.5);
     }
 
-    
     # now increment the random walk traces simultaneously
     # etch as it goes until it can no longer go further, etch its finish and add a via. If it collides with another trace without passing through already etched sides, connect them together.
     set_depositor_from_number $substrate_col;
@@ -142,7 +141,7 @@ proc generate_pcb size_x, size_y, trace_col, substrate_col {
     delete custom_grid;
     delete agents;
 
-    require_composite = true;
+    generator_finished;
 }
 proc _try_place_IC x, y, size_x, has_legs_x, size_y, has_legs_y {
     if (($has_legs_x + $has_legs_y) == 0) {
@@ -187,7 +186,7 @@ proc _try_place_IC x, y, size_x, has_legs_x, size_y, has_legs_y {
 
     # vacant, draw component and spawn in the traces
     set_depositor_from_sRGB_value 0.2; # plastic housing
-    draw_cuboid_corner_size $x+1, $y+1, 1, ($size_x*2)+1, ($size_y*2)+1, 2;
+    draw_cuboid_corner_size $x+1, $y+1, 1, ($size_x*2)+1, ($size_y*2)+1, random(2,3);
     
     set_depositor_from_sRGB_value 0.7; # soldered legs
     if ($has_legs_x) {
@@ -330,7 +329,7 @@ on "gen.city.run" {
     generate_city UI_return[1], UI_return[2], UI_return[3], UI_return[4];
 }
 proc generate_city size_x, size_y, size_z, ground_col {
-    reset_canvas true, $size_x, $size_y, $size_z;
+    reset_generator $size_x, $size_y, $size_z;
 
     set_depositor_from_number $ground_col;
     draw_base_layer;
@@ -364,7 +363,7 @@ proc generate_city size_x, size_y, size_z, ground_col {
         random_walk_taxicab RANDOM_X(), RANDOM_Y(), random(1, 16), 16, 20;
     }
     
-    require_composite = true;
+    generator_finished;
 }
 
 on "gen.control_panel.run" {
@@ -377,20 +376,20 @@ on "gen.control_panel.run" {
 }
 proc generate_control_panel cells_x, cells_y, cell_size, panel_color {
     # template 1: mesh
-    reset_canvas true, 2, 2, 1;
+    reset_generator 2, 2, 1;
     set_depositor_from_number $panel_color;
     set_voxel 0, 0, 0;
     set_voxel 1, 1, 0;
     add_canvas_as_template;
 
     # template 2: louvres
-    reset_canvas false, 1, 2, 1;
+    clear_canvas 1, 2, 1;
     set_depositor_from_number $panel_color;
     set_voxel 0, 0, 0;
     add_canvas_as_template;
 
     # template 3: text
-    reset_canvas false, 48, 12, 1;
+    clear_canvas 48, 12, 1;
     set_depositor_from_sRGB_value 0.8;
     draw_base_layer;
     iy = 0;
@@ -408,7 +407,7 @@ proc generate_control_panel cells_x, cells_y, cell_size, panel_color {
     add_canvas_as_template;
 
     # template 4: gauge
-    reset_canvas false, 10, 6, 2;
+    clear_canvas 10, 6, 2;
     set_depositor_from_sRGB_value 0.75;
     draw_base_layer;
     set_depositor_from_sRGB_value 0.6;
@@ -421,7 +420,7 @@ proc generate_control_panel cells_x, cells_y, cell_size, panel_color {
     add_canvas_as_template;
 
     # template 5: slider grip
-    reset_canvas false, 1, 2, 1;
+    clear_canvas 1, 2, 1;
     set_depositor_from_sRGB_value 0.8;
     set_voxel 0, 0, 0;
     set_depositor_from_sRGB_value 0.75;
@@ -432,7 +431,7 @@ proc generate_control_panel cells_x, cells_y, cell_size, panel_color {
 
     local cell_size = MAX(4, $cell_size);
     
-    reset_canvas false, $cells_x*cell_size, $cells_y*cell_size, cell_size;
+    clear_canvas $cells_x*cell_size, $cells_y*cell_size, cell_size;
 
     set_depositor_from_number_lerp 0, $panel_color, 0.5;
     draw_cuboid_corner_size 0, 0, 0, canvas_size_x, canvas_size_y, (cell_size*0.2)-1;
@@ -454,7 +453,7 @@ proc generate_control_panel cells_x, cells_y, cell_size, panel_color {
         i += 5;
     }
     
-    require_composite = true;
+    generator_finished;
 }
 
 %define CSZ(FRAC) ($cell_size*(FRAC))
@@ -641,7 +640,7 @@ on "gen.eca.run" {
 }
 proc generate_elementary_cellular_automata size_x, size_y, extrude_z, rule, random_start, state_0_col, state_1_col {
     # generate the canvas
-    reset_canvas true, $size_x, $size_y, 1 + $extrude_z;
+    reset_generator $size_x, $size_y, 1 + $extrude_z;
 
     set_depositor_from_number $state_0_col;
     draw_base_layer;
@@ -700,7 +699,7 @@ proc generate_elementary_cellular_automata size_x, size_y, extrude_z, rule, rand
 
     delete custom_grid;
     delete eca_lut;
-    require_composite = true;
+    generator_finished;
 }
 
 
@@ -714,7 +713,7 @@ on "gen.erosion.run.generate" {
     generate_terrain UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5];
 }
 proc generate_terrain size_x, size_y, size_z, scale, color {
-    reset_canvas true, 1, 1, $size_z; # column defining rock strata
+    reset_generator 1, 1, $size_z; # column defining rock strata
     set_depositor_from_number $color;
     local HSV col = RGB_to_HSV(depositor_voxel.r, depositor_voxel.g, depositor_voxel.b);
     iz = 0;
@@ -725,7 +724,7 @@ proc generate_terrain size_x, size_y, size_z, scale, color {
     }
     add_canvas_as_template; # template 1
 
-    reset_canvas false, $size_x, $size_y, $size_z;
+    clear_canvas $size_x, $size_y, $size_z;
     generate_value_noise $size_x, $size_y, $scale, 8, false; # doesn't write to the canvas
 
     # convert height into rock formation
@@ -745,7 +744,7 @@ proc generate_terrain size_x, size_y, size_z, scale, color {
 
     glbfx_smudge 0.5, 1;
 
-    require_composite = true;
+    generator_finished;
 }
 
 
@@ -764,7 +763,7 @@ proc finalise_terrain water_level_fac, water_col, grass_fac, grass_col, tree_fac
     set_depositor_from_number $water_col;
     depositor_replace = false;
     draw_cuboid_corner_size 0, 0, 0, canvas_size_x, canvas_size_y, canvas_size_z * $water_level_fac;
-    require_composite = true;
+    generator_finished;
 }
 
 
@@ -783,7 +782,7 @@ on "gen.extruded_grid.run" {
 proc generate_extruded_grid cell_count, cell_size, cell_spacing, max_height, jitter_fac, col1, col2, glow {
     local total_cell_size = ($cell_size+$cell_spacing);
     
-    reset_canvas true, $cell_count*total_cell_size, $cell_count*total_cell_size, $max_height;
+    reset_generator $cell_count*total_cell_size, $cell_count*total_cell_size, $max_height;
     
     set_depositor_from_number $col1;
     draw_base_layer;
@@ -801,7 +800,7 @@ proc generate_extruded_grid cell_count, cell_size, cell_spacing, max_height, jit
     }
 
     glbfx_recolor 0.25, 0.5, 0.25, 0, 1, $col1, $col2, true;
-    require_composite = true;
+    generator_finished;
 }
 
 
@@ -868,7 +867,7 @@ proc generate_maze cell_count, cell_size, wall_thickness, wall_height, pertubati
     }
 
     # generate the canvas
-    reset_canvas true, $cell_count*total_cell_size, $cell_count*total_cell_size, $wall_height+1;
+    reset_generator $cell_count*total_cell_size, $cell_count*total_cell_size, $wall_height+1;
     
     set_depositor_from_number $ground_col;
     draw_base_layer;
@@ -892,7 +891,7 @@ proc generate_maze cell_count, cell_size, wall_thickness, wall_height, pertubati
     }
 
     delete custom_graph;
-    require_composite = true;
+    generator_finished;
 }
 
 
@@ -906,7 +905,7 @@ on "gen.nucleus.run" {
 }
 proc generate_nucleus radius, size_z, ground_col {
     # first create a section on the XZ plane
-    reset_canvas true, $radius, 1, $size_z;
+    reset_generator $radius, 1, $size_z;
 
     set_depositor_from_number $ground_col;
 
@@ -970,7 +969,7 @@ proc generate_nucleus radius, size_z, ground_col {
         random_walk_any (canvas_size_x/2)+dist*cos(rot), (canvas_size_y/2)+dist*sin(rot), random(elev_min, elev_max), rot, steps, canvas_size_x*random("0.05", "0.1"), turn;
     }
     
-    require_composite = true;
+    generator_finished;
 }
 
 
@@ -994,7 +993,7 @@ on "gen.fibres.run" {
     generate_fibres UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6], UI_return[7], UI_return[8], UI_return[9], UI_return[10], UI_return[11], UI_return[12];
 }
 proc generate_fibres size_x, size_y, size_z, density, cl_count, cl_rad, seg_len, seg_count, seg_angle, col1, col2, col3 {
-    reset_canvas true, $size_x, $size_y, $size_z;
+    reset_generator $size_x, $size_y, $size_z;
 
     if (PROBABILITY(0.5)) {
         set_depositor_from_number_lerp $col1, $col2, RANDOM_0_1();
@@ -1018,7 +1017,7 @@ proc generate_fibres size_x, size_y, size_z, density, cl_count, cl_rad, seg_len,
         }
     }
     
-    require_composite = true;
+    generator_finished;
 }
 
 
@@ -1027,7 +1026,7 @@ on "gen.refinery.run" {
     generate_refinery;
 }
 proc generate_refinery {
-    reset_canvas true, 64, 64, 16;
+    reset_generator 64, 64, 16;
     set_depositor_from_sRGB 0.7, 0.7, 0.6;
     draw_base_layer;
 
@@ -1049,7 +1048,7 @@ proc generate_refinery {
         random_walk_taxicab tank_x, tank_y-tank_rad, random(1, tank_rad/2), 12, 16;
     }
     
-    require_composite = true;
+    generator_finished;
 }
 
 
@@ -1060,7 +1059,7 @@ on "gen.value_noise.run" {
     setting_from_id "gen.value_noise.scale";
     setting_from_id "gen.value_noise.octaves";
     generate_value_noise UI_return[1], UI_return[2], UI_return[3], UI_return[4], true;
-    require_composite = true;
+    generator_finished;
 }
 
 # 2D value noise
@@ -1127,7 +1126,7 @@ proc generate_value_noise size_x, size_y, scale, octaves, write_to_canvas {
 
     # write the to the real canvas
     if $write_to_canvas {
-        reset_canvas true, $size_x, $size_y, 1;
+        clear_canvas $size_x, $size_y, 1;
         
         i = 1;
         repeat (canvas_size_x * canvas_size_y) {
@@ -1153,7 +1152,7 @@ on "gen.sphere.run" {
     generate_sphere UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6];
 }
 proc generate_sphere canvas_size, include_ground, ground_col, sphere_radius, sphere_color, sphere_emission {
-    reset_canvas true, $canvas_size*2, $canvas_size*2, $sphere_radius*2;
+    reset_generator $canvas_size*2, $canvas_size*2, $sphere_radius*2;
     if $include_ground {
         set_depositor_from_number $ground_col;
         draw_base_layer;
@@ -1161,12 +1160,12 @@ proc generate_sphere canvas_size, include_ground, ground_col, sphere_radius, sph
     set_depositor_from_number $sphere_color;
     depositor_voxel.emission = $sphere_emission;
     draw_sphere $canvas_size, $canvas_size, $sphere_radius, $sphere_radius;
-    require_composite = true;
+    generator_finished;
 }
 
 
 on "gen.template.run" {
-    reset_canvas true, 64, 64, 8;
+    reset_generator 64, 64, 8;
     set_depositor_from_sRGB_value 0.8;
     draw_base_layer;
     set_depositor_from_sRGB 1, 0, 0;
@@ -1175,7 +1174,7 @@ on "gen.template.run" {
     draw_sphere 32, 16, 4, 4;
     set_depositor_from_sRGB 0, 0, 1;
     draw_sphere 24, 32, 4, 4;
-    require_composite = true;
+    generator_finished;
 }
 
 
@@ -1183,7 +1182,7 @@ on "gen.grad.run" {
     generate_grad 120, 80;
 }
 proc generate_grad size_x, size_y {
-    reset_canvas true, $size_x, $size_y, 1;
+    reset_generator $size_x, $size_y, 1;
     set_depositor_from_sRGB 0.5, 0.5, 0.5;
     draw_base_layer;
 
@@ -1198,13 +1197,13 @@ proc generate_grad size_x, size_y {
         px_y++;
     }
     
-    require_composite = true;
+    generator_finished;
 }
 
 
 on "gen.test.run" { generate_test; }
 proc generate_test {
-    reset_canvas true, 100, 64, 10;
+    reset_generator 100, 64, 10;
 
     set_depositor_from_sRGB 0.8, 0.8, 0.8;
     draw_base_layer;
@@ -1241,7 +1240,7 @@ proc generate_test {
     depositor_voxel.opacity = 0.5;
     draw_sphere 20, 50, 0, 10;
 
-    require_composite = true;
+    generator_finished;
 }
 
 
@@ -1425,33 +1424,36 @@ proc set_voxel x, y, z {
 }
 
 
-# Reset the canvas to an empty state, ready for a generator to run. Use full_reset=true to erase templates. Does not trigger compositor despite changing the canvas.
-proc reset_canvas full_reset, size_x, size_y, size_z {
-    if $full_reset {
-        delete_all_templates;
-    }
+# Reset the canvas to an empty state, ready for a generator to run. Deletes templates and resets the depositor.
+proc reset_generator size_x, size_y, size_z {
+    delete_all_templates;
     reset_depositor;
+    clear_canvas $size_x, $size_y, $size_z;
 
+    if ((canvas_size_x * canvas_size_y * canvas_size_z) != length canvas) {
+        error "canvas does not contain all requested voxels";
+        if (length canvas == 200000) {
+            print "Error: Scratch's 200k list limit has been reached, canvas is malformed", 6;
+        }
+    }
+}
+
+# Clear the canvas to an empty state.
+proc clear_canvas size_x, size_y, size_z {
     canvas_size_x = floor($size_x) * ($size_x > 0); # positive clamp and floor
     canvas_size_y = floor($size_y) * ($size_y > 0);
     canvas_size_z = floor($size_z) * ($size_z > 0);
-
-    cam_x = canvas_size_x/2;
-    cam_y = canvas_size_x/2;
-
     delete canvas;
     repeat (canvas_size_x * canvas_size_y * canvas_size_z) {
         add VOXEL_NONE to canvas;
     }
+}
 
-    if $full_reset { # only check it the first time
-        if ((canvas_size_x * canvas_size_y * canvas_size_z) != length canvas) {
-            error "canvas does not contain all requested voxels";
-            if (length canvas == 200000) {
-                print "Error: Scratch's 200k list limit has been reached, canvas is malformed", 6;
-            }
-        }
-    }
+
+proc generator_finished {
+    require_composite = true;
+    cam_x = canvas_size_x/2;
+    cam_y = canvas_size_y/2;
 }
 
 

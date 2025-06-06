@@ -123,7 +123,7 @@ struct template_metadata {
 %define CLAMP(MIN,MAX,VAL) ((MAX) - (((MAX) - ((((VAL) - (MIN)) * ((VAL) > (MIN))) + (MIN))) * ((VAL) < (MAX))))
 
 
-# Arithmetic mean of 2 numbers
+# Arithmetic mean ("average") of 2 numbers
 %define MEAN(A,B) (((A)+(B))/2)
 
 # Linear interpolation ("lerp"). Remap a normalised value `t` (between 0 and 1) to a different interval.
@@ -132,7 +132,7 @@ struct template_metadata {
 # opposite of lerp. Gets t from a value.
 %define UNLERP(IN0,IN1,VAL) (((VAL)-(IN0))/((IN1)-(IN0)))
 
-# Remap a value from input range to output range.
+# Remap a value from input interval to output interval.
 %define REMAP(IN0,IN1,OUT0,OUT1,T) (LERP(OUT0,OUT1,UNLERP(IN0,IN1,T)))
 
 
@@ -164,16 +164,16 @@ struct template_metadata {
 # Linear Rec.709 to sRGB (not piecewise)
 %define FROM_LINEAR(VAL) ROOT(VAL, 2.2)
 
-# Convert 2D coordinates into index, assumes ints that do not wrap
+# Convert 2D coordinates into list index, assumes ints that do not wrap
 %define INDEX_FROM_2D_NOWRAP_INTS(X,Y,SIZE_X) (1 + (((SIZE_X)*(Y)) + (X)))
 
-# Convert 2D coordinates into index, assumes ints, wrapped
+# Convert 2D coordinates into list index, assumes ints, wrapped
 %define INDEX_FROM_2D_INTS(X,Y,SIZE_X,SIZE_Y) (1 + (((SIZE_X)*((Y)%(SIZE_Y))) + ((X)%(SIZE_X))))
 
-# Convert 2D coordinates into index, floored and wrapped
+# Convert 2D coordinates into list index, floored and wrapped
 %define INDEX_FROM_2D(X,Y,SIZE_X,SIZE_Y) (1 + (((SIZE_X)*(floor(Y)%(SIZE_Y))) + (floor(X)%(SIZE_X))))
 
-# Convert 3D coordinates into index, wrapping along all axes. Remember that lists are 1-indexed.
+# Convert 3D coordinates into list index, wrapping along all axes. Remember that lists are 1-indexed.
 %define INDEX_FROM_3D(X,Y,Z,SIZE_X,SIZE_Y,SIZE_Z) (1 + ((((SIZE_X)*(SIZE_Y)) * (floor(Z) % (SIZE_Z))) + (((SIZE_X)*(floor(Y) % (SIZE_Y))) + (floor(X) % (SIZE_X)))))
 
 # Same as INDEX_FROM_3D but for the canvas, which only wraps along X and Y.
@@ -182,7 +182,7 @@ struct template_metadata {
 # same as INDEX_FROM_3D_CANVAS but assumes ints
 %define INDEX_FROM_3D_CANVAS_INTS(X,Y,Z,SIZE_X,SIZE_Y) (1 + ((((SIZE_X)*(SIZE_Y)) * (Z)) + (((SIZE_X)*((Y) % (SIZE_Y))) + ((X) % (SIZE_X)))))
 
-# Special case index, assumes ints that do not wrap
+# Special case list index, assumes ints that do not wrap
 %define INDEX_FROM_3D_NOWRAP_INTS(X,Y,Z,SIZE_X,SIZE_Y) (1 + ((((SIZE_X)*(SIZE_Y)) * (Z)) + (((SIZE_X)*(Y)) + (X))))
 
 
