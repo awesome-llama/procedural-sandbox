@@ -93,11 +93,13 @@ on "gen.pcb.run" {
     delete UI_return;
     setting_from_id "gen.pcb.size_x";
     setting_from_id "gen.pcb.size_y";
-    setting_from_id "gen.pcb.trace_col";
+    setting_from_id "gen.pcb.seamless";
     setting_from_id "gen.pcb.substrate_col";
-    generate_pcb UI_return[1], UI_return[2], UI_return[3], UI_return[4];
+    setting_from_id "gen.pcb.trace_col";
+    setting_from_id "gen.pcb.via_col";
+    generate_pcb UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6];
 }
-proc generate_pcb size_x, size_y, trace_col, substrate_col {
+proc generate_pcb size_x, size_y, seamless, substrate_col, trace_col, via_col {
     reset_generator $size_x, $size_y, 4;
     set_depositor_from_number $trace_col; # unetched copper
     draw_base_layer;
@@ -107,10 +109,31 @@ proc generate_pcb size_x, size_y, trace_col, substrate_col {
     repeat (canvas_size_x * canvas_size_y) {
         add 0 to custom_grid; # 0 = unetched copper, 1 = etched, 2 = unetched trace
     }
+    if ($seamless == 0) {
+        # add a ring around the edge to prevent things from being placed there
+        i = 1;
+        repeat (canvas_size_x-1) {
+            custom_grid[i] = 1;
+            i++;
+        }
+        repeat (canvas_size_y-1) {
+            custom_grid[i] = 1;
+            i += canvas_size_x;
+        }
+        repeat (canvas_size_x-1) {
+            custom_grid[i] = 1;
+            i--;
+        }
+        repeat (canvas_size_y-1) {
+            custom_grid[i] = 1;
+            i -= canvas_size_x;
+        }
+    }
+
     delete agents; # traces storing: x, y, direction, steps left
 
     # place the large IC components
-    repeat (canvas_size_x*0.5) {
+    repeat (0.5*(canvas_size_x+canvas_size_y)) {
         _try_place_IC RANDOM_X(), RANDOM_Y(), random(2, 8), PROBABILITY(0.5), random(2, 8), PROBABILITY(0.5);
     }
 
@@ -119,7 +142,7 @@ proc generate_pcb size_x, size_y, trace_col, substrate_col {
     set_depositor_from_number $substrate_col;
     i = 1;
     repeat (length agents / 4) {
-        _trace agents[i], agents[i+1], agents[i+2], agents[i+3];
+        _trace agents[i], agents[i+1], agents[i+2], agents[i+3], random(0.05,0.2)*(canvas_size_x+canvas_size_y), $via_col;
         i += 4;
     }
 
@@ -151,7 +174,6 @@ proc _try_place_IC x, y, size_x, has_legs_x, size_y, has_legs_y {
     }
 
     # check if the grid is vacant (all cells have copper plus 1 cell margin, plus 2 cells either side if needed for traces)
-    
     local bb_start_y = $y-2;
     local bb_start_x = $x-2;
     local bb_size_x = ($size_x*2)+3+4;
@@ -166,7 +188,7 @@ proc _try_place_IC x, y, size_x, has_legs_x, size_y, has_legs_y {
         ix = bb_start_x;
         repeat (bb_size_x) {
             if (custom_grid[INDEX_FROM_2D(ix, iy, canvas_size_x, canvas_size_y)] > 0) {
-                stop_this_script; # not vacant
+                stop_this_script; # not vacant, do not draw component
             }
             ix++;
         }
@@ -184,29 +206,42 @@ proc _try_place_IC x, y, size_x, has_legs_x, size_y, has_legs_y {
         iy++;
     }
 
-    # vacant, draw component and spawn in the traces
-    set_depositor_from_sRGB_value 0.2; # plastic housing
-    draw_cuboid_corner_size $x+1, $y+1, 1, ($size_x*2)+1, ($size_y*2)+1, random(2,3);
-    
-    set_depositor_from_sRGB_value 0.7; # soldered legs
+    # draw component and spawn in the traces
+    # plastic housing
+    iz = random(2,3);
+    set_depositor_from_sRGB_value 0.2;
+    draw_cuboid_corner_size $x+1, $y+1, 1, ($size_x*2)+1, ($size_y*2)+1, iz;
+    if (PROBABILITY(0.5)) { # text
+        set_depositor_from_sRGB_value 0.23;
+        bb_size_x = ($size_x*2)-5;
+        bb_size_y = ($size_y*2)-5;
+        draw_rectangle_fill_random_centered_XY $x+2+$size_x, $y+2+$size_y, iz, MIN(5, bb_size_x), MIN(5, bb_size_y), 0.8;
+    }
+
+    # soldered legs
+    set_depositor_from_sRGB_value 0.7;
     if ($has_legs_x) {
+        i = $size_y*-0.5;
         iy = $y+2;
         repeat ($size_y) {
             set_voxel $x, iy, 1;
             set_voxel $x+($size_x*2)+2, iy, 1;
-            _add_agent $x, iy, 4, random(3,10);
-            _add_agent $x+($size_x*2)+2, iy, 0, random(1,10);
+            _add_agent $x, iy, 4, random(1, 2+round(($size_y/2)-i));
+            _add_agent $x+($size_x*2)+2, iy, 0, random(1, 2+round(($size_y/2)-i));
             iy += 2;
+            i++;
         }
     }
     if ($has_legs_y) {
+        i = $size_x*-0.5;
         ix = $x+2;
         repeat ($size_x) {
             set_voxel ix, $y, 1;
             set_voxel ix, $y+($size_y*2)+2, 1;
-            _add_agent ix, $y, 6, random(3,10);
-            _add_agent ix, $y+($size_y*2)+2, 2, random(3,10);
+            _add_agent ix, $y, 6, random(1, 2+round(($size_x/2)-i));
+            _add_agent ix, $y+($size_y*2)+2, 2, random(1, 2+round(($size_x/2)-i));
             ix += 2;
+            i++;
         }
     }
 }
@@ -228,27 +263,37 @@ proc _add_agent x, y, dir, len {
     insert $dir at agents[agent_i];
     insert $y at agents[agent_i];
     insert $x at agents[agent_i];
+    custom_grid[INDEX_FROM_2D($x, $y, canvas_size_x, canvas_size_y)] = 2;
 }
 
-proc _trace x, y, dir, no_turn_len {
+proc _trace x, y, dir, no_turn_len, length_remaining, via_col {
     set_depositor_from_sRGB RANDOM_0_1(), RANDOM_0_1(), 1; # TESTING
     local steps = 0; # counted steps
     ix = $x;
     iy = $y;
     
-    local agent_dir = $dir;
-    local agent_dx = round(cos(agent_dir*45));
-    local agent_dy = round(sin(agent_dir*45));
+    agent_dir = $dir;
+    agent_dx = round(cos(agent_dir*45));
+    agent_dy = round(sin(agent_dir*45));
     local can_place_smc = true;
+
+    # add etch along sides at start
+    _try_etch ix-agent_dy, iy+agent_dx;
+    _try_etch ix+agent_dy, iy-agent_dx;
+    if (agent_dir % 2 == 1) {
+        _try_etch ix-agent_dx, iy;
+        _try_etch ix, iy-agent_dy;
+    }
     
-    repeat 1000 {
+    local length_remaining = $length_remaining;
+    repeat (length_remaining) {
         local trace_i = INDEX_FROM_2D(ix+agent_dx, iy+agent_dy, canvas_size_x, canvas_size_y);
         if (steps < $no_turn_len) {
             if (custom_grid[trace_i] > 0) {
-                # blocked, add via
-                set_depositor_from_sRGB 0.75, 0.55, 0.25;
-                set_voxel ix, iy, 0;
-                custom_grid[INDEX_FROM_2D(ix, iy, canvas_size_x, canvas_size_y)] = 2;
+                # blocked, add via (if reached etch)
+                if (custom_grid[trace_i] == 1) {
+                    _cap_trace $via_col;
+                }
                 stop_this_script; # no turning allowed
             }
         } else {
@@ -257,15 +302,15 @@ proc _trace x, y, dir, no_turn_len {
 
                 local attempted_turn = (random(0,1)*2-1);
                 if (custom_grid[INDEX_FROM_2D(ix+round(cos((agent_dir+attempted_turn)*45)), iy+round(sin((agent_dir+attempted_turn)*45)), canvas_size_x, canvas_size_y)] == 0) {
-                    _trace ix, iy, agent_dir+attempted_turn, 2;
+                    _trace ix, iy, agent_dir+attempted_turn, 2, length_remaining, $via_col;
 
                 } else {
                     if (custom_grid[INDEX_FROM_2D(ix+round(cos((agent_dir-attempted_turn)*45)), iy+round(sin((agent_dir-attempted_turn)*45)), canvas_size_x, canvas_size_y)] == 0) {
-                        _trace ix, iy, agent_dir-attempted_turn, 2;
+                        _trace ix, iy, agent_dir-attempted_turn, 2, length_remaining, $via_col;
                         
                     } else {
                         # completely blocked, add via
-                        set_depositor_from_sRGB 0.75, 0.55, 0.25;
+                        set_depositor_from_number $via_col;
                         set_voxel ix, iy, 0;
                         custom_grid[INDEX_FROM_2D(ix, iy, canvas_size_x, canvas_size_y)] = 2;
                     }
@@ -283,13 +328,17 @@ proc _trace x, y, dir, no_turn_len {
         # add etch along sides
         _try_etch ix-agent_dy, iy+agent_dx;
         _try_etch ix+agent_dy, iy-agent_dx;
+        if (agent_dir % 2 == 1) {
+            _try_etch ix-agent_dx, iy;
+            _try_etch ix, iy-agent_dy;
+        }
 
-        #set_voxel ix, iy, 0;
         steps++;
+        length_remaining--;
 
         # add a small surface mount component (e.g. resistor, capacitor, diode)
-        if (can_place_smc and PROBABILITY(0.05)) {
-            if (steps > 6 and agent_dir % 2 == 0) {
+        if (can_place_smc and PROBABILITY(0.2)) {
+            if (steps > 5 and agent_dir % 2 == 0) {
                 set_depositor_from_sRGB_value 0.7; # solder
                 set_voxel ix, iy, 1;
                 set_voxel ix-(agent_dx*3), iy-(agent_dy*3), 1;
@@ -306,10 +355,8 @@ proc _trace x, y, dir, no_turn_len {
         }
 
     }
-    # too long
-    set_depositor_from_sRGB 0.75, 0.55, 0.25;
-    set_voxel ix, iy, 0;
-    custom_grid[INDEX_FROM_2D(ix, iy, canvas_size_x, canvas_size_y)] = 2;
+    
+    _cap_trace $via_col; # too long
 }
 
 proc _try_etch x, y {
@@ -318,6 +365,22 @@ proc _try_etch x, y {
         custom_grid[etch_i] = 1;
     }
 }
+
+proc _cap_trace via_col {
+    set_depositor_from_number $via_col;
+    set_voxel ix, iy, 0;
+    
+    custom_grid[INDEX_FROM_2D(ix, iy, canvas_size_x, canvas_size_y)] = 2;
+    _try_etch ix+agent_dx, iy+agent_dy;
+    if (agent_dir % 2 == 1) {
+        _try_etch ix+agent_dx, iy;
+        _try_etch ix, iy+agent_dy;
+    } else {
+        _try_etch ix-agent_dy+agent_dx, iy+agent_dx+agent_dy;
+        _try_etch ix+agent_dy+agent_dx, iy-agent_dx+agent_dy;
+    }
+}
+
 
 
 on "gen.city.run" {
@@ -1531,7 +1594,6 @@ proc draw_cylinder_chamfered x, y, z, radius, height, chamfer {
 }
 
 
-
 # sphere centered exactly at the given coordinates (not voxel counts)
 proc draw_sphere x, y, z, radius {
     local bb_width = ceil(2 * $radius); # bounding box width
@@ -1579,15 +1641,38 @@ proc draw_cuboid_centered x, y, z, size_x, size_y, size_z {
     draw_cuboid_corner_size $x-($size_x/2), $y-($size_y/2), $z-($size_z/2), $size_x, $size_y, $size_z;
 }
 
+
 # rectangular prism centered at x,y,z
 proc draw_cuboid_centered_XY x, y, z, size_x, size_y, size_z {
     draw_cuboid_corner_size $x-($size_x/2), $y-($size_y/2), $z, $size_x, $size_y, $size_z;
 }
 
+
+# partially filled rectangle
+proc draw_rectangle_fill_random x, y, z, size_x, size_y, probability {
+    local px_y = $y;
+    repeat (round($size_y)) {
+        local px_x = $x;
+        repeat (round($size_x)) {
+            if (PROBABILITY($probability)) {
+                set_voxel px_x, px_y, $z;
+            }
+            px_x++;
+        }
+        px_y++;
+    }
+}
+
+
+proc draw_rectangle_fill_random_centered_XY x, y, z, size_x, size_y, probability {
+    draw_rectangle_fill_random $x-($size_x/2), $y-($size_y/2), $z, $size_x, $size_y, $probability;
+}
+
+
 # random walk in a 2D plane using taxicab movement (X and Y axis only)
 proc random_walk_taxicab x, y, z, turns, steps {
-    local agent_x = $x;
-    local agent_y = $y;
+    agent_x = $x;
+    agent_y = $y;
 
     repeat $turns {
         if (PROBABILITY(0.5)) {
@@ -1619,12 +1704,11 @@ proc random_walk_taxicab x, y, z, turns, steps {
 }
 
 
-
 # random XY walk, snapping to particular angles
 proc random_walk_any x, y, z, start_dir, turns, steps, angle {
-    local agent_x = $x;
-    local agent_y = $y;
-    local agent_dir = $start_dir;
+    agent_x = $x;
+    agent_y = $y;
+    agent_dir = $start_dir;
 
     repeat $turns {
         local dist = random(1, $steps);
@@ -1634,7 +1718,6 @@ proc random_walk_any x, y, z, start_dir, turns, steps, angle {
         agent_dir += random(-1,1)*$angle;
     }
 }
-
 
 
 # 3D DDA

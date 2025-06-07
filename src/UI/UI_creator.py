@@ -200,10 +200,10 @@ panels['menu.io'] = Container([
 panels['menu.gen'] = Container([
     Label.title('Generate'),
     Separator(),
-    btn_menu_set_page('Circuit Board', 'gen.pcb'),
     btn_menu_set_page('City', 'gen.city'),
     btn_menu_set_page('Control Panel', 'gen.control_panel'),
     btn_menu_set_page('Nucleus', 'gen.nucleus'),
+    btn_menu_set_page('Printed Circuit Board', 'gen.pcb'),
     btn_menu_set_page('Refinery', 'gen.refinery'),
     Separator(0, 5),
     btn_menu_set_page('Erosion', 'gen.erosion'),
@@ -392,12 +392,14 @@ panels['gen.pcb'] = Container([
     Label.title('Generate PCB'),
     Separator(),
     Expander('Canvas', '', True, [
-        Value.canvas_size('Size X', 'gen.pcb.size_x', 64),
-        Value.canvas_size('Size Y', 'gen.pcb.size_y', 64),
+        Value('Size X', 'gen.pcb.size_x', 64, 32, 256, 0, 4096, 1),
+        Value('Size Y', 'gen.pcb.size_y', 64, 32, 256, 0, 4096, 1),
+        Checkbox('Seamless', 'gen.pcb.seamless', True),
     ]),
     Expander('Color', '', True, [
-        Color('Traces', 'gen.pcb.trace_col', '#07892D'),
-        Color('Substrate', 'gen.pcb.substrate_col', '#005225'),
+        Color('Substrate', 'gen.pcb.substrate_col', "#00682F"),
+        Color('Trace', 'gen.pcb.trace_col', '#07892D'),
+        Color('Via', 'gen.pcb.via_col', "#a48b3e"),
     ]),
     Button('Generate', 'gen.pcb.run'),
 ])
