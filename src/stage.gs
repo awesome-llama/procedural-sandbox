@@ -139,8 +139,12 @@ on "hard reset" {
     # project settings
     PS_slider_sensitivity = 200;
 
-    PS_sky_intensity = 1;
     PS_emission_intensity = 1;
+
+    PS_sky_intensity = 1;
+    PS_sun_intensity = 1;
+    PS_sun_bearing = 0;
+    PS_sun_elevation = 45;
 
     PS_filter_size_fac_2D_PT = 0;
     PS_filter_size_fac_3D_PT = 1;

@@ -1,7 +1,5 @@
 %include lib/common
 
-# For more info see: https://scratch.mit.edu/projects/934459716/
-
 costumes 
 "costumes/UI/icon.svg" as "icon", 
 "costumes/large.svg" as "large",
@@ -371,6 +369,8 @@ proc render_viewport_overlay {
 }
 
 proc draw_axes ox, oy, size {
+    set_pen_size 1;
+
     if (viewport_mode == ViewportMode.ALIGNED) {
         set_pen_color "#00ff00";
         goto $ox, $oy;
@@ -385,6 +385,16 @@ proc draw_axes ox, oy, size {
         pen_up;
 
     } elif (viewport_mode == ViewportMode.ORBIT) {
+        if (compositor_mode == CompositorMode.PATHTRACED) {
+            set_pen_color "#ffff00";
+            set_pen_size 2;
+            calculate_sun_vector;
+            local XYZ axis_vec = rotate_world_space_to_cam_space(sun_direction.x, sun_direction.y, sun_direction.z);
+            goto $ox+axis_vec.x*$size, $oy+axis_vec.y*$size;
+            pen_down;
+            pen_up;
+        }
+    
         set_pen_color "#00ff00";
         goto $ox, $oy;
         pen_down;
@@ -407,6 +417,7 @@ proc draw_axes ox, oy, size {
         pen_up;
     }
 }
+
 
 # modular panel specific
 %define IS_HOVERED_MODULAR_PANEL() ((UI_last_hovered_group == $panel_id) and (UI_last_hovered_element == $index))
@@ -840,39 +851,12 @@ onkey "v" {
 }
 
 
-on "project.settings.apply" {
-    PS_slider_sensitivity = get_setting_from_id("project.settings.slider_sensitivity");
-
-    PS_sky_intensity = get_setting_from_id("project.settings.sky_intensity");
-    PS_emission_intensity = get_setting_from_id("project.settings.emission_intensity");
-
-    PS_use_tone_map = get_setting_from_id("project.settings.use_tone_map");
-
-    PS_filter_size_fac_2D_PT = get_setting_from_id("project.settings.filter_size_fac_2D_PT");
-    PS_filter_size_fac_3D_PT = get_setting_from_id("project.settings.filter_size_fac_3D_PT");
-
-    PS_max_samples = get_setting_from_id("project.settings.max_samples");
-    PS_max_iteration_time = get_setting_from_id("project.settings.max_frame_time");
-    PS_render_resolution_default_orbit = get_setting_from_id("project.settings.resolution");
-
-    PS_reset_render_on_flag = get_setting_from_id("project.settings.reset_render_on_flag");
-    
-    PS_normal_map_intensity = get_setting_from_id("project.settings.normal_map_intensity");
-    PS_normal_map_kernel_size = get_setting_from_id("project.settings.normal_map_kernel_size");
-
-    if (viewport_mode == ViewportMode.ORBIT) {
-        requested_render_resolution = PS_render_resolution_default_orbit;
-    }
-
-    require_composite = true;
-
-    print "changes applied", 3;
-}
-
 
 ################################
 #       Text renderers         #
 ################################
+
+# For more info see: https://scratch.mit.edu/projects/934459716/
 
 list PTE_font = file ```data/5x7 printable ASCII.txt```;
 
@@ -1066,6 +1050,19 @@ func rotate_world_space_to_cam_space(x, y, z) XYZ {
     # rotate point around X
     return XYZ {x:r1.x, y:r1.y*cos(-cam_elev)-r1.z*sin(-cam_elev), z:r1.y*sin(-cam_elev)+r1.z*cos(-cam_elev)};
 }
+
+func rotate_vector_intrinsic_zx(x, y, z, angle_x, angle_z) XYZ {
+    # rotate point around X
+    local XYZ r1 = XYZ {x:$x, y:$y*cos($angle_x)-$z*sin($angle_x), z:$y*sin($angle_x)+$z*cos($angle_x)};
+    # rotate point around Z
+    return XYZ {x:r1.x*cos($angle_z)-r1.y*sin($angle_z), y:r1.x*sin($angle_z)+r1.y*cos($angle_z), z:r1.z};
+}
+
+proc calculate_sun_vector {
+    # the direction the sun rotates is probably unconventional, I don't know much about this subject.
+    XYZ sun_direction = rotate_vector_intrinsic_zx(0, 1, 0, PS_sun_elevation, -PS_sun_bearing);
+}
+
 
 proc get_unfenced_mouse {
     if abs(mouse_x()) < stage_max_x {

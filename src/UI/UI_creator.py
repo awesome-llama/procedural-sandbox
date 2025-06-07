@@ -746,8 +746,14 @@ panels['project.settings'] = Container([
         Checkbox('Reset render on flag', 'project.settings.reset_render_on_flag', True),
     ]),
     Expander('Pathtracer', '', False, [
-        Value('Sky intensity', 'project.settings.sky_intensity', 1, 0, 2, 0, 100, snap_frac=100),
         Value('Emission intensity', 'project.settings.emission_intensity', 1, 0, 2, 0, 100, snap_frac=100),
+        Expander('Sky', '', False, [
+            Value('Sky intensity', 'project.settings.sky_intensity', 0.8, 0, 2, 0, 100, snap_frac=100),
+            Separator(),
+            Value('Sun intensity', 'project.settings.sun_intensity', 1, 0, 2, 0, 100, snap_frac=100),
+            Value('Sun bearing', 'project.settings.sun_bearing', 0, -90, 90, -360, 360, snap_frac=1),
+            Value('Sun elevation', 'project.settings.sun_elevation', 45, 0, 90, 0, 90, snap_frac=1),
+        ]),
         Checkbox('"PBR Neutral" tone map', 'project.settings.use_tone_map', False),
         Separator(),
         Label('Anti-aliasing:'),

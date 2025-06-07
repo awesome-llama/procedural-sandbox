@@ -81,6 +81,7 @@ on "composite" {
             require_iterative_compositor = true;
 
         } elif (compositor_mode == CompositorMode.PATHTRACED) {
+            calculate_sun_vector;
             init_aligned_raytracer;
             require_iterative_compositor = true;
 
@@ -110,6 +111,7 @@ on "composite" {
             cmp_orbit_shaded;
 
         } elif (compositor_mode == CompositorMode.PATHTRACED) {
+            calculate_sun_vector;
             init_orbit_raytracer;
             require_iterative_compositor = true;
 
@@ -646,9 +648,12 @@ proc iterate_generic_pathtracer max_samples, max_time, filter_size {
                 acc_col_b += throughput_b * TO_LINEAR(canvas[hit_index].b) * (canvas[hit_index].emission * PS_emission_intensity) * opacity;
             } else {
                 # sky
-                acc_col_r += throughput_r * (PS_sky_intensity * TO_LINEAR(0.5+(vec_y/2)));
-                acc_col_g += throughput_g * (PS_sky_intensity * TO_LINEAR(0.5+(vec_y/2))); 
-                acc_col_b += throughput_b * (PS_sky_intensity * TO_LINEAR(0.5+(vec_y/2)));
+                local sun_brightness = DOT_PRODUCT_3D(vec_x, vec_y, vec_z, sun_direction.x, sun_direction.y, sun_direction.z);
+                sun_brightness = (sun_brightness > 0.8) * PS_sun_intensity;
+                
+                acc_col_r += throughput_r * (PS_sky_intensity + sun_brightness);
+                acc_col_g += throughput_g * (PS_sky_intensity + sun_brightness); 
+                acc_col_b += throughput_b * (PS_sky_intensity + sun_brightness);
             }
 
             # add to result
@@ -856,6 +861,18 @@ func rotate_cam_space_to_world_space(x, y, z) XYZ {
     local XYZ r1 = XYZ {x:$x, y:$y*cos(cam_elev)-$z*sin(cam_elev), z:$y*sin(cam_elev)+$z*cos(cam_elev)};
     # rotate point around Z
     return XYZ {x:r1.x*cos(cam_azi)-r1.y*sin(cam_azi), y:r1.x*sin(cam_azi)+r1.y*cos(cam_azi), z:r1.z};
+}
+
+func rotate_vector_intrinsic_zx(x, y, z, angle_x, angle_z) XYZ {
+    # rotate point around X
+    local XYZ r1 = XYZ {x:$x, y:$y*cos($angle_x)-$z*sin($angle_x), z:$y*sin($angle_x)+$z*cos($angle_x)};
+    # rotate point around Z
+    return XYZ {x:r1.x*cos($angle_z)-r1.y*sin($angle_z), y:r1.x*sin($angle_z)+r1.y*cos($angle_z), z:r1.z};
+}
+
+proc calculate_sun_vector {
+    # the direction the sun rotates is probably unconventional, I don't know much about this subject.
+    XYZ sun_direction = rotate_vector_intrinsic_zx(0, 1, 0, PS_sun_elevation, -PS_sun_bearing);
 }
 
 
