@@ -199,21 +199,22 @@ panels['menu.io'] = Container([
 
 panels['menu.gen'] = Container([
     Label.title('Generate'),
-    Separator(),
+    Separator(), # featured structures
     btn_menu_set_page('City', 'gen.city'),
     btn_menu_set_page('Control Panel', 'gen.control_panel'),
     btn_menu_set_page('Nucleus', 'gen.nucleus'),
     btn_menu_set_page('Printed Circuit Board', 'gen.pcb'),
     btn_menu_set_page('Refinery', 'gen.refinery'),
-    Separator(0, 5),
+    Separator(0, 5), # patterns, specific
     btn_menu_set_page('Erosion', 'gen.erosion'),
+    btn_menu_set_page('Extruded grid', 'gen.extruded_grid'),
     btn_menu_set_page('Fibres', 'gen.fibres'),
-    btn_menu_set_page('Value Noise', 'gen.value_noise'),
-    Separator(0, 5),
+    btn_menu_set_page('Hedge', 'gen.hedge'),
+    Separator(0, 5), # patterns, misc
     btn_menu_set_page('Ball Pit', 'gen.ballpit'),
     btn_menu_set_page('Elem. cellular automata', 'gen.eca'),
-    btn_menu_set_page('Extruded grid', 'gen.extruded_grid'),
     btn_menu_set_page('Maze', 'gen.maze'),
+    btn_menu_set_page('Value Noise', 'gen.value_noise'),
     Separator(0, 5),
     btn_menu_set_page('Sphere', 'gen.sphere'),
 ])
@@ -412,8 +413,10 @@ panels['gen.city'] = Container([
         Value.canvas_size('Size Y', 'gen.city.size_y', 64),
         Value.canvas_size('Size Z', 'gen.city.size_z', 16, 64),
     ]),
-    Expander('Color', '', True, [
+    Expander('Formation', '', True, [
+        Value('Sky bridges', 'gen.city.bridges', 1, 0, 2, 0, 1000),
         Color('Ground color', 'gen.city.ground_col', '#aaaaaa'),
+        Value.fraction('Glow', 'gen.city.glow', 0.5),
     ]),
     Button('Generate', 'gen.city.run'),
 ])
@@ -432,11 +435,10 @@ panels['gen.control_panel'] = Container([
     Expander('Color', '', True, [
         Color('Panel color', 'gen.control_panel.panel_color', '#aaaaaa'),
         Color('Accent color 1', 'gen.control_panel.accent1', "#6f6f6f"),
-        Color('Accent color 2', 'gen.control_panel.accent2', "#b1b1b1"),
+        Color('Accent color 2', 'gen.control_panel.accent2', "#c5c5c5"),
     ]),
     Button('Generate', 'gen.control_panel.run'),
 ])
-
 
 panels['gen.eca'] = Container([
     Label.title('Elementary cellular automata'),
@@ -497,12 +499,31 @@ panels['gen.extruded_grid'] = Container([ # "I call them cities"
         Value('Jitter', 'gen.extruded_grid.jitter_fac', 0, 0, 1, snap_frac=1000),
     ]),
     Expander('Color', '', True, [
-        Color('Color 1', 'gen.extruded_grid.col1', '#007F7F'), # green
-        Color('Color 2', 'gen.extruded_grid.col2', '#FDFE7F'), # yellow
+        Color('Color 1', 'gen.extruded_grid.col1', '#007F7F'),
+        Color('Color 2', 'gen.extruded_grid.col2', '#FDFE7F'),
         Value.fraction('Glow', 'gen.extruded_grid.glow', 0),
     ]),
     Button('Generate', 'gen.extruded_grid.run'),
 ])
+
+panels['gen.hedge'] = Container([
+    Label.title('Generate hedge'),
+    Separator(),
+    Expander('Dimensions', '', True, [
+        Value.canvas_size('Size X', 'gen.hedge.size_x', 64),
+        Value.canvas_size('Size Y', 'gen.hedge.size_y', 64),
+        Value.canvas_size('Size Z', 'gen.hedge.size_z', 4, 16),
+        Value('Leaf density', 'gen.hedge.leaf_density', 2, 0, 4, 0, 64, snap_frac=100),
+        Value('Leaf size', 'gen.hedge.leaf_size', 3, 1, 16, 1, 256, snap_frac=10),
+    ]),
+    Expander('Color', '', True, [
+        Color('Color 1', 'gen.hedge.col1', "#2E4934"),
+        Color('Color 2', 'gen.hedge.col2', "#2F6517"),
+        Color('Color 3', 'gen.hedge.col3', "#7C9C41"),
+    ]),
+    Button('Generate', 'gen.hedge.run'),
+])
+
 
 panels['gen.maze'] = Container([
     Label.title('Generate maze'),

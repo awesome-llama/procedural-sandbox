@@ -388,10 +388,12 @@ on "gen.city.run" {
     setting_from_id "gen.city.size_x";
     setting_from_id "gen.city.size_y";
     setting_from_id "gen.city.size_z";
+    setting_from_id "gen.city.bridges";
     setting_from_id "gen.city.ground_col";
-    generate_city UI_return[1], UI_return[2], UI_return[3], UI_return[4];
+    setting_from_id "gen.city.glow";
+    generate_city UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6];
 }
-proc generate_city size_x, size_y, size_z, ground_col {
+proc generate_city size_x, size_y, size_z, bridges, ground_col, glow {
     reset_generator $size_x, $size_y, $size_z;
 
     set_depositor_from_number $ground_col;
@@ -399,7 +401,7 @@ proc generate_city size_x, size_y, size_z, ground_col {
 
     local placement_fac = 1 * (canvas_size_x * canvas_size_y / 16384);
 
-    repeat (300*placement_fac) { # cuboids and low pipes
+    repeat (300*placement_fac) { # cuboids
         brightness = random(0.5, 0.9);
         set_depositor_from_sRGB brightness, brightness, brightness;
 
@@ -412,22 +414,29 @@ proc generate_city size_x, size_y, size_z, ground_col {
         draw_cuboid_corner_size c1x, c1y, 0, cube_x, cube_y, cube_z-1;
         draw_cuboid_corner_size c1x+1, c1y+1, 0, cube_x-2, cube_y-2, cube_z;
     }
-    repeat (90*placement_fac) { # pipes, grey
+    repeat ($glow * $bridges * 90*placement_fac) { # pipes, low
+        set_depositor_from_sRGB random(0.4, 0.9), random(0.4, 0.9), random(0.4, 0.9);
+        depositor_voxel.emission = 1;
+        random_walk_taxicab RANDOM_X(), RANDOM_Y(), random(1, 5), 16, 20;
+    }
+    repeat ($bridges * 90*placement_fac) { # pipes, grey
         brightness = random(0.5, 0.7);
         set_depositor_from_sRGB brightness+random(-0.1, 0.1), brightness+random(-0.1, 0.1), brightness+random(-0.1, 0.1);
         random_walk_taxicab RANDOM_X(), RANDOM_Y(), random(1, 12), 16, 20;
     }
-    repeat (10*placement_fac) { # pipes multicolor
+    repeat ($bridges * 10*placement_fac) { # pipes multicolor
         set_depositor_from_sRGB random(0.4, 0.9), random(0.4, 0.9), random(0.4, 0.9);
         random_walk_taxicab RANDOM_X(), RANDOM_Y(), random(1, 16), 16, 20;
     }
-    repeat (10*placement_fac) { # high pipes
+    repeat ($bridges * 10*placement_fac) { # high pipes
         set_depositor_from_sRGB random(0.4, 0.8), random(0.4, 0.8), random(0.4, 0.8);
         random_walk_taxicab RANDOM_X(), RANDOM_Y(), random(1, 16), 16, 20;
     }
     
     generator_finished;
 }
+
+
 
 on "gen.control_panel.run" {
     delete UI_return;
@@ -489,9 +498,10 @@ proc generate_control_panel cells_x, cells_y, cell_size, repetition_fac, panel_c
     delete custom_grid; # a list of rectangles
     create_custom_grid_recursive_rectangles 0, 0, $cells_x, $cells_y, $repetition_fac, $repetition_fac;
     
+
     i = 0;
     repeat (length custom_grid / 5) {
-        # debug colours
+        # debug colors
         #set_depositor_from_HSV custom_grid[i+5], 1.0, random("0.8", "0.9");
         #set_voxel custom_grid[i+1]*$cell_size, custom_grid[i+2]*$cell_size, 1;
         #draw_cuboid_corner_size custom_grid[i+1]*$cell_size, custom_grid[i+2]*$cell_size, 1, custom_grid[i+3]*$cell_size, custom_grid[i+4]*$cell_size, 1;
@@ -596,7 +606,7 @@ proc control_panel_draw_element cell_size, grid_x, grid_y, grid_size_x, grid_siz
     }
 
     if (($seed*94.3114) % 1 < 0.3) {
-        # coloured panel
+        # colored panel
         set_depositor_to_air;
         draw_cuboid_centered_XY center_x, center_y, 1, (radius_x*2), (radius_y*2), 1;
         
@@ -688,7 +698,6 @@ proc add_custom_grid_rect x, y, size_x, size_y, seed, depth {
 
 
 
-
 on "gen.eca.run" {
     delete UI_return;
     setting_from_id "gen.eca.size_x";
@@ -765,6 +774,7 @@ proc generate_elementary_cellular_automata size_x, size_y, extrude_z, rule, rand
 }
 
 
+
 on "gen.erosion.run.generate" {
     delete UI_return;
     setting_from_id "gen.erosion.size_x";
@@ -829,6 +839,7 @@ proc finalise_terrain water_level_fac, water_col, grass_fac, grass_col, tree_fac
 }
 
 
+
 on "gen.extruded_grid.run" {
     delete UI_return;
     setting_from_id "gen.extruded_grid.cell_count";
@@ -866,6 +877,41 @@ proc generate_extruded_grid cell_count, cell_size, cell_spacing, max_height, jit
 }
 
 
+
+on "gen.hedge.run" {
+    delete UI_return;
+    setting_from_id "gen.hedge.size_x";
+    setting_from_id "gen.hedge.size_y";
+    setting_from_id "gen.hedge.size_z";
+    setting_from_id "gen.hedge.leaf_density";
+    setting_from_id "gen.hedge.leaf_size";
+    setting_from_id "gen.hedge.col1";
+    setting_from_id "gen.hedge.col2";
+    setting_from_id "gen.hedge.col3";
+    generate_hedge UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6], UI_return[7], UI_return[8];
+}
+proc generate_hedge size_x, size_y, size_z, leaf_density, leaf_size, col1, col2, col3 {
+    reset_generator $size_x, $size_y, $size_z;
+
+    set_depositor_from_number $col1;
+    draw_base_layer;
+
+    iz = 0;
+    repeat ($size_z) {
+        repeat ($leaf_density * (canvas_size_x/$leaf_size) * (canvas_size_y/$leaf_size)) {
+            # draw a leaf
+            set_depositor_from_number_lerp $col2, $col3, RANDOM_0_1();
+            lerp_depositor_towards_number $col1, 1-((iz+1)/$size_z);
+            draw_cuboid_centered_XY RANDOM_X(), RANDOM_Y(), iz, RANDOM_0_1()*$leaf_size, RANDOM_0_1()*$leaf_size, 1;
+        }
+        iz++;
+    }
+    
+    generator_finished;
+}
+
+
+
 on "gen.maze.run" {
     delete UI_return;
     setting_from_id "gen.maze.cell_count";
@@ -873,7 +919,6 @@ on "gen.maze.run" {
     setting_from_id "gen.maze.wall_thickness";
     setting_from_id "gen.maze.wall_height";
     setting_from_id "gen.maze.pertubation";
-
     setting_from_id "gen.maze.ground_col";
     setting_from_id "gen.maze.wall_col";
     generate_maze UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6], UI_return[7]; 
@@ -962,7 +1007,6 @@ on "gen.nucleus.run" {
     setting_from_id "gen.nucleus.radius";
     setting_from_id "gen.nucleus.size_z";
     setting_from_id "gen.nucleus.ground_col";
-
     generate_nucleus UI_return[1], UI_return[2], UI_return[3];
 }
 proc generate_nucleus radius, size_z, ground_col {
@@ -1021,7 +1065,7 @@ proc generate_nucleus radius, size_z, ground_col {
     local elev_min = random(0, canvas_size_z-2);
     local elev_max = random(0, canvas_size_z-2);
     
-    if (PROBABILITY(0.5)) { # set colour
+    if (PROBABILITY(0.5)) { # set color
         set_depositor_from_HSV RANDOM_0_1(), random("0.0", "0.8"), RANDOM_0_1();
     } else {
         set_depositor_from_sRGB RANDOM_0_1(), RANDOM_0_1(), RANDOM_0_1();
@@ -1414,6 +1458,13 @@ proc set_depositor_from_number_lerp number1, number2, t {
     depositor_voxel.r = LERP(depositor_voxel.r, (($number2//65536)%256/255), $t);
     depositor_voxel.g = LERP(depositor_voxel.g, (($number2//256)%256/255), $t);
     depositor_voxel.b = LERP(depositor_voxel.b, (($number2%256)/255), $t);
+}
+
+# move the current depositor color towards a color
+proc lerp_depositor_towards_number target_number, t {
+    depositor_voxel.r = LERP(depositor_voxel.r, (($target_number//65536)%256/255), $t);
+    depositor_voxel.g = LERP(depositor_voxel.g, (($target_number//256)%256/255), $t);
+    depositor_voxel.b = LERP(depositor_voxel.b, (($target_number%256)/255), $t);
 }
 
 proc set_depositor_from_sRGB r, g, b {
@@ -2089,7 +2140,7 @@ proc glbfx_recolor weight_r, weight_g, weight_b, map_0, map_1, col_0, col_1, use
                 t = 1;
             }
 
-            # use fac to interpolate colours
+            # use fac to interpolate colors
             canvas[i].r = (LERP(c0r,c1r,t));
             canvas[i].g = (LERP(c0g,c1g,t));
             canvas[i].b = (LERP(c0b,c1b,t));
@@ -2119,7 +2170,7 @@ proc glbfx_recolor weight_r, weight_g, weight_b, map_0, map_1, col_0, col_1, use
                 t = 1;
             }
 
-            # use fac to interpolate colours
+            # use fac to interpolate colors
             canvas[i].r = FROM_LINEAR(LERP(c0r,c1r,t));
             canvas[i].g = FROM_LINEAR(LERP(c0g,c1g,t));
             canvas[i].b = FROM_LINEAR(LERP(c0b,c1b,t));
