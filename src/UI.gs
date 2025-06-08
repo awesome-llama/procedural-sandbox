@@ -842,9 +842,16 @@ onkey "c" {
 # paste value
 onkey "v" {
     if (not mouse_down() and (UI_last_hovered_group == "side bar" or UI_last_hovered_group == "popup")) {
-        if (HOVERED_IS_INPUT_ELEM()) {
-            if (UI_data[UI_last_hovered_element] == UI_data[UI_clipboard_source]) {
+        if (UI_data[UI_last_hovered_element] == UI_data[UI_clipboard_source]) {
+            if (UI_data[UI_last_hovered_element] == "CHECKBOX") {
+                UI_data[UI_last_hovered_element+3] = UI_data[UI_clipboard_source+3];
+
+            } elif (UI_data[UI_last_hovered_element] == "VALUE") {
                 set_value_element UI_last_hovered_element, UI_data[UI_clipboard_source+3], false;
+
+            } elif (UI_data[UI_last_hovered_element] == "COLOR") {
+                UI_data[UI_last_hovered_element+3] = UI_data[UI_clipboard_source+3];
+
             }
         }
     }
