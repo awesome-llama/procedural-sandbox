@@ -434,10 +434,13 @@ on "gen.control_panel.run" {
     setting_from_id "gen.control_panel.cell_count_x";
     setting_from_id "gen.control_panel.cell_count_y";
     setting_from_id "gen.control_panel.cell_size";
+    setting_from_id "gen.control_panel.repetition_fac";
     setting_from_id "gen.control_panel.panel_color";
-    generate_control_panel UI_return[1], UI_return[2], UI_return[3], UI_return[4]; 
+    setting_from_id "gen.control_panel.accent1";
+    setting_from_id "gen.control_panel.accent2";
+    generate_control_panel UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6], UI_return[7]; 
 }
-proc generate_control_panel cells_x, cells_y, cell_size, panel_color {
+proc generate_control_panel cells_x, cells_y, cell_size, repetition_fac, panel_color, accent1, accent2 {
     # template 1: mesh
     reset_generator 2, 2, 1;
     set_depositor_from_number $panel_color;
@@ -451,42 +454,24 @@ proc generate_control_panel cells_x, cells_y, cell_size, panel_color {
     set_voxel 0, 0, 0;
     add_canvas_as_template;
 
-    # template 3: text
-    clear_canvas 48, 12, 1;
-    set_depositor_from_sRGB_value 0.8;
-    draw_base_layer;
-    iy = 0;
-    repeat canvas_size_y {
-        ix = 0;
-        repeat canvas_size_x {
-            if (PROBABILITY(0.5)) {
-                set_depositor_from_sRGB_value random("0.2"+(iy%2)*0.5, "0.8");
-                set_voxel ix, iy, 0;
-            }
-            ix++;
-        }
-        iy++;
-    }
-    add_canvas_as_template;
-
     # template 4: gauge
     clear_canvas 10, 6, 2;
-    set_depositor_from_sRGB_value 0.75;
+    set_depositor_from_number_lerp 8355711, $accent1, 0.9;
     draw_base_layer;
-    set_depositor_from_sRGB_value 0.6;
+    set_depositor_from_number_lerp 8355711, $accent1, 0.85;
     draw_cuboid_corner_size 1, 0, 0, 1, 2, 1;
     draw_cuboid_corner_size 3, 0, 0, 1, 2, 1;
     draw_cuboid_corner_size 5, 0, 0, 1, 2, 1;
     draw_cuboid_corner_size 7, 0, 0, 1, 2, 1;
-    set_depositor_from_sRGB_value 0.4;
+    set_depositor_from_number_lerp 8355711, $accent1, 0.82;
     draw_cuboid_corner_size 9, 0, 0, 1, 4, 1;
     add_canvas_as_template;
 
     # template 5: slider grip
     clear_canvas 1, 2, 1;
-    set_depositor_from_sRGB_value 0.8;
+    set_depositor_from_number_lerp 8355711, $accent2, 0.8;
     set_voxel 0, 0, 0;
-    set_depositor_from_sRGB_value 0.75;
+    set_depositor_from_number_lerp 8355711, $accent2, 0.75;
     set_voxel 0, 1, 0;
     add_canvas_as_template;
 
@@ -497,21 +482,21 @@ proc generate_control_panel cells_x, cells_y, cell_size, panel_color {
     clear_canvas $cells_x*cell_size, $cells_y*cell_size, cell_size;
 
     set_depositor_from_number_lerp 0, $panel_color, 0.5;
-    draw_cuboid_corner_size 0, 0, 0, canvas_size_x, canvas_size_y, (cell_size*0.2)-1;
+    draw_cuboid_corner_size 0, 0, 0, canvas_size_x, canvas_size_y, 1;
     set_depositor_from_number $panel_color;
-    draw_cuboid_corner_size 0, 0, (cell_size*0.2)-1, canvas_size_x, canvas_size_y, 1;
+    draw_cuboid_corner_size 0, 0, 1, canvas_size_x, canvas_size_y, 1;
     
     delete custom_grid; # a list of rectangles
-    create_custom_grid_recursive_rectangles 0, 0, $cells_x, $cells_y;
+    create_custom_grid_recursive_rectangles 0, 0, $cells_x, $cells_y, $repetition_fac, $repetition_fac;
     
     i = 0;
     repeat (length custom_grid / 5) {
         # debug colours
-        #set_depositor_from_HSV custom_grid[i+5], random("0.0", "0.04"), random("0.8", "0.9");
+        #set_depositor_from_HSV custom_grid[i+5], 1.0, random("0.8", "0.9");
         #set_voxel custom_grid[i+1]*$cell_size, custom_grid[i+2]*$cell_size, 1;
         #draw_cuboid_corner_size custom_grid[i+1]*$cell_size, custom_grid[i+2]*$cell_size, 1, custom_grid[i+3]*$cell_size, custom_grid[i+4]*$cell_size, 1;
 
-        control_panel_draw_element cell_size, custom_grid[i+1], custom_grid[i+2], custom_grid[i+3], custom_grid[i+4], custom_grid[i+5];
+        control_panel_draw_element cell_size, custom_grid[i+1], custom_grid[i+2], custom_grid[i+3], custom_grid[i+4], custom_grid[i+5], $panel_color, $accent1, $accent2;
         
         i += 5;
     }
@@ -520,7 +505,7 @@ proc generate_control_panel cells_x, cells_y, cell_size, panel_color {
 }
 
 %define CSZ(FRAC) ($cell_size*(FRAC))
-proc control_panel_draw_element cell_size, grid_x, grid_y, grid_size_x, grid_size_y, seed {
+proc control_panel_draw_element cell_size, grid_x, grid_y, grid_size_x, grid_size_y, seed, panel_color, accent1, accent2 {
     local center_x = ($grid_x+($grid_size_x/2))*$cell_size;
     local center_y = ($grid_y+($grid_size_y/2))*$cell_size;
     local size_x = $grid_size_x*$cell_size;
@@ -531,48 +516,48 @@ proc control_panel_draw_element cell_size, grid_x, grid_y, grid_size_x, grid_siz
     # arguments are in canvas space with x and y being centered
     if ($grid_size_x == 1 and $grid_size_y == 1) {
         
-        if (PROBABILITY(0.2)) {
+        if (($seed*13.3654) % 1 < 0.2) {
             # Push button
-            set_depositor_from_sRGB_value 0.3;
+            set_depositor_from_number $accent1;
             draw_cylinder center_x, center_y, 0, CSZ(0.4), CSZ(0.5);
-            set_depositor_from_HSV random(0,5)/6, random(0,5)/6, random(3,5)/6;
-            draw_cylinder_chamfered center_x, center_y, 0, CSZ(0.3), CSZ(0.6), CSZ(0.1);
+            set_depositor_from_HSV (($seed*76.121)%6)/6, (($seed*16.126)%3)/3, (3+($seed*53.321)%3)/6;
+            draw_cylinder center_x, center_y, 0, CSZ(0.3), CSZ(0.6);
             stop_this_script;
         }
-        if (PROBABILITY(0.3)) {
+        if (($seed*61.7658) % 1 < 0.3) {
             # Light bulb
-            set_depositor_from_sRGB_value 0.3;
+            set_depositor_from_number $accent1;
             draw_cylinder center_x, center_y, 0, CSZ(0.3), CSZ(0.3);
-            if (PROBABILITY(0.5)) {
-                set_depositor_from_HSV random(0,5)/6, random(3,5)/6, random(3,5)/6;
+            if (($seed*47.2123) % 1 < 0.5) {
+                set_depositor_from_HSV (($seed*19.562)%6)/6, 3+(($seed*4.411)%2)/6, 1;
                 depositor_voxel.emission = 1;
             } else {
-                set_depositor_from_HSV random(0,5)/6, random(1,3)/12, random(1,3)/6;
+                set_depositor_from_HSV (($seed*54.752)%6)/6, 1+(($seed*4.411)%2)/12, 1+(($seed*5.791)%2)/6;
             }
             draw_sphere center_x, center_y, CSZ(0.3), CSZ(0.2);
             stop_this_script;
         }
 
-    } elif ($grid_size_x == 1 and $grid_size_y > 1) {
-        if (PROBABILITY(0.2)) {
+    } elif ($grid_size_x == 1 and $grid_size_y > 2) {
+        if (($seed*25.3411) % 1 < 0.2) {
             # vertical slider
             set_depositor_to_air;
             draw_cuboid_centered_XY center_x, center_y, 1, CSZ(0.2), (radius_y*2)-CSZ(0.4), 1;
             # grip
-            set_depositor_to_template 5, 0, 0, 0;
+            set_depositor_to_template 4, 0, 0, 0;
             draw_cuboid_centered_XY center_x, center_y+random(-0.5, 0.5)*(radius_y-CSZ(0.4)), 2, CSZ(0.4), CSZ(0.6), 2;
             stop_this_script;
         }
     }
 
-    if (PROBABILITY(0.15)) {
+    if (($seed*21.2121) % 1 < 0.15) {
         # create raised area
         set_depositor_from_voxel center_x, center_y, 1;
         draw_cuboid_centered_XY center_x, center_y, 2, (radius_x*2)-CSZ(0.2), (radius_y*2)-CSZ(0.2), 1;
-        if (PROBABILITY(0.3)) {
+        if (($seed*6.9642) % 1 < 0.3) {
             # port
             set_depositor_to_air;
-            if (PROBABILITY(0.3)) {
+            if (($seed*58.323) % 1 < 0.3) {
                 draw_cylinder center_x, center_y, 1, MIN(radius_x, radius_y)*0.4, 2;
             } else {
                 draw_cuboid_centered_XY center_x, center_y, 1, (radius_x*2)*RANDOM_0_1()*0.4, (radius_y*2)*RANDOM_0_1()*0.4, 2;
@@ -580,7 +565,7 @@ proc control_panel_draw_element cell_size, grid_x, grid_y, grid_size_x, grid_siz
         }
         stop_this_script;
     }
-    if (PROBABILITY(0.15)) {
+    if (($seed*7.3247) % 1 < 0.15) {
         # create depressed area
         set_depositor_from_voxel center_x, center_y, 1;
         draw_cuboid_centered_XY center_x, center_y, 0, (radius_x*2)-CSZ(0.2), (radius_y*2)-CSZ(0.2), 1;
@@ -588,13 +573,13 @@ proc control_panel_draw_element cell_size, grid_x, grid_y, grid_size_x, grid_siz
         draw_cuboid_centered_XY center_x, center_y, 1, (radius_x*2)-CSZ(0.2), (radius_y*2)-CSZ(0.2), 1;
         stop_this_script;
     }
-    if (PROBABILITY(0.1)) {
+    if (($seed*9.1942) % 1 < 0.1) {
         # create mesh
         set_depositor_to_template 1, center_x, center_y, 0;
         draw_cuboid_centered_XY center_x, center_y, 1, (radius_x*2)-CSZ(0.2), (radius_y*2)-CSZ(0.2), 1;
         stop_this_script;
     }
-    if (PROBABILITY(0.1)) {
+    if (($seed*18.0841) % 1 < 0.2) {
         # create louvres
         set_depositor_to_template 2, center_x, center_y, 0;
         draw_cuboid_centered_XY center_x, center_y, 1, (radius_x*2)-CSZ(0.2), (radius_y*2)-CSZ(0.2), 1;
@@ -602,69 +587,83 @@ proc control_panel_draw_element cell_size, grid_x, grid_y, grid_size_x, grid_siz
     }
 
     if ($grid_size_x > 1 and $grid_size_y == 1) {
-        if (PROBABILITY(0.1)) {
-            # create text plate
-            set_depositor_to_template 3, center_x, center_y, 0;
-            draw_cuboid_centered_XY center_x, center_y, 1, (radius_x*2)-CSZ(0.4), (radius_y*2)-CSZ(0.4), 1;
-            stop_this_script;
-        }
-        if (PROBABILITY(0.15)) {
+        if (($seed*42.1234) % 1 < 0.15) {
             # create horizontal gauge
-            set_depositor_to_template 4, center_x, ($grid_y+0.3)*$cell_size, 0; # TODO set origin
+            set_depositor_to_template 3, center_x, ($grid_y+0.3)*$cell_size, 0; # TODO set origin
             draw_cuboid_centered_XY center_x, center_y, 0, (radius_x*2)-CSZ(0.3), (radius_y*2)-CSZ(0.3), 2;
             stop_this_script;
         }
     }
 
-    if ($grid_size_x > 1 and $grid_size_y > 1) {
-        if (PROBABILITY(0.3)) {
-            # screen
-            set_depositor_to_air;
-            draw_cuboid_centered_XY center_x, center_y, 1, (radius_x*2)-CSZ(0.05), (radius_y*2)-CSZ(0.05), 1;
-
-            set_depositor_from_sRGB_value 0.3;
-            draw_cuboid_centered_XY center_x, center_y, 1, (radius_x*2)-CSZ(0.2), (radius_y*2)-CSZ(0.2), 1;
-            stop_this_script;
-        }
-    }
-
-    if (PROBABILITY(0.3)) {
+    if (($seed*94.3114) % 1 < 0.3) {
         # coloured panel
         set_depositor_to_air;
-        draw_cuboid_centered_XY center_x, center_y, 1, (radius_x*2)-CSZ(0.05), (radius_y*2)-CSZ(0.05), 1;
-
-        set_depositor_from_sRGB_value random(0.3, 0.8);
-        draw_cuboid_centered_XY center_x, center_y, 1, (radius_x*2)-CSZ(0.2), (radius_y*2)-CSZ(0.2), 1;
+        draw_cuboid_centered_XY center_x, center_y, 1, (radius_x*2), (radius_y*2), 1;
+        
+        set_depositor_from_number_lerp $accent2, $panel_color, 0.2;
+        draw_cuboid_centered_XY center_x, center_y, 1, (radius_x*2)-2, (radius_y*2)-2, 1;
         stop_this_script;
     }
 }
 
 
 # create a recursively subdivided grid of rectangles, outputted to the list `custom_grid`
-proc create_custom_grid_recursive_rectangles x, y, size_x, size_y {
+proc create_custom_grid_recursive_rectangles x, y, size_x, size_y, probability_half, probability_similar {
     delete stack;
-    add_custom_grid_rect $x, $y, $size_x, $size_y, RANDOM_0_1(), 0;
+    local hash = RANDOM_0_1();
+    add_custom_grid_rect $x, $y, $size_x, $size_y, hash, 0;
 
     until (length stack == 0) {
-        if (RANDOM_0_1() < POW(stack[6]/18, 2)) {
+        hash = (stack[5]*15.2139) % 1;
+        if (hash < POW(stack[6]/18, 2)) {
             # emit rectangle because life ran out or size is too small
             add stack[1] to custom_grid;
             add stack[2] to custom_grid;
             add stack[3] to custom_grid;
             add stack[4] to custom_grid;
             add stack[5] to custom_grid;
+            # depth isn't outputted
         } else {
             # try splitting (must be run in a loop in the root rect)
-            if (PROBABILITY(0.5)) {
+            if (((stack[5]*21.9324) % 1) < 0.5) {
                 # split x
-                local split_position = round(stack[3] * random("0.25", "0.75"));
-                add_custom_grid_rect stack[1], stack[2], split_position, stack[4], RANDOM_0_1(), stack[6]+1;
-                add_custom_grid_rect stack[1]+split_position, stack[2], stack[3]-split_position, stack[4], RANDOM_0_1(), stack[6]+1;
+                if ((((stack[5]*34.3259) % 1) < $probability_half) and (stack[3] % 2 == 0)) {
+                    # divide in half perfectly
+                    local split_position = round(stack[3] / 2);
+                    hash = (stack[4]*33.5411 + stack[4]*63.1771 + stack[5]*19.4937) % 1;
+                    add_custom_grid_rect stack[1], stack[2], split_position, stack[4], hash, stack[6]+1;
+                    add_custom_grid_rect stack[1]+split_position, stack[2], stack[3]-split_position, stack[4], hash, stack[6]+1;
+                } elif (((stack[5]*90.2345) % 1) < $probability_similar) {
+                    # split anywhere
+                    local split_position = round(stack[3] * 0.25+((stack[5]*16.9034) % 0.5));
+                    add_custom_grid_rect stack[1], stack[2], split_position, stack[4], ((stack[5]*75.5398) % 1), stack[6]+1;
+                    add_custom_grid_rect stack[1]+split_position, stack[2], stack[3]-split_position, stack[4], ((stack[5]*7.043) % 1), stack[6]+1;
+                } else {
+                    # split randomly anywhere
+                    local split_position = round(stack[3] * random("0.25", "0.75"));
+                    add_custom_grid_rect stack[1], stack[2], split_position, stack[4], RANDOM_0_1(), stack[6]+1;
+                    add_custom_grid_rect stack[1]+split_position, stack[2], stack[3]-split_position, stack[4], RANDOM_0_1(), stack[6]+1;
+                }
+                
             } else {
                 # split y
-                local split_position = round(stack[4] * random("0.25", "0.75"));
-                add_custom_grid_rect stack[1], stack[2], stack[3], split_position, RANDOM_0_1(), stack[6]+1;
-                add_custom_grid_rect stack[1], stack[2]+split_position, stack[3], stack[4]-split_position, RANDOM_0_1(), stack[6]+1;
+                if ((((stack[5]*36.1209) % 1) < $probability_half) and (stack[4] % 2 == 0)) {
+                    # divide in half perfectly
+                    local split_position = round(stack[4] / 2);
+                    hash = (stack[4]*42.1877 + stack[4]*15.4401 + stack[5]*31.7991) % 1;
+                    add_custom_grid_rect stack[1], stack[2], stack[3], split_position, hash, stack[6]+1;
+                    add_custom_grid_rect stack[1], stack[2]+split_position, stack[3], stack[4]-split_position, hash, stack[6]+1;
+                } elif (((stack[5]*90.2345) % 1) < $probability_similar) {
+                    # split anywhere
+                    local split_position = round(stack[4] * 0.25+((stack[5]*21.3661) % 0.5));
+                    add_custom_grid_rect stack[1], stack[2], stack[3], split_position, ((stack[5]*19.5327) % 1), stack[6]+1;
+                    add_custom_grid_rect stack[1], stack[2]+split_position, stack[3], stack[4]-split_position, ((stack[5]*31.5121) % 1), stack[6]+1;
+                } else {
+                    # split randomly anywhere
+                    local split_position = round(stack[4] * random("0.25", "0.75"));
+                    add_custom_grid_rect stack[1], stack[2], stack[3], split_position, RANDOM_0_1(), stack[6]+1;
+                    add_custom_grid_rect stack[1], stack[2]+split_position, stack[3], stack[4]-split_position, RANDOM_0_1(), stack[6]+1;
+                }
             }
         }
         delete stack[1];

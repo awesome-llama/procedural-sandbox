@@ -424,10 +424,15 @@ panels['gen.control_panel'] = Container([
     Expander('Dimensions', '', True, [
         Value('Cell count X', 'gen.control_panel.cell_count_x', 12, 1, 64, 1, 1024, snap_frac=1),
         Value('Cell count Y', 'gen.control_panel.cell_count_y', 12, 1, 64, 1, 1024, snap_frac=1),
-        Value('Cell size', 'gen.control_panel.cell_size', 10, 4, 24, 1, 256, snap_frac=1),
+        Value('Cell size', 'gen.control_panel.cell_size', 6, 4, 12, 1, 256, snap_frac=1),
+    ]),
+    Expander('Shape', '', True, [
+        Value.fraction('Repetition chance', 'gen.control_panel.repetition_fac', 0.7),
     ]),
     Expander('Color', '', True, [
         Color('Panel color', 'gen.control_panel.panel_color', '#aaaaaa'),
+        Color('Accent color 1', 'gen.control_panel.accent1', "#6f6f6f"),
+        Color('Accent color 2', 'gen.control_panel.accent2', "#b1b1b1"),
     ]),
     Button('Generate', 'gen.control_panel.run'),
 ])
