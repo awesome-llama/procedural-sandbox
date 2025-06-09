@@ -776,7 +776,7 @@ panels['project.settings'] = Container([
         Expander('Sky', '', False, [
             Value('Sky intensity', 'project.settings.sky_intensity', 0.8, 0, 2, 0, 100, snap_frac=100),
             Separator(),
-            Value('Sun intensity', 'project.settings.sun_intensity', 1, 0, 2, 0, 100, snap_frac=100),
+            Value('Sun intensity', 'project.settings.sun_intensity', 2, 0, 4, 0, 100, snap_frac=100),
             Value('Sun bearing', 'project.settings.sun_bearing', 0, -90, 90, -360, 360, snap_frac=1),
             Value('Sun elevation', 'project.settings.sun_elevation', 45, 0, 90, 0, 90, snap_frac=1),
         ]),
@@ -801,9 +801,10 @@ panels['project.info'] = Container([
     Label.title('Info'),
     Separator(),
     Label('Created by awesome-llama'),
-    Label('Developed w/ goboscript'),
-    Separator(),
     Label('2025'),
+    Label('Written in goboscript'),
+    Separator(),
+    TextBlock('Contribtions accepted! See the GitHub repository in the project notes and credits.'),
 ])
 
 """panels['test.sliders'] = Container([

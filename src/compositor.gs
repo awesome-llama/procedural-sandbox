@@ -138,6 +138,9 @@ on "iterative compositor" {
     if (UI_popup[1]) {
         stop_this_script; # pause rendering whilst a popup is open (prioritise UI performance)
     }
+    #if (not (UI_last_hovered_group == "" or UI_last_hovered_group == "viewport")) {
+    #    stop_this_script; # pause rendering whilst the interface is hovered
+    #}
 
     if (viewport_mode == ViewportMode.ALIGNED) {
         if (compositor_mode == CompositorMode.SHADED) {
@@ -583,14 +586,14 @@ proc iterate_generic_pathtracer max_samples, max_time, filter_size {
                         # diffuse bounce
 
                         # add light from emission
-                        acc_col_r += throughput_r * (linear_col_r * (emission * PS_emission_intensity)); # no opacity accounted for, surface reflection only
+                        acc_col_r += throughput_r * (linear_col_r * (emission * PS_emission_intensity));
                         acc_col_g += throughput_g * (linear_col_g * (emission * PS_emission_intensity));
                         acc_col_b += throughput_b * (linear_col_b * (emission * PS_emission_intensity));
 
                         # update throughput (scales towards 0)
-                        throughput_r *= 1-((1-linear_col_r));
-                        throughput_g *= 1-((1-linear_col_g));
-                        throughput_b *= 1-((1-linear_col_b));
+                        throughput_r *= linear_col_r;
+                        throughput_g *= linear_col_g;
+                        throughput_b *= linear_col_b;
 
                         if (side == 0) {
                             if (step_x > 0) { 
@@ -648,12 +651,16 @@ proc iterate_generic_pathtracer max_samples, max_time, filter_size {
                 acc_col_b += throughput_b * TO_LINEAR(canvas[hit_index].b) * (canvas[hit_index].emission * PS_emission_intensity) * opacity;
             } else {
                 # sky
-                local sun_brightness = DOT_PRODUCT_3D(vec_x, vec_y, vec_z, sun_direction.x, sun_direction.y, sun_direction.z);
-                sun_brightness = (sun_brightness > 0.8) * PS_sun_intensity;
-                
-                acc_col_r += throughput_r * (PS_sky_intensity + sun_brightness);
-                acc_col_g += throughput_g * (PS_sky_intensity + sun_brightness); 
-                acc_col_b += throughput_b * (PS_sky_intensity + sun_brightness);
+                local sun_alignment = DOT_PRODUCT_3D(vec_x, vec_y, vec_z, sun_direction.x, sun_direction.y, sun_direction.z);
+                if (sun_alignment > 0.95) {
+                    acc_col_r += throughput_r * PS_sun_intensity;
+                    acc_col_g += throughput_g * PS_sun_intensity; 
+                    acc_col_b += throughput_b * PS_sun_intensity;
+                } else {
+                    acc_col_r += throughput_r * PS_sky_intensity;
+                    acc_col_g += throughput_g * PS_sky_intensity; 
+                    acc_col_b += throughput_b * PS_sky_intensity;
+                }
             }
 
             # add to result

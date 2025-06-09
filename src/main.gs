@@ -24,15 +24,16 @@ on "start main loop" {
         
         # reset hover detection
         if (not mouse_down()) {
-            # the last hover variables are so that the click detection hats have usable data.
-            # the hats do not run after the main loop.
+            # the "last_hovered" variables are so that the click detection hats have usable data guaranteed to be correct as the entire frame was completed.
+
+            if (not (mouse_x() > stage_min_x and mouse_x() < stage_max_x and mouse_y() > stage_min_y and mouse_y() < stage_max_y)) {
+                UI_hovered_group = ""; # out of bounds (this takes priority over every hovered element)
+                UI_hovered_element = "";
+            }
+
             UI_last_hovered_group = UI_hovered_group;
             UI_last_hovered_element = UI_hovered_element;
-            if abs(mouse_x()) < stage_max_x and abs(mouse_y()) < stage_max_y {
-                UI_hovered_group = "viewport"; # default hover is viewport (if mouse is in bounds)
-            } else {
-                UI_hovered_group = "";
-            }
+            UI_hovered_group = "";
             UI_hovered_element = "";
         }
 
@@ -49,8 +50,7 @@ on "start main loop" {
             require_viewport_refresh = false;
         }
 
-        broadcast "render ui"; # always redraw, no erase. This goes to the UI sprite only.
-        # more broadcasts for UI may be added although it's not clear if this is needed
+        broadcast "sys.render_UI"; # always redraw, no erase. This goes to the UI sprite only.
     }
 }
 

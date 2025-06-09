@@ -2,6 +2,8 @@
 
 %include lib/common
 
+%define PROJECT "PSB_62182952"
+
 costumes "costumes/TextImage/icon.svg" as "icon", "costumes/blank.svg" as "@ascii/";
 hide;
 
@@ -357,8 +359,8 @@ proc write_TextImage {
     TextImage_file = ("txtimg,v:0," & ((("x:" & TI_image_size_x) & (",y:" & TI_image_size_y)) & ","));
     
     # you can define custom properties like this:
-    TextImage_file &= (("_project:" & "PSB") & ",");
-    TextImage_file &= (("_z:" & canvas_size_z) & ",");
+    TextImage_file &= (("_project:" & PROJECT) & ",");
+    #TextImage_file &= (("_z:" & canvas_size_z) & ",");
     
     # layers (sets of 6 items)
     TextImage_file &= ("p:" & (4*((length layers)/6)));
@@ -774,7 +776,7 @@ on "io.save_canvas.run" {
     save_canvas UI_return[1], UI_return[2];
 }
 proc save_canvas include_opacity, include_emission {
-    write_TextImage_begin canvas_size_x, (canvas_size_y * canvas_size_z);
+    write_TextImage_begin canvas_size_x, (canvas_size_y * canvas_size_z), true;
 
     voxel_count = canvas_size_x * canvas_size_y * canvas_size_z;
 
@@ -836,7 +838,7 @@ proc save_canvas include_opacity, include_emission {
 
 on "io.export_rendered_canvas.run" { export_rendered_canvas; }
 proc export_rendered_canvas {
-    write_TextImage_begin render_size_x, render_size_y;
+    write_TextImage_begin render_size_x, render_size_y, false;
 
     # RGB8 main layer
     delete image_buffer;
@@ -880,7 +882,7 @@ on "io.export_height_map.run" {
     export_height_map UI_return[1], UI_return[2];
 }
 proc export_height_map map_0, map_1 {
-    write_TextImage_begin canvas_size_x, canvas_size_y;
+    write_TextImage_begin canvas_size_x, canvas_size_y, false;
 
     # A8 main layer
     delete image_buffer;
@@ -902,12 +904,14 @@ proc export_height_map map_0, map_1 {
 
 
 # reset vars and lists to write a custom TextImage file
-proc write_TextImage_begin size_x, size_y {
+proc write_TextImage_begin size_x, size_y, include_3D_metadata {
     TI_image_size_x = floor(POSITIVE_CLAMP($size_x));
     TI_image_size_y = floor(POSITIVE_CLAMP($size_y));
     TextImage_file = ("txtimg,v:0," & ((("x:" & TI_image_size_x) & (",y:" & TI_image_size_y)) & ","));
-    TextImage_file &= (("_project:" & "PSB") & ",");
-    TextImage_file &= (("_z:" & canvas_size_z) & ",");
+    TextImage_file &= (("_project:" & PROJECT) & ",");
+    if ($include_3D_metadata) {
+        TextImage_file &= (("_z:" & canvas_size_z) & ",");
+    }
     delete layers;
     delete image_buffer;
 }

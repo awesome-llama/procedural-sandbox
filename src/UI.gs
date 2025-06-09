@@ -59,13 +59,16 @@ on "hard reset" {
 %define TXT_Y_OFFSET 12
 %define INPUT_WIDTH 50
 
-on "render ui" {
-    # constantly renders, this is because the ui needs to be interactive.
 
+# Render the UI and handle mouse hover detection. Constantly renders, this is because the ui needs to be interactive.
+on "sys.render_UI" {
     clear_graphic_effects;
     switch_costume "large";
     point_in_direction 90;
     set_size 100;
+
+    # VIEWPORT
+    UI_check_touching_mouse stage_min_x+UI_sidebar_width, stage_max_y-TOP_BAR_HEIGHT, stage_size_x-UI_sidebar_width, stage_size_y-TOP_BAR_HEIGHT, "viewport", "";
 
     # TOP BAR
     draw_rect stage_min_x+UI_sidebar_width, stage_max_y-TOP_BAR_HEIGHT, stage_size_x-UI_sidebar_width, TOP_BAR_HEIGHT, 1, "#505050";
@@ -92,6 +95,8 @@ on "render ui" {
         tab_button tab_offset, 37, "Gen", "menu.gen";
         tab_button tab_offset, 31, "FX", "menu.fx";
         #tab_button tab_offset, 42, "Draw", "menu.draw";
+
+        # TODO note in top bar
     }
 
     render_popup;
@@ -616,12 +621,12 @@ proc render_modular_element index, x, y, width, panel_id {
     }
 }
 
-# height is downwards, rect is inclusve of bounds
-proc UI_check_touching_mouse x, y, width, height, id1, id2 {
-    
+
+# Check if the mouse is in a given rectangle, inclusive of bounds. Height is measured downwards.
+proc UI_check_touching_mouse x, y, width, height, hov_group, hov_elem {
     if (not (((mouse_x() < $x) or (mouse_x() > ($x+$width))) or ((mouse_y() > $y) or (mouse_y() < ($y-$height))))) {
-        UI_hovered_group = $id1;
-        UI_hovered_element = $id2;
+        UI_hovered_group = $hov_group;
+        UI_hovered_element = $hov_elem;
     }
 }
 
