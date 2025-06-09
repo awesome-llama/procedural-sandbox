@@ -4,7 +4,7 @@
 costumes "costumes/stage_size/icon.svg" as "icon", "costumes/stage_size/probe.png" as "probe";
 hide;
 
-on "get_stage_size" { get_stage_size; }
+on "sys.get_stage_size" { get_stage_size; }
 proc get_stage_size {
     switch_costume "probe";
     set_size 100;

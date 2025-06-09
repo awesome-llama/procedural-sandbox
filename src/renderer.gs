@@ -7,7 +7,7 @@ on "initalise" {
     hide;
 }
 
-on "render viewport" {
+on "sys.render_viewport" {
     if (viewport_mode == ViewportMode.ALIGNED) {
         render_edge_lines stage_max_x, stage_max_y;
         render_canvas_2D;

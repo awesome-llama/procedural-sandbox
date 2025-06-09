@@ -7,7 +7,7 @@ hide;
 # 2^(1/increment)
 %define ZOOM_INCREMENT sqrt(2)
 
-on "start main loop" {
+on "sys.start_main_loop" {
     if (PS_reset_render_on_flag) {
         requested_render_resolution = 1;
         zoom_extents;
@@ -38,15 +38,15 @@ on "start main loop" {
         }
 
         if (require_composite == true) {
-            broadcast_and_wait "composite";
+            broadcast_and_wait "sys.composite";
         }
         if (require_iterative_compositor == true) {
-            broadcast_and_wait "iterative compositor";
+            broadcast_and_wait "sys.iterative_compositor";
         }
         if (require_viewport_refresh == true) {
             erase_all;
-            broadcast "render viewport";
-            broadcast "render viewport overlay";
+            broadcast "sys.render_viewport";
+            broadcast "sys.render_viewport_overlay";
             require_viewport_refresh = false;
         }
 
@@ -96,15 +96,15 @@ proc move_camera dx, dy {
 
 
 onkey "p" {
+    # TODO remove
     broadcast "gen.test.run"; # debug
-    broadcast "zoom extents";
 }
 
 
 %define UPDATE_MOUSE() prev_mouse_x = mouse_x(); prev_mouse_y = mouse_y();
 
 # click and drag to pan
-on "stage clicked" {
+on "sys.stage_clicked" {
     if (UI_last_hovered_group == "viewport") {
         if (viewport_mode == ViewportMode.ALIGNED) {
             
@@ -157,8 +157,8 @@ nowarp proc wait_until_mouse_moves {
 }
 
 
-onkey "up arrow" { broadcast "zoom in"; }
-on "zoom in" {
+onkey "up arrow" { broadcast "sys.zoom_in"; }
+on "sys.zoom_in" {
     change_zoom 1;
     limit_scroll;
     if (viewport_mode == ViewportMode.ORBIT) {
@@ -167,8 +167,8 @@ on "zoom in" {
     require_viewport_refresh = true;
 }
 
-onkey "down arrow" { broadcast "zoom out"; }
-on "zoom out" {
+onkey "down arrow" { broadcast "sys.zoom_out"; }
+on "sys.zoom_out" {
     change_zoom -1;
     limit_scroll;
     if (viewport_mode == ViewportMode.ORBIT) {
@@ -196,7 +196,7 @@ proc limit_scroll  {
 }
 
 
-on "zoom extents" { zoom_extents; }
+on "sys.zoom_extents" { zoom_extents; }
 proc zoom_extents {
     # first get avail width and height of viewport
     local viewport_width = stage_size_x-UI_sidebar_width;

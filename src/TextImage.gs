@@ -21,7 +21,7 @@ on "initalise" {
     hide;
 }
 
-on "hard reset" {
+on "sys.hard_reset" {
     clear_all_shared_data;
     delete layers;
     delete image_buffer;
@@ -183,7 +183,7 @@ proc clear_all_shared_data {
 }
 
 # the expectation is TextImage var gets written to
-on "read TextImage" { read_TextImage TextImage_file; }
+on "TextImage.read" { read_TextImage TextImage_file; }
 proc read_TextImage TextImage_file {
     clear_all_shared_data;
     add "" to TI_header;
@@ -598,7 +598,7 @@ proc _data_stream_process_RLE RLE_index, op_size_start_index {
 # lists used to store the canvas temporarily
 list voxel temp;
 
-on "hard reset" {
+on "sys.hard_reset" {
     delete temp;
     # other shared variables are deleted in stage
 }
@@ -614,7 +614,7 @@ on "io.load_canvas.run" {
     ask "paste TextImage file, leave blank to cancel";
     if (answer() != "") {
         TextImage_file = answer();
-        broadcast_and_wait "read TextImage";
+        broadcast_and_wait "TextImage.read";
         copy_TI_px_buffer_to_canvas;
         require_composite = true;
     }
@@ -658,7 +658,7 @@ on "io.import_height_map.run" {
     ask "paste TextImage file, leave blank to cancel";
     if (answer() != "") {
         TextImage_file = answer(); 
-        broadcast_and_wait "read TextImage";
+        broadcast_and_wait "TextImage.read";
         
         delete UI_return;
         setting_from_id "io.import_height_map.erase_canvas";
@@ -723,7 +723,7 @@ on "io.import_color_map.run" {
     ask "paste TextImage file, leave blank to cancel";
     if (answer() != "") {
         TextImage_file = answer(); 
-        broadcast_and_wait "read TextImage";
+        broadcast_and_wait "TextImage.read";
 
         delete UI_return;
         setting_from_id "io.import_color_map.resize_canvas";

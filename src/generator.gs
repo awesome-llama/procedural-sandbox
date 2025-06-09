@@ -16,7 +16,8 @@ on "initalise" {
     hide;
 }
 
-on "hard reset" {
+
+on "sys.hard_reset" {
     delete custom_graph;
     delete custom_grid;
     delete eca_lut;
@@ -24,12 +25,6 @@ on "hard reset" {
     delete temp_canvas;
     delete stack;
     delete agents;
-}
-
-on "*" {
-    # currently unused
-    load_template_to_canvas 0;
-    stamp_template 0, 0, 0, 0;
 }
 
 

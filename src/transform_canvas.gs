@@ -13,7 +13,7 @@ on "initalise" {
     hide;
 }
 
-on "hard reset" {
+on "sys.hard_reset" {
     delete temp_canvas;
 }
 

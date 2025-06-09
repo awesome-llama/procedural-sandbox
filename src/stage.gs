@@ -94,7 +94,7 @@ on "initalise" {
 }
 
 
-on "hard reset" {
+on "sys.hard_reset" {
     delete canvas;
 
     canvas_size_x = 0;
@@ -160,23 +160,21 @@ on "hard reset" {
     PS_normal_map_intensity = 1;
     PS_normal_map_kernel_size = 2;
 
-    broadcast "project.settings.apply"; # update the project settings from UI (which is always the source)
+    broadcast "settings.apply"; # update the project settings from UI (which is always the source)
 }
 
 onflag {
     if (not_first_time == false) { # goboscript hack to reset the project on first load
-        broadcast_and_wait "hard reset";
+        broadcast_and_wait "sys.hard_reset";
         not_first_time = 1;
     }
-    broadcast "get_stage_size"; # this happens before init just in case anything needs stage size
+    broadcast "sys.get_stage_size"; # this happens before init just in case anything needs stage size
     broadcast "initalise"; # all receivers must complete within the frame, no loops allowed to start. Think of it as a soft reset.
-    broadcast "start main loop"; # schedule main loop start after init
+    broadcast "sys.start_main_loop"; # schedule main loop start after init
 }
 
 onclick {
     hide copy_this; # hide the list to copy from
-    broadcast "stage clicked"; # each receiver checks if the hovered group is for it. This prevents the script from running in multiple places at the same time. Use the last hover variable because it stores the state where all of the UI is guaranteed to have been checked. 
+    broadcast "sys.stage_clicked"; # each receiver checks if the hovered group is for it. This prevents the script from running in multiple places at the same time. Use the last hover variable because it stores the state where all of the UI is guaranteed to have been checked. 
 }
 
-
-# comment block generator https://blocks.jkniest.dev/

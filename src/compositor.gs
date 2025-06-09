@@ -18,7 +18,7 @@ on "initalise" {
     }
 }
 
-on "hard reset" {
+on "sys.hard_reset" {
     delete buffer_ao;
     delete buffer_topmost;
     delete buffer_r;
@@ -63,7 +63,7 @@ onkey "6" {
 ################################
 
 
-on "composite" {
+on "sys.composite" {
     require_iterative_compositor = false; # default off
     render_resolution = requested_render_resolution; # this is the only time the resolution is set
 
@@ -134,7 +134,7 @@ on "composite" {
 }
 
 
-on "iterative compositor" {
+on "sys.iterative_compositor" {
     if (UI_popup[1]) {
         stop_this_script; # pause rendering whilst a popup is open (prioritise UI performance)
     }

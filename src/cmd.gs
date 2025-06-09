@@ -11,12 +11,12 @@ on "initalise" {
     delete command;
 }
 
-on "hard reset" {
+on "sys.hard_reset" {
     delete command;
 }
 
 onkey "/" {
-    broadcast "open commands";
+    broadcast "sys.open_commands";
 }
 
 ##################################
@@ -75,7 +75,7 @@ nowarp proc evaluate_command {
     #} 
 
     if (command_name == "reset") {
-        broadcast "reset";
+        broadcast "sys.reset";
         stop_all;
     }
     
@@ -141,7 +141,7 @@ nowarp proc evaluate_command {
 }
 
 
-on "open commands" {
+on "sys.open_commands" {
     hide;
     switch_costume "icon";
     stop_other_scripts;
@@ -150,13 +150,13 @@ on "open commands" {
         if (answer() != ".") { # check if the previous command should be re-run
             cmd_string = answer();
         }
-        broadcast "run command";
+        broadcast "sys.run_command";
     }
 }
 
 
 # run the command given in cmd_string
-on "run command" {
+on "sys.run_command" {
     if cmd_string != "" {
         i = 1;
         until i >= length(cmd_string) {

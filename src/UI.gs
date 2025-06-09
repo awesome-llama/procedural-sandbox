@@ -28,7 +28,7 @@ on "initalise" {
     unfenced_mouse_x = 0;
 }
 
-on "hard reset" {
+on "sys.hard_reset" {
     UI_sidebar_width = 160;
 }
 
@@ -355,7 +355,7 @@ proc top_bar_button id, costume, x, y, enabled {
 }
 
 
-on "render viewport overlay" { render_viewport_overlay; }
+on "sys.render_viewport_overlay" { render_viewport_overlay; }
 proc render_viewport_overlay {
     # Text
     set_pen_color THEME_COL_TEXT;
@@ -627,7 +627,7 @@ proc UI_check_touching_mouse x, y, width, height, hov_group, hov_elem {
 
 
 
-on "stage clicked" {
+on "sys.stage_clicked" {
     stop_other_scripts; # stop previous ask block
     clicked_element = UI_last_hovered_element; # alias
 
@@ -686,7 +686,7 @@ on "stage clicked" {
 
             } elif (UI_data[clicked_element+3] == "command") {
                 cmd_string = UI_data[clicked_element+4];
-                broadcast "run command";
+                broadcast "sys.run_command";
             }
             
         } elif (UI_data[clicked_element] == "CHECKBOX") {
@@ -776,11 +776,11 @@ on "stage clicked" {
         } elif (clicked_element == "compositor mode") {
             create_popup "compositor mode", stage_min_x+UI_sidebar_width+80, stage_max_y-TOP_BAR_HEIGHT, 100, 116;
         } elif (clicked_element == "zoom in") {
-            broadcast "zoom in";
+            broadcast "sys.zoom_in";
         } elif (clicked_element == "zoom out") {
-            broadcast "zoom out";
+            broadcast "sys.zoom_out";
         } elif (clicked_element == "zoom fit") {
-            broadcast "zoom extents";
+            broadcast "sys.zoom_extents";
         }
     }
 }

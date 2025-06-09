@@ -8,10 +8,10 @@ on "initalise" {
     goto 0, 0;
 }
 
-on "*" {
+on "sys.reset" {
     log "run this script to reset the project for sharing";
     broadcast "initalise";
-    broadcast_and_wait "hard reset";
+    broadcast_and_wait "sys.hard_reset";
     switch_costume "awesome-llama";
     show;
     stop_all;
