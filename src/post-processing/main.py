@@ -20,11 +20,12 @@ project_data: dict = json.loads(project_archive.read('project.json'))
 
 # reorder the sprites
 
-SPRITE_ORDER = ['Stage', '_', 'main', 'stage_size', 'UI', 'transform_canvas', 'generator', 'compositor', 'renderer', 'TextImage', 'export_3D', 'cmd', 'debug']
+SPRITE_ORDER = ['Stage', '_', 'main', 'stage_size', 'UI', 'transform_canvas', 'generator', 'compositor', 'renderer', 'TextImage', 'export_3D', 'project_settings', 'cmd', 'debug']
 
 def get_layer_number(target: dict):
     if target['name'] in SPRITE_ORDER:
         return SPRITE_ORDER.index(target['name'])
+    print(f'unknown layer name: {target['name']}')
     return 1000 # no order given, move to the end
 
 project_data['targets'].sort(key=get_layer_number)
@@ -46,21 +47,24 @@ costume['rotationCenterY'] = 0
 
 # add the monitors
 
+copy_list_monitor_data = {
+    "id": "copy_this",
+    "mode": "list",
+    "opcode": "data_listcontents",
+    "params": {"LIST": "copy_this"},
+    "spriteName": None,
+    "value": [],
+    "width": 400,
+    "height": 230,
+    "x": 40,
+    "y": 60,
+    "visible": False
+}
 monitor = utils.get_monitor_by_id(project_data, 'copy_this')
 if monitor is None:
-    project_data['monitors'].append({
-        "id": "copy_this",
-        "mode": "list",
-        "opcode": "data_listcontents",
-        "params": {"LIST": "copy_this"},
-        "spriteName": None,
-        "value": [],
-        "width": 400,
-        "height": 230,
-        "x": 40,
-        "y": 60,
-        "visible": False
-    })
+    project_data['monitors'].append(copy_list_monitor_data)
+else:
+    raise Exception('monitor already exists')
 
 
 
@@ -73,11 +77,14 @@ for target in project_data['targets']:
 
 # remove field text
 
+fields_updated_count = 0
 for target in project_data['targets']:
     for block in target['blocks'].values():
         for field in block.get('fields', {}).values():
             if isinstance(field, list) and field[0] == 'make gh issue if this bothers u':
                 field[0] = ''
+                fields_updated_count += 1
+print(f'fields updated: {fields_updated_count}')
 
 
 
@@ -123,3 +130,4 @@ with zipfile.ZipFile(PATH_TARGET_PROJECT, 'w') as new_archive:
 
 
 project_archive.close()
+print(f'saved to {PATH_TARGET_PROJECT}')
