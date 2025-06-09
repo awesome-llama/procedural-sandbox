@@ -4,7 +4,7 @@ A Scratch project designed to procedurally generate image textures. You could th
 
 This project intends on:
 
-- Exploring ways to generate source textures for future Scratch games, especially 3D.
+- Exploring ways to generate source textures for future Scratch games, especially 3D games like *[The Mast](https://scratch.mit.edu/projects/861541218/)*.
 - Testing goboscript, which is a programming language that compiles to Scratch.
 - Further developing user interface handling for Scratch projects.
 - Experimenting with exporting to different file formats such as [TextImage](https://github.com/awesome-llama/TextImage) and generation of [data URLs](https://developer.mozilla.org/en-US/docs/Web/URI/Reference/Schemes/data) for a way to download these files.
@@ -48,7 +48,7 @@ If using Visual Studio Code, you can run the build tasks. The default task does 
 
 ## Contributing
 
-Feel free to fork the repository and make pull requests. There are no specific contributing guidelines currently. If you are unsure whether a change would be accepted, consider asking.
+Feel free to fork the repository and make pull requests. There are no specific contributing guidelines currently, it's an open-ended "do whatever you think would fit". If you are unsure whether a change would be accepted, consider asking.
 
 Places where improvements could be seen include new texture generators (especially this!), path tracing, and more supported file formats. For mostly standalone code such as generators, you may alternatively remix the Scratch project. This is less efficient as you won't be able to make use of goboscript's features and someone would have to translate it into goboscript to be added to this repo.
 

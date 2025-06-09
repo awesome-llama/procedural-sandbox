@@ -469,7 +469,7 @@ proc render_modular_element index, x, y, width, panel_id {
         render_modular_element $index+3, $x, UI_y, $width, $panel_id;
 
     } elif (elem_type == "BUTTON") {
-        # [type, label, id, button_clicked]
+        # [type, label, id, action, action_data]
         UI_check_touching_mouse $x, $y-1, $width, LINEHIGHT, $panel_id, $index;
         if (IS_HOVERED_MODULAR_PANEL()) {
             draw_UI_rect $x, $y-1, $width, LINEHIGHT, 4, THEME_COL_OUTLINE_HIGHLIGHT, "#656565";
@@ -526,10 +526,13 @@ proc render_modular_element index, x, y, width, panel_id {
             plainText $x+5, $y-TXT_Y_OFFSET, 1, (UI_data[$index+1] & ": " & UI_data[$index+3]);
 
             if (IS_HOVERED_MODULAR_PANEL()) {
-                #set_pen_color THEME_COL_OUTLINE_HIGHLIGHT;
                 set_ghost_effect 50;
-                draw_triangle $x-2, $y-8, 180;
-                draw_triangle $x+$width+2, $y-8, 0;
+                if (UI_data[$index+3] != UI_data[$index+5]) {
+                    draw_triangle $x-2, $y-8, 180;
+                }
+                if (UI_data[$index+3] != UI_data[$index+6]) {
+                    draw_triangle $x+$width+2, $y-8, 0;
+                }
                 set_ghost_effect 0;
             }
 
@@ -546,10 +549,13 @@ proc render_modular_element index, x, y, width, panel_id {
             plainText (($x+$width)-INPUT_WIDTH)+3, $y-TXT_Y_OFFSET, 1, UI_data[$index+3];
             
             if (IS_HOVERED_MODULAR_PANEL()) {
-                #set_pen_color THEME_COL_OUTLINE_HIGHLIGHT;
                 set_ghost_effect 50;
-                draw_triangle $x+$width+2, $y-8, 0;
-                draw_triangle $x+$width-INPUT_WIDTH-2, $y-8, 180;
+                if (UI_data[$index+3] != UI_data[$index+5]) {
+                    draw_triangle $x+$width-INPUT_WIDTH-2, $y-8, 180;
+                }
+                if (UI_data[$index+3] != UI_data[$index+6]) {
+                    draw_triangle $x+$width+2, $y-8, 0;
+                }
                 set_ghost_effect 0;
             }
         }
