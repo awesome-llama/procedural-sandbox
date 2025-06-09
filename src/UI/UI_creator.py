@@ -40,6 +40,8 @@ class Button(Element):
     def __init__(self, label, id='', action='broadcast', action_data=''):
         # id needs to be unique
         super().__init__()
+        if action == 'broadcast' and (action_data == '' or action_data is None):
+            action_data = id
         self.items = ['BUTTON', label, id, action, action_data]
 
     def to_flat_list(self, ids_list):
@@ -174,7 +176,7 @@ def btn_menu_set_page(label, page):
     return Button.set_page(label, 'menu.'+page, page)
 
 panels['menu.io'] = Container([
-    Label.title('Import/Export'),
+    Label.title('Import/export'),
     Separator(),
     btn_menu_set_page('New canvas', 'io.new_canvas'),
     Separator(0, 5),
@@ -201,9 +203,9 @@ panels['menu.gen'] = Container([
     Label.title('Generate'),
     Separator(), # featured structures
     btn_menu_set_page('City', 'gen.city'),
-    btn_menu_set_page('Control Panel', 'gen.control_panel'),
+    btn_menu_set_page('Control panel', 'gen.control_panel'),
     btn_menu_set_page('Nucleus', 'gen.nucleus'),
-    btn_menu_set_page('Printed Circuit Board', 'gen.pcb'),
+    btn_menu_set_page('Printed circuit board', 'gen.pcb'),
     btn_menu_set_page('Refinery', 'gen.refinery'),
     Separator(0, 5), # patterns, specific
     btn_menu_set_page('Erosion', 'gen.erosion'),
@@ -214,7 +216,7 @@ panels['menu.gen'] = Container([
     btn_menu_set_page('Ball Pit', 'gen.ballpit'),
     btn_menu_set_page('Elem. cellular automata', 'gen.eca'),
     btn_menu_set_page('Maze', 'gen.maze'),
-    btn_menu_set_page('Value Noise', 'gen.value_noise'),
+    btn_menu_set_page('Value noise', 'gen.value_noise'),
     Separator(0, 5),
     btn_menu_set_page('Sphere', 'gen.sphere'),
 ])
@@ -226,7 +228,7 @@ panels['menu.fx'] = Container([
     btn_menu_set_page('Rotate', 'fx.rotate'),
     btn_menu_set_page('Scale', 'fx.scale'),
     btn_menu_set_page('Mirror', 'fx.mirror'),
-    btn_menu_set_page('Repeated Symmetry', 'fx.repeated_symmetry'),
+    btn_menu_set_page('Repeated symmetry', 'fx.repeated_symmetry'),
     Separator(0, 5),
     btn_menu_set_page('Crop XY', 'fx.crop_xy'),
     Separator(0, 5),
@@ -238,11 +240,17 @@ panels['menu.fx'] = Container([
     btn_menu_set_page('Reshape', 'fx.reshape_canvas'),
 ])
 
-panels['menu.draw'] = Container([
-    Label.title('Draw'),
+panels['menu.settings'] = Container([
+    Label.title('Settings'),
     Separator(),
+    btn_menu_set_page('Misc.', 'settings.misc'),
+    btn_menu_set_page('Pathtracer', 'settings.pathtracer'),
+    btn_menu_set_page('Normal map', 'settings.normal_map'),
+    Separator(0, 5),
+    btn_menu_set_page('Tips', 'settings.tips'),
+    Separator(0, 5),
+    btn_menu_set_page('Credits', 'settings.credits'),
 ])
-
 
 ################################
 #              IO              #
@@ -365,7 +373,7 @@ panels['gen.fibres'] = Container([
 ])
 
 panels['gen.ballpit'] = Container([
-    Label.title('Generate Ball Pit'),
+    Label.title('Generate ball pit'),
     Separator(),
     Expander('Canvas', '', True, [
         Value.canvas_size('Size X', 'gen.ballpit.size_x', 64),
@@ -422,7 +430,7 @@ panels['gen.city'] = Container([
 ])
 
 panels['gen.control_panel'] = Container([
-    Label.title('Generate Control Panel'),
+    Label.title('Generate control panel'),
     Separator(),
     Expander('Dimensions', '', True, [
         Value('Cell count X', 'gen.control_panel.cell_count_x', 12, 1, 64, 1, 1024, snap_frac=1),
@@ -543,7 +551,7 @@ panels['gen.maze'] = Container([
 ])
 
 panels['gen.nucleus'] = Container([
-    Label.title('Generate "Nucleus"'),
+    Label.title('Generate "nucleus"'),
     Separator(),
     Expander('Canvas', '', True, [
         Value('Radius', 'gen.nucleus.radius', 64, 1, 256, 0, 4096, snap_frac=1),
@@ -571,7 +579,7 @@ panels['gen.refinery'] = Container([
 
 # https://en.wikipedia.org/wiki/Value_noise
 panels['gen.value_noise'] = Container([
-    Label.title('Value Noise (2D)'),
+    Label.title('Value noise (2D)'),
     Separator(),
     Expander('Dimensions', '', True, [
         Value.canvas_size('Size X', 'gen.value_noise.size_x', 64),
@@ -749,6 +757,102 @@ panels['fx.reshape_canvas'] = Container([
 ])
 
 ################################
+#           Settings           #
+################################
+
+panels['settings.misc'] = Container([
+    Label.title('Miscellaneous'),
+    Separator(),
+    Expander('Inputs', '', True, [
+        Value('Slider sensitivity', 'settings.slider_sensitivity', 100, 20, 500, 0, 10000, snap_frac=1),
+    ]),
+    Expander('Viewport', '', True, [
+        #Checkbox('Show on-screen text', 'settings.show_on_screen_text', True),
+        Value('Resolution 3D', 'settings.resolution', 4, 1, 12, 1, 64, snap_frac=1),
+    ]),
+    Expander('Reset', '', True, [
+        Checkbox('Reset render on flag', 'settings.reset_render_on_flag', True),
+    ]),
+    Separator(0),
+    Button('Apply changes', 'settings.misc.apply', action_data='settings.apply'),
+])
+
+panels['settings.pathtracer'] = Container([
+    Label.title('Pathtracer'),
+    Separator(),
+    TextBlock('Applies to the "pathtraced" mode only.'),
+    Expander('Iterations', '', True, [
+        Value('Max. samples', 'settings.max_samples', 256, 1, 1024, 1, 16777216, snap_frac=1),
+        TextBlock('Total number of rays'),
+        Separator(),
+        Value('Max. frame time', 'settings.max_frame_time', 0.1, 0, 0.5, 0, 60, snap_frac=100),
+        TextBlock('Keep the interface responsive by limiting how long the renderer iterates.'),
+    ]),
+    Expander('Anti-aliasing', '', False, [
+        Value('2D pathtraced', 'settings.filter_size_fac_2D_PT', 0, 0, 2, 0, 100, snap_frac=10),
+        Value('3D pathtraced', 'settings.filter_size_fac_3D_PT', 1, 0, 2, 0, 100, snap_frac=10),
+        TextBlock('Spread of rays, measured in pixels.'),
+    ]),
+    Expander('Emissive voxels', '', False, [
+        Value('Emission intensity', 'settings.emission_intensity', 1, 0, 2, 0, 100, snap_frac=100),
+    ]),
+    Expander('Sky', '', False, [
+        Value('Sky intensity', 'settings.sky_intensity', 0.8, 0, 2, 0, 100, snap_frac=100),
+        Separator(),
+        Value('Sun intensity', 'settings.sun_intensity', 2, 0, 4, 0, 100, snap_frac=100),
+        Value('Sun bearing', 'settings.sun_bearing', 0, -90, 90, -360, 360, snap_frac=1),
+        Value('Sun elevation', 'settings.sun_elevation', 45, 0, 90, 0, 90, snap_frac=1),
+    ]),
+    Expander('Display transform', '', False, [
+        Checkbox('"PBR Neutral" tone map', 'settings.use_tone_map', False),
+        TextBlock('How light is converted into your screen\'s RGB pixels'),
+    ]),
+    Separator(0),
+    Button('Apply changes', 'settings.pathtracer.apply', action_data='settings.apply'),
+])
+
+panels['settings.normal_map'] = Container([
+    Label.title('Normal map'),
+    Separator(),
+    TextBlock('Applies to the "normal map" mode in 2D only.'),
+    Expander('Sampling', '', True, [
+        Value('Intensity', 'settings.normal_map_intensity', 1, 0, 2, snap_frac=1000),
+        Value('Kernel size', 'settings.normal_map_kernel_size', 2, 2, 3, 2, 3, snap_frac=1),
+    ]),
+    Separator(0),
+    Button('Apply changes', 'settings.normal_map.apply', action_data='settings.apply'),
+])
+
+panels['settings.tips'] = Container([
+    Label.title('Tips'),
+    Separator(),
+    Expander('Set render mode', '', False, [
+        TextBlock('Press the number keys 1-6 to quickly choose render mode "color", "shaded", "pathtraced", and so on.'),
+    ]),
+    Expander('Inputs', '', False, [
+        TextBlock('When hovering over a number, checkbox, or color input, press:'),
+        TextBlock('- R to reset to default value'),
+        TextBlock('- C to copy value to project clipboard'),
+        TextBlock('- V to paste value'),
+        Separator(0),
+        TextBlock('You can also click a number input to enter a specific value, even numbers out of the normally allowed range.'),
+        Separator(0),
+        Value('Try it!', value=0.5),
+        Value('Try it!', value=28),
+    ]),
+])
+
+panels['settings.credits'] = Container([
+    Label.title('Credits'),
+    Separator(),
+    Label('Created by awesome-llama'),
+    Label('2025'),
+    Label('Written in goboscript'),
+    Separator(),
+    TextBlock('Contributions accepted! See the GitHub repository in the project notes and credits.'),
+])
+
+################################
 #             Misc             #
 ################################
 
@@ -761,51 +865,7 @@ panels['project.compositor_mode'] = Container([
     Button.run_command('6. Normal', 'project.compositor_mode.6', 'compositor NORMAL'),
 ])
 
-panels['project.settings'] = Container([
-    Label.title('Project settings'),
-    Separator(),
-    Expander('Interface', '', False, [
-        Value('Slider sensitivity', 'project.settings.slider_sensitivity', 100, 20, 500, 0, 10000, snap_frac=1),
-    ]),
-    Expander('Render (misc)', '', False, [
-        Value('Resolution 3D', 'project.settings.resolution', 4, 1, 12, 1, 64, snap_frac=1),
-        Checkbox('Reset render on flag', 'project.settings.reset_render_on_flag', True),
-    ]),
-    Expander('Pathtracer', '', False, [
-        Value('Emission intensity', 'project.settings.emission_intensity', 1, 0, 2, 0, 100, snap_frac=100),
-        Expander('Sky', '', False, [
-            Value('Sky intensity', 'project.settings.sky_intensity', 0.8, 0, 2, 0, 100, snap_frac=100),
-            Separator(),
-            Value('Sun intensity', 'project.settings.sun_intensity', 2, 0, 4, 0, 100, snap_frac=100),
-            Value('Sun bearing', 'project.settings.sun_bearing', 0, -90, 90, -360, 360, snap_frac=1),
-            Value('Sun elevation', 'project.settings.sun_elevation', 45, 0, 90, 0, 90, snap_frac=1),
-        ]),
-        Checkbox('"PBR Neutral" tone map', 'project.settings.use_tone_map', False),
-        Separator(),
-        Label('Anti-aliasing:'),
-        Value('- 2D pathtraced', 'project.settings.filter_size_fac_2D_PT', 0, 0, 2, 0, 100, snap_frac=10),
-        Value('- 3D pathtraced', 'project.settings.filter_size_fac_3D_PT', 1, 0, 2, 0, 100, snap_frac=10),
-        Separator(),
-        Value('Max. samples', 'project.settings.max_samples', 256, 1, 1024, 1, 16777216, snap_frac=1),
-        Value('Max. frame time', 'project.settings.max_frame_time', 0.1, 0, 0.5, 0, 60, snap_frac=100),
-    ]),
-    Expander('Normal map', '', False, [
-        Value('Intensity', 'project.settings.normal_map_intensity', 1, 0, 2, snap_frac=1000),
-        Value('Kernel size', 'project.settings.normal_map_kernel_size', 2, 2, 3, 2, 3, snap_frac=1)
-    ]),
-    Separator(0),
-    Button('Apply changes', 'project.settings.apply'),
-])
 
-panels['project.info'] = Container([
-    Label.title('Info'),
-    Separator(),
-    Label('Created by awesome-llama'),
-    Label('2025'),
-    Label('Written in goboscript'),
-    Separator(),
-    TextBlock('Contribtions accepted! See the GitHub repository in the project notes and credits.'),
-])
 
 """panels['test.sliders'] = Container([
     Label.title('Slider test'),

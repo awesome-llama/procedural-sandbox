@@ -77,7 +77,7 @@ on "sys.render_UI" {
 
     # SIDE BAR
     if (UI_sidebar_width > 8) {
-        if (UI_current_panel == "menu.io" or UI_current_panel == "menu.gen" or UI_current_panel == "menu.fx" or UI_current_panel == "menu.draw") {
+        if (UI_current_panel == "menu.io" or UI_current_panel == "menu.gen" or UI_current_panel == "menu.fx" or UI_current_panel == "menu.draw" or UI_current_panel == "menu.settings") {
             draw_rect stage_min_x, stage_min_y, UI_sidebar_width, stage_size_y, 0, "#423C4F";
         } else {
             draw_rect stage_min_x, stage_min_y, UI_sidebar_width, stage_size_y, 0, THEME_COL_BG;
@@ -85,16 +85,15 @@ on "sys.render_UI" {
         
         UI_check_touching_mouse stage_min_x, stage_max_y, UI_sidebar_width, stage_size_y, "side bar", "";
 
-        render_side_bar stage_min_x+4, stage_max_y-TOP_BAR_HEIGHT, UI_sidebar_width-8, stage_size_y-TOP_BAR_HEIGHT; # scroll bar might be needed
+        render_side_bar stage_min_x+4, stage_max_y-TOP_BAR_HEIGHT, UI_sidebar_width-8, stage_size_y-TOP_BAR_HEIGHT;
 
         # tabs
         draw_rect stage_min_x, stage_max_y-TOP_BAR_HEIGHT, UI_sidebar_width, TOP_BAR_HEIGHT, 0, "#271D33";
-        # custom implementation for buttons is fine
         tab_offset = stage_min_x;
         tab_button tab_offset, 34, "I/O", "menu.io";
         tab_button tab_offset, 37, "Gen", "menu.gen";
         tab_button tab_offset, 31, "FX", "menu.fx";
-        #tab_button tab_offset, 42, "Draw", "menu.draw";
+        tab_button tab_offset, 58, "Settings", "menu.settings";
 
         # TODO note in top bar
     }
@@ -299,7 +298,7 @@ proc tab_button x, width, text, hover_id {
         }
         set_pen_color "#ffffff";
     }
-    plainText $x+10, (stage_max_y-TOP_BAR_HEIGHT)+6, 1, $text;
+    plainText $x+9, (stage_max_y-TOP_BAR_HEIGHT)+6, 1, $text;
     tab_offset += $width;
 }
 
@@ -328,10 +327,6 @@ proc render_top_bar x, y {
     top_bar_button "zoom out", "zoom out", TOP_BAR_OFFSET(8), $y-10, false;
     top_bar_button "zoom fit", "zoom fit", TOP_BAR_OFFSET(9), $y-10, false;
     top_bar_button "zoom in", "zoom in", TOP_BAR_OFFSET(10), $y-10, false;
-
-    # right-aligned settings cog
-    top_bar_button "settings", "settings", stage_max_x-30, $y-10, false;
-    top_bar_button "info", "info", stage_max_x-10, $y-10, false;
 }
 
 # custom implementation, not general-purpose
@@ -685,8 +680,10 @@ on "stage clicked" {
             # check for button behvaviour type
             if (UI_data[clicked_element+3] == "set_page") {
                 UI_current_panel = UI_data[clicked_element+4];
+
             } elif (UI_data[clicked_element+3] == "broadcast") {
-                broadcast UI_data[clicked_element+2]; # the button id is broadcasted
+                broadcast UI_data[clicked_element+4];
+
             } elif (UI_data[clicked_element+3] == "command") {
                 cmd_string = UI_data[clicked_element+4];
                 broadcast "run command";
@@ -784,14 +781,6 @@ on "stage clicked" {
             broadcast "zoom out";
         } elif (clicked_element == "zoom fit") {
             broadcast "zoom extents";
-        } elif (clicked_element == "settings") {
-            UI_current_panel = "project.settings";
-            if (UI_sidebar_width < 8) {
-                UI_sidebar_width = 160;
-                require_viewport_refresh = true;
-            }
-        } elif (clicked_element == "info") {
-            UI_current_panel = "project.info";
         }
     }
 }
