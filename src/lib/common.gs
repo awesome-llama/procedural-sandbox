@@ -332,7 +332,6 @@ func RGB_num_to_hex_code(col) {
 
 # print a message to the project_messages list
 proc print text, duration {
-    # to be displayed with a text engine
     add $text to project_messages;
     if $duration == "" {
         add 5 to project_messages;
@@ -341,6 +340,20 @@ proc print text, duration {
     }
 }
 
+
+# print a message to the project_messages list, only if the previous message is different
+proc print_no_duplicates text, duration {
+    if (project_messages[length project_messages - 1] == $text) {
+        project_messages[length project_messages] = $duration;
+    } else {
+        add $text to project_messages;
+        if $duration == "" {
+            add 5 to project_messages;
+        } else {
+            add $duration to project_messages;
+        }
+    }
+}
 
 
 

@@ -384,48 +384,102 @@ on "gen.city.run" {
     setting_from_id "gen.city.size_y";
     setting_from_id "gen.city.size_z";
     setting_from_id "gen.city.bridges";
-    setting_from_id "gen.city.ground_col";
+    #setting_from_id "gen.city.ground_col";
     setting_from_id "gen.city.glow";
-    generate_city UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6];
+    generate_city UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5];
 }
-proc generate_city size_x, size_y, size_z, bridges, ground_col, glow {
-    reset_generator $size_x, $size_y, $size_z;
+proc generate_city size_x, size_y, size_z, bridges, glow {
+    # template 1: pavement with dot
+    reset_generator 2, 2, 1;
+    set_depositor_from_sRGB_value 0.6;
+    draw_base_layer;
+    set_depositor_from_sRGB_value 0.56;
+    set_voxel 0, 0, 0;
+    add_canvas_as_template;
 
-    set_depositor_from_number $ground_col;
+    # template 2: skyscraper
+    clear_canvas 2, 2, 2;
+    set_depositor_from_sRGB_value 0.45;
+    draw_base_layer;
+    set_depositor_from_sRGB_value 0.4;
+    draw_cuboid_corner_size 0, 0, 1, 2, 2, 1;
+    set_depositor_from_sRGB 0.4, 0.4, 0.41;
+    set_voxel 0, 0, 0;
+    set_voxel 1, 1, 0;
+    set_depositor_from_sRGB 0.4, 0.4, 0.43;
+    set_voxel 0, 0, 1;
+    set_voxel 1, 1, 1;
+    add_canvas_as_template;
+
+    # template 3: skyscraper sandwich
+    clear_canvas 1, 1, 2;
+    set_depositor_from_sRGB_value 0.65;
+    set_voxel 0, 0, 0;
+    set_depositor_from_sRGB 0.6, 0.6, 0.64;
+    set_voxel 0, 0, 1;
+    add_canvas_as_template;
+
+    # template 4: dither
+    clear_canvas 2, 2, 2;
+    set_depositor_from_sRGB_value 0.62;
+    draw_cuboid_corner_size 0, 0, 0, 2, 2, 2;
+    set_depositor_from_sRGB_value 0.52;
+    set_voxel 0, 0, 0;
+    set_voxel 1, 1, 0;
+    set_voxel 1, 0, 1;
+    set_voxel 0, 1, 1;
+    add_canvas_as_template;
+
+    ###
+
+    clear_canvas $size_x, $size_y, $size_z;
+    local placement_fac = (canvas_size_x * canvas_size_y) * 1;
+
+
+    # pavement
+    set_depositor_from_sRGB_value 0.7;
     draw_base_layer;
 
-    local placement_fac = 1 * (canvas_size_x * canvas_size_y / 16384);
-
-    repeat (300*placement_fac) { # cuboids
-        brightness = random(0.5, 0.9);
-        set_depositor_from_sRGB brightness, brightness, brightness;
-
-        local c1x = RANDOM_X();
-        local c1y = RANDOM_Y();
-        local cube_x = random(2,16);
-        local cube_y = random(2,16);
-        local cube_z = random(1, 15);
-
-        draw_cuboid_corner_size c1x, c1y, 0, cube_x, cube_y, cube_z-1;
-        draw_cuboid_corner_size c1x+1, c1y+1, 0, cube_x-2, cube_y-2, cube_z;
+    # patches of dot pavement
+    set_depositor_to_template 1, random(0,1), random(0,1), 0;
+    repeat (placement_fac * 0.005) {
+        draw_cuboid_corner_size RANDOM_X(), RANDOM_Y(), 0, random(2,16), random(2,16), 1;
     }
-    repeat ($glow * $bridges * 90*placement_fac) { # pipes, low
-        set_depositor_from_sRGB random(0.4, 0.9), random(0.4, 0.9), random(0.4, 0.9);
+    
+
+    # pavement lights
+    repeat (placement_fac * 0.01 * $glow) {
+        set_depositor_from_HSV RANDOM_0_1(), RANDOM_0_1(), 1;
         depositor_voxel.emission = 1;
-        random_walk_taxicab RANDOM_X(), RANDOM_Y(), random(1, 5), 16, 20;
+        set_voxel RANDOM_X(), RANDOM_Y(), 0;
     }
-    repeat ($bridges * 90*placement_fac) { # pipes, grey
-        brightness = random(0.5, 0.7);
-        set_depositor_from_sRGB brightness+random(-0.1, 0.1), brightness+random(-0.1, 0.1), brightness+random(-0.1, 0.1);
-        random_walk_taxicab RANDOM_X(), RANDOM_Y(), random(1, 12), 16, 20;
+
+
+    # street cuboids
+    repeat (placement_fac * 0.015) {
+        set_depositor_from_sRGB_value random(0.6, 0.9);
+        draw_cuboid_corner_size RANDOM_X(), RANDOM_Y(), 0, random(2,12), random(2,12), random(3,6);
     }
-    repeat ($bridges * 10*placement_fac) { # pipes multicolor
+
+
+    # low sky bridges
+    repeat (placement_fac * 0.01 * $bridges) {
         set_depositor_from_sRGB random(0.4, 0.9), random(0.4, 0.9), random(0.4, 0.9);
-        random_walk_taxicab RANDOM_X(), RANDOM_Y(), random(1, 16), 16, 20;
+        depositor_voxel.emission = PROBABILITY(0.2);
+        depositor_replace = false;
+        random_walk_taxicab RANDOM_X(), RANDOM_Y(), random(3,5), random(1,3), random(10,20);
     }
-    repeat ($bridges * 10*placement_fac) { # high pipes
-        set_depositor_from_sRGB random(0.4, 0.8), random(0.4, 0.8), random(0.4, 0.8);
-        random_walk_taxicab RANDOM_X(), RANDOM_Y(), random(1, 16), 16, 20;
+
+    # skyscrapers
+    repeat (placement_fac * 0.008) {
+        if (PROBABILITY(0.3)) {
+            set_depositor_from_sRGB_value random(0.6, 0.9);
+        } else {
+            set_depositor_to_template random(1,4), random(0,1), random(0,1), 0; # use any template
+        }
+        
+        iz = random(3,6);
+        draw_cuboid_corner_size RANDOM_X(), RANDOM_Y(), iz, random(2,14), random(2,14), random(3, canvas_size_z-iz);
     }
     
     generator_finished;
@@ -479,7 +533,7 @@ proc generate_control_panel cells_x, cells_y, cell_size, repetition_fac, panel_c
     set_voxel 0, 1, 0;
     add_canvas_as_template;
 
-
+    ###
 
     local cell_size = MAX(4, $cell_size);
     
@@ -1773,14 +1827,8 @@ proc reset_generator size_x, size_y, size_z {
     delete_all_templates;
     reset_depositor;
     clear_canvas $size_x, $size_y, $size_z;
-
-    if ((canvas_size_x * canvas_size_y * canvas_size_z) != length canvas) {
-        error "canvas does not contain all requested voxels";
-        if (length canvas == 200000) {
-            print "Error: Scratch's 200k list limit has been reached, canvas is malformed", 6;
-        }
-    }
 }
+
 
 # Clear the canvas to an empty state.
 proc clear_canvas size_x, size_y, size_z {
@@ -1790,6 +1838,13 @@ proc clear_canvas size_x, size_y, size_z {
     delete canvas;
     repeat (canvas_size_x * canvas_size_y * canvas_size_z) {
         add VOXEL_NONE to canvas;
+    }
+
+    if ((canvas_size_x * canvas_size_y * canvas_size_z) != length canvas) {
+        error "canvas does not contain all requested voxels";
+        if (length canvas == 200000) {
+            print_no_duplicates "Error: Scratch's 200k list limit has been reached, canvas is malformed", 6;
+        }
     }
 }
 
