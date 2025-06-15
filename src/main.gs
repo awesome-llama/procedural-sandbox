@@ -97,7 +97,7 @@ proc move_camera dx, dy {
 
 onkey "p" {
     # TODO remove
-    broadcast "gen.test.run"; # debug
+    #broadcast "gen.test.run"; # debug
 }
 
 

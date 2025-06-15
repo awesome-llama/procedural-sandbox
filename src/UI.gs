@@ -518,7 +518,12 @@ proc render_modular_element index, x, y, width, panel_id {
 
             # draw the fill indicator
             if (UI_data[$index+3] != UI_data[$index+5]) {
-                draw_rect $x+1, $y-(LINEHIGHT-2), round(($width-2)*UNLERP(UI_data[$index+5],UI_data[$index+6],UI_data[$index+3])), LINEHIGHT-4, 0, "#505050"; 
+                if (UI_data[$index+3] < UI_data[$index+6]) {
+                    draw_rect $x+1, $y-(LINEHIGHT-2), round(($width-2)*UNLERP(UI_data[$index+5],UI_data[$index+6],UI_data[$index+3])), LINEHIGHT-4, 0, "#505050"; 
+                } else {
+                    draw_rect $x+1, $y-(LINEHIGHT-2), round(($width-2)), LINEHIGHT-4, 0, "#505050"; 
+                }
+                
             }
 
             # text

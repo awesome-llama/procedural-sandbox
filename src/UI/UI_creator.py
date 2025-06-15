@@ -476,14 +476,14 @@ panels['gen.erosion'] = Container([
         Value.canvas_size('Size X', 'gen.erosion.size_x', 64),
         Value.canvas_size('Size Y', 'gen.erosion.size_y', 64),
         Value.canvas_size('Size Z', 'gen.erosion.size_z', 16, 64),
-        Value('Scale', 'gen.erosion.scale', 16, 1, 256, 0, 4096, snap_frac=1),
+        Value('Noise scale', 'gen.erosion.scale', 16, 1, 256, 0, 4096, snap_frac=1),
         Color('Ground color', 'gen.erosion.ground_col', '#AA997C'),
         Button('Generate', 'gen.erosion.run.generate'),
     ]),
     Expander('Erode', '', False, [
-        Value('Steps', 'gen.erosion.steps', 1, 0, 1000, 0, snap_frac=10),
-        Value('Stream strength', 'gen.erosion.strength', 0.1, 0, 1, 0, snap_frac=100),
-        Value('Stream capacity', 'gen.erosion.capacity', 5, 0, 10, 0, snap_frac=10),
+        Value('Steps', 'gen.erosion.steps', 0.5, 0, 1, 0, 100, snap_frac=1000, shape='full'),
+        Value('Stream capacity', 'gen.erosion.capacity', 5, 0, 10, 0, snap_frac=1000),
+        Value.fraction('Stream strength', 'gen.erosion.strength', 0.1),
         Button('Run', 'gen.erosion.run.erode'),
     ]),
     Expander('Finalise', '', False, [

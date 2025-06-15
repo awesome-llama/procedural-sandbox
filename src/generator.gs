@@ -6,7 +6,7 @@ hide;
 # The following lists are named by purpose and can be used by any generator procedure.
 list custom_graph;
 list custom_grid;
-list eca_lut;
+list custom_lut;
 list temp_canvas_mono; # temporary single channel canvas
 list voxel temp_canvas; # temporary voxel canvas
 list stack;
@@ -20,7 +20,7 @@ on "initalise" {
 on "sys.hard_reset" {
     delete custom_graph;
     delete custom_grid;
-    delete eca_lut;
+    delete custom_lut;
     delete temp_canvas_mono;
     delete temp_canvas;
     delete stack;
@@ -713,10 +713,10 @@ proc generate_elementary_cellular_automata size_x, size_y, extrude_z, rule, rand
     set_depositor_from_number $state_1_col;
 
     # generate the lookup table (convert rule to binary)
-    delete eca_lut;
+    delete custom_lut;
     local remaining = floor($rule);
     repeat 8 {
-        add 1-((remaining % 2)<1) to eca_lut;
+        add 1-((remaining % 2)<1) to custom_lut;
         remaining /= 2;
     }
 
@@ -748,7 +748,7 @@ proc generate_elementary_cellular_automata size_x, size_y, extrude_z, rule, rand
         ix = 0;
         repeat canvas_size_x {
             # get the adj
-            if eca_lut[1 + \
+            if custom_lut[1 + \
             custom_grid[iy*canvas_size_x + (ix-1)%canvas_size_x + 1]*4 + \
             custom_grid[iy*canvas_size_x + ix + 1]*2 + \
             custom_grid[iy*canvas_size_x + (ix+1)%canvas_size_x + 1]] {
@@ -764,7 +764,7 @@ proc generate_elementary_cellular_automata size_x, size_y, extrude_z, rule, rand
     }
 
     delete custom_grid;
-    delete eca_lut;
+    delete custom_lut;
     generator_finished;
 }
 
@@ -792,26 +792,225 @@ proc generate_terrain size_x, size_y, size_z, scale, color {
     add_canvas_as_template; # template 1
 
     clear_canvas $size_x, $size_y, $size_z;
-    generate_value_noise $size_x, $size_y, $scale, 8, false; # doesn't write to the canvas
+    generate_value_noise canvas_size_x, canvas_size_y, $scale, 8, false; # doesn't write to the canvas
+
+    # remap noise
+    i = 1;
+    repeat (canvas_size_x * canvas_size_y) {
+        temp_canvas_mono[i] = (((temp_canvas_mono[i] * 1.6) - 0.3) * canvas_size_z);
+        if (temp_canvas_mono[i] < 1) {
+            temp_canvas_mono[i] = 1;
+        }
+        i++;
+    }
 
     # convert height into rock formation
-    set_depositor_to_template 1, 0, 0, 0; 
+    set_depositor_to_template 1, 0, 0, 0;
+    temp_canvas_mono_to_canvas;
+    delete temp_canvas_mono;
+
+    generator_finished;
+}
+
+proc temp_canvas_mono_to_canvas {
     i = 1;
     iy = 0;
-    repeat canvas_size_y {
+    repeat (canvas_size_y) {
         ix = 0;
-        repeat canvas_size_x {
-            draw_column ix, iy, 0, (temp_canvas_mono[i] * canvas_size_z);
+        repeat (canvas_size_x) {
+            draw_column ix, iy, 0, temp_canvas_mono[i];
             ix++;
             i++;
         }
         iy++;
     }
-    delete temp_canvas_mono;
+}
 
-    glbfx_smudge 0.5, 1;
+
+on "gen.erosion.run.erode" {
+    delete UI_return;
+    setting_from_id "gen.erosion.steps";
+    setting_from_id "gen.erosion.capacity";
+    setting_from_id "gen.erosion.strength";
+    erode UI_return[1], UI_return[2], UI_return[3];
+}
+proc erode steps, capacity, strength {
+    create_erosion_lut 2;
+
+    # convert canvas into temp_canvas_mono representing heights
+    # it was originally planned to move around real voxels but that's too expensive, even for turbowarp
+    delete temp_canvas_mono;
+    layer_size = (canvas_size_x * canvas_size_y);
+    i = 1;
+    repeat layer_size {
+        iz = canvas_size_z-1;
+        until ((iz < 0) or (canvas[i + (iz * layer_size)].opacity > 0)) {
+            iz += -1;
+        }
+        add iz+1 to temp_canvas_mono;
+        i++;
+    }
+
+    # create flows
+    repeat ((canvas_size_x * canvas_size_y) * $steps) {
+        erode_flow RANDOM_X(), RANDOM_Y(), $capacity, $capacity*$strength;
+    }
+
+    # update the terrain by removing air where necessary and adding voxels
+
+    i = 1;
+    iy = 0;
+    repeat (canvas_size_y) {
+        ix = 0;
+        repeat (canvas_size_x) {
+            set_depositor_to_air;
+            iz = canvas_size_z-1;
+            repeat (canvas_size_z-temp_canvas_mono[i]) {
+                set_voxel ix, iy, iz;
+                iz += -1;
+            }
+            # now search down until solid is found
+            #repeat (temp_canvas_mono[i]) {
+            #    set_voxel ix, iy, iz;
+            #    iz += -1;
+            #}
+
+            #draw_column ix, iy, 0, temp_canvas_mono[i];
+            ix++;
+            i++;
+        }
+        iy++;
+    }
+    
+    #delete temp_canvas_mono;
 
     generator_finished;
+}
+
+
+proc create_erosion_lut radius {
+    delete custom_lut;
+
+    # create grid
+    local radius = ceil($radius);
+    local sum = 0;
+    iy = -radius;
+    repeat (1+radius*2) {
+        ix = -radius;
+        repeat (1+radius*2) {
+            local val = $radius - VEC2_LEN(ix, iy);
+            if (val > 0) {
+                add ix to custom_lut;
+                add iy to custom_lut;
+                add val to custom_lut;
+                sum += val;
+            }
+            ix++;
+        }
+        iy++;
+    }
+
+    # normalise to 1
+    i = 3;
+    repeat (length custom_lut / 3) {
+        custom_lut[i] /= sum;
+        i += 3;
+    }
+}
+
+
+# heightmap of the topmost non-transparent voxel, normalised to greyscale 0-1
+%define FLOW_KERNEL_X(DX,DY,WX) \
+agent_dx += WX*(temp_canvas_mono[INDEX_FROM_2D_INTS(agent_x+(DX), agent_y, canvas_size_x, canvas_size_y)] - h);
+
+%define FLOW_KERNEL_Y(DX,DY,WY) \
+agent_dy += WY*(temp_canvas_mono[INDEX_FROM_2D_INTS(agent_x, agent_y+(DY), canvas_size_x, canvas_size_y)] - h);
+
+%define FLOW_KERNEL_XY(DX,DY,WX,WY) \
+local kernel_h = (temp_canvas_mono[INDEX_FROM_2D_INTS(agent_x+(DX), agent_y+(DY), canvas_size_x, canvas_size_y)] - h);\
+agent_dx += WX*kernel_h;\
+agent_dy += WY*kernel_h;\
+
+%define W_EDGE 0.5
+%define W_CORNER 0.25
+
+
+
+proc erode_flow x, y, capacity, strength {
+    agent_x = $x;
+    agent_y = $y;
+    local current_capacity = $capacity;
+    
+    local speed = 0;
+    local evaporation_rate = $strength;
+    local sediment = 0;
+    local capacity_fac = 0;
+    local capacity_fac_change = 5 / (current_capacity / evaporation_rate);
+    repeat (current_capacity // evaporation_rate) {
+        #log agent_x & "," & agent_y;
+        agent_i = INDEX_FROM_2D_NOWRAP_INTS(agent_x, agent_y, canvas_size_x);
+        
+        # 3D terrain generator method
+        _terr_change sediment - (capacity_fac * current_capacity);
+        sediment += (capacity_fac * current_capacity) - sediment;
+
+        current_capacity -= evaporation_rate;
+
+        #log sediment & "/" & current_capacity;
+
+        # pick a way to move (but only move at the end after erosion, so erosion doesn't affect direction)
+        local agent_dx = 0;
+        local agent_dy = 0;
+        local h = temp_canvas_mono[agent_i];
+
+        # x
+        FLOW_KERNEL_X(-1,0,W_EDGE)
+        FLOW_KERNEL_X(1,0,-W_EDGE)
+        
+        # y
+        FLOW_KERNEL_Y(0,-1,W_EDGE)
+        FLOW_KERNEL_Y(0,1,-W_EDGE)
+
+        # corners
+        FLOW_KERNEL_XY(1,1,-W_CORNER,-W_CORNER)
+        FLOW_KERNEL_XY(-1,1,W_CORNER,-W_CORNER)
+        FLOW_KERNEL_XY(1,-1,-W_CORNER,W_CORNER)
+        FLOW_KERNEL_XY(-1,-1,W_CORNER,W_CORNER)
+
+        # move
+        speed = VEC2_LEN(agent_dx, agent_dy);
+        if (speed < 0.1) {
+            _terr_change sediment; # might be unnecessary
+            stop_this_script;
+        }
+
+        # find new location
+        local new_x = (agent_x + ((agent_dx>0)*2-1)) % canvas_size_x;
+        local new_y = (agent_y + ((agent_dy>0)*2-1)) % canvas_size_y;
+
+        agent_x = new_x;
+        agent_y = new_y;
+
+        capacity_fac += capacity_fac_change;
+        if (capacity_fac > 1) {
+            capacity_fac = 1;
+        }
+    }
+    _terr_change -sediment;
+}
+
+
+proc _terr_change amount {
+    # can be optimised
+    local terr_change_i = 1;
+    repeat length custom_lut / 3 {
+        local deposit_i = INDEX_FROM_2D_INTS(agent_x+custom_lut[terr_change_i], agent_y+custom_lut[terr_change_i+1], canvas_size_x, canvas_size_y);
+        temp_canvas_mono[deposit_i] += $amount * custom_lut[terr_change_i+2];
+        if temp_canvas_mono[deposit_i] < 0 {
+            temp_canvas_mono[deposit_i] = 0;
+        }
+        terr_change_i += 3;
+    }
 }
 
 
@@ -830,9 +1029,40 @@ proc finalise_terrain water_level_fac, water_col, grass_fac, grass_col, tree_fac
     set_depositor_from_number $water_col;
     depositor_replace = false;
     draw_cuboid_corner_size 0, 0, 0, canvas_size_x, canvas_size_y, canvas_size_z * $water_level_fac;
+
+    # add trees (must not overlap)
+    iy = 0;
+    repeat (canvas_size_y) {
+        ix = 0;
+        repeat (canvas_size_x) {
+            if (PROBABILITY($tree_fac)) {
+                _plant_tree ix, iy, (canvas_size_z * $water_level_fac) + 1;
+            }
+            ix++;
+        }
+        iy++;
+    }
+
     generator_finished;
 }
-
+proc _plant_tree x, y, min_elevation {
+    iz = $min_elevation;
+    i = INDEX_FROM_3D_CANVAS($x, $y, iz, canvas_size_x, canvas_size_y);
+    layer_size = (canvas_size_x * canvas_size_y);
+    # find first non-air voxel
+    repeat (canvas_size_z) {
+        if (canvas[i].opacity == 0 and canvas[i-layer_size].opacity > 0) {
+            # plant the tree here
+            set_depositor_from_HSV 0.25, 0.5, 0.5;
+            randomise_depositor_by_HSV 0.05, 0.05, 0.05;
+            draw_column $x, $y, iz, random(1,random(2,4));
+            
+            stop_this_script;
+        }
+        i += layer_size;
+        iz++;
+    }
+}
 
 
 on "gen.extruded_grid.run" {
@@ -1225,7 +1455,7 @@ proc generate_value_noise size_x, size_y, scale, octaves, write_to_canvas {
         i++;
     }
 
-    # write the to the real canvas
+    # write the to the real canvas as 1 layer of voxels
     if $write_to_canvas {
         clear_canvas $size_x, $size_y, 1;
         
@@ -1979,6 +2209,7 @@ proc glbfx_color_noise min, max {
 proc glbfx_revolve dist_offset {
     # copy the line of voxels
     delete temp_canvas;
+    layer_size = (canvas_size_x * canvas_size_y);
     local row_index = 1;
     repeat (canvas_size_z) {
         ix = 0;
@@ -1986,7 +2217,7 @@ proc glbfx_revolve dist_offset {
             add canvas[row_index + ix] to temp_canvas;
             ix++;
         }
-        row_index += (canvas_size_x * canvas_size_y);
+        row_index += layer_size;
     }
     local temp_width = canvas_size_x;
 
@@ -2034,12 +2265,12 @@ on "fx.mirror.mirror_x" {
 # copy one side to the other
 proc glbfx_mirror_x keep_lower {
     # no additional list required
-
+    layer_size = (canvas_size_x * canvas_size_y);
     iz = 0;
     repeat canvas_size_z {
         iy = 0;
         repeat canvas_size_y {
-            local row_index = ((canvas_size_x * canvas_size_y) * iz) + (canvas_size_x * iy);
+            local row_index = (layer_size * iz) + (canvas_size_x * iy);
             ix = 0;
             if $keep_lower {
                 repeat canvas_size_x//2 {
