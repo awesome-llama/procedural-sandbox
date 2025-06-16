@@ -383,17 +383,17 @@ on "gen.city.run" {
     setting_from_id "gen.city.size_x";
     setting_from_id "gen.city.size_y";
     setting_from_id "gen.city.size_z";
+    setting_from_id "gen.city.buildings";
     setting_from_id "gen.city.bridges";
-    #setting_from_id "gen.city.ground_col";
     setting_from_id "gen.city.glow";
-    generate_city UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5];
+    generate_city UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6];
 }
-proc generate_city size_x, size_y, size_z, bridges, glow {
+proc generate_city size_x, size_y, size_z, buildings, bridges, glow {
     # template 1: pavement with dot
     reset_generator 2, 2, 1;
-    set_depositor_from_sRGB_value 0.6;
+    set_depositor_from_sRGB_value random(0.5, 0.6);
     draw_base_layer;
-    set_depositor_from_sRGB_value 0.56;
+    set_depositor_from_sRGB_value random(0.5, 0.6);
     set_voxel 0, 0, 0;
     add_canvas_as_template;
 
@@ -430,6 +430,15 @@ proc generate_city size_x, size_y, size_z, bridges, glow {
     set_voxel 0, 1, 1;
     add_canvas_as_template;
 
+    # template 5: dither with air
+    clear_canvas 2, 2, 2;
+    set_depositor_from_sRGB_value random(0.4, 0.6);
+    set_voxel 0, 0, 0;
+    set_voxel 1, 1, 0;
+    set_voxel 1, 0, 1;
+    set_voxel 0, 1, 1;
+    add_canvas_as_template;
+
     ###
 
     clear_canvas $size_x, $size_y, $size_z;
@@ -445,41 +454,120 @@ proc generate_city size_x, size_y, size_z, bridges, glow {
     repeat (placement_fac * 0.005) {
         draw_cuboid_corner_size RANDOM_X(), RANDOM_Y(), 0, random(2,16), random(2,16), 1;
     }
-    
 
+    # dithered screens
+    repeat (placement_fac * 0.005 * $buildings) {
+        set_depositor_to_template 5, random(1,4), random(0,1), random(0,1);
+
+        if (PROBABILITY(0.33)) {
+            # horizontal
+            draw_cuboid_corner_size RANDOM_X(), RANDOM_Y(), random(1,5), random(2,8), random(2,8), 1;
+        } else {
+            if (PROBABILITY(0.5)) {
+                # x
+                draw_cuboid_corner_size RANDOM_X(), RANDOM_Y(), random(1,3), random(2,8), 1, random(2,5);
+            } else {
+                # y
+                draw_cuboid_corner_size RANDOM_X(), RANDOM_Y(), random(1,3), 1, random(2,8), random(2,5);
+            }
+        }
+    }
+    
     # pavement lights
-    repeat (placement_fac * 0.01 * $glow) {
+    repeat (placement_fac * 0.01 * $buildings * $glow) {
+        local c1x = RANDOM_X();
+        local c1y = RANDOM_X();
+        set_depositor_from_sRGB_value 0.4;
+        set_voxel c1x, c1y, 1;
+        set_voxel c1x, c1y, 4;
         set_depositor_from_HSV RANDOM_0_1(), RANDOM_0_1(), 1;
         depositor_voxel.emission = 1;
-        set_voxel RANDOM_X(), RANDOM_Y(), 0;
+        set_voxel c1x, c1y, 2;
+        set_voxel c1x, c1y, 3;
     }
-
 
     # street cuboids
-    repeat (placement_fac * 0.015) {
-        set_depositor_from_sRGB_value random(0.6, 0.9);
-        draw_cuboid_corner_size RANDOM_X(), RANDOM_Y(), 0, random(2,12), random(2,12), random(3,6);
+    repeat (placement_fac * 0.015 * $buildings) {
+        local c1x = RANDOM_X();
+        local c1y = RANDOM_X();
+        local dx = random(2,12);
+        local dy = random(2,12);
+
+        set_depositor_from_sRGB_value random(0.2, 0.9);
+        draw_cuboid_corner_size c1x, c1y, 0, dx, dy, random(4,6);
+
+        if (PROBABILITY(0.2 * $glow)) {
+            set_depositor_from_HSV RANDOM_0_1(), RANDOM_0_1(), 1;
+            depositor_voxel.emission = 1;
+            draw_cuboid_corner_size c1x, c1y, random(1,2), dx, dy, 1;
+        }
     }
 
-
     # low sky bridges
-    repeat (placement_fac * 0.01 * $bridges) {
-        set_depositor_from_sRGB random(0.4, 0.9), random(0.4, 0.9), random(0.4, 0.9);
-        depositor_voxel.emission = PROBABILITY(0.2);
+    repeat (placement_fac * 0.003 * $bridges) {
+        set_depositor_from_HSV RANDOM_0_1(), random(0.0, 0.4), random(0.2, 0.7);
         depositor_replace = false;
-        random_walk_taxicab RANDOM_X(), RANDOM_Y(), random(3,5), random(1,3), random(10,20);
+        random_walk_any RANDOM_X(), RANDOM_Y(), random(3,5), random(0,7)*45, random(2,4), random(5,32), 45;
     }
 
     # skyscrapers
-    repeat (placement_fac * 0.008) {
+    repeat (placement_fac * 0.008 * $buildings) {
+        local c1x = RANDOM_X();
+        local c1y = RANDOM_X();
+        local c1z = random(3,6);
+        local dx = random(2,12);
+        local dy = random(2,12);
+        local dz = random(3, canvas_size_z-c1z-2);
+
+        # lobby
+        if (PROBABILITY(0.2 * $glow)) {
+            set_depositor_from_HSV RANDOM_0_1(), RANDOM_0_1(), 1;
+            depositor_voxel.emission = 1;
+        } else {
+            set_depositor_from_sRGB_value random(0.2, 0.9);
+        }
+        if (dx-4 < 1 or dy-4 < 1) {
+            # same size as main structure because it's thin
+            draw_cuboid_corner_size c1x, c1y, 0, dx, dy, c1z;
+        } else {
+            draw_cuboid_corner_size c1x+2, c1y+2, 0, dx-4, dy-4, c1z;
+        }
+        
+        # columns
+        if PROBABILITY(0.5) {
+            set_depositor_from_sRGB_value random(0.2, 0.9);
+            draw_column c1x, c1y, 0, c1z;
+            draw_column c1x+dx-1, c1y, 0, c1z;
+            draw_column c1x, c1y+dy-1, 0, c1z;
+            draw_column c1x+dx-1, c1y+dy-1, 0, c1z;
+        }
+
+        # main
         if (PROBABILITY(0.3)) {
-            set_depositor_from_sRGB_value random(0.6, 0.9);
+            set_depositor_from_sRGB_value random(0.2, 0.9);
         } else {
             set_depositor_to_template random(1,4), random(0,1), random(0,1), 0; # use any template
         }
-        
-        iz = random(3,6);
-        draw_cuboid_corner_size RANDOM_X(), RANDOM_Y(), iz, random(2,14), random(2,14), random(3, canvas_size_z-iz);
+        draw_cuboid_corner_size c1x, c1y, c1z, dx, dy, dz;
+
+        # roof
+        if (PROBABILITY(0.5)) {
+            # indent
+            set_depositor_to_air;
+            draw_cuboid_corner_size c1x+1, c1y+1, c1z+dz-1, dx-2, dy-2, 2;
+
+        } else {
+            set_depositor_from_sRGB_value random(0.2, 0.6);
+            local offset = random(0, 1);
+            draw_cuboid_corner_size c1x+offset, c1y+offset, c1z+dz, dx-offset*2, dy-offset*2, 1;
+        }
+
+        # glow band
+        if (PROBABILITY(0.1 * $glow)) {
+            set_depositor_from_HSV RANDOM_0_1(), RANDOM_0_1(), 1;
+            depositor_voxel.emission = 1;
+            draw_cuboid_corner_size c1x, c1y, random(c1z, c1z+dz-3), dx, dy, 1;
+        }
     }
     
     generator_finished;

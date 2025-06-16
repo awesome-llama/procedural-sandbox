@@ -419,12 +419,12 @@ panels['gen.city'] = Container([
     Expander('Canvas', '', True, [
         Value.canvas_size('Size X', 'gen.city.size_x', 64),
         Value.canvas_size('Size Y', 'gen.city.size_y', 64),
-        Value.canvas_size('Size Z', 'gen.city.size_z', 16, 64),
+        Value('Size Z', 'gen.city.size_z', 16, 8, 32, 4, 256, snap_frac=1),
     ]),
-    Expander('Formation', '', True, [
+    Expander('Form', '', True, [
+        Value('Buildings', 'gen.city.buildings', 1, 0, 2, 0, 1000),
         Value('Sky bridges', 'gen.city.bridges', 1, 0, 2, 0, 1000),
-        Color('Ground color', 'gen.city.ground_col', '#aaaaaa'),
-        Value.fraction('Glow', 'gen.city.glow', 0.5),
+        Value('Glow', 'gen.city.glow', 1, 0, 2, 0, 1000),
     ]),
     Button('Generate', 'gen.city.run'),
 ])
@@ -781,7 +781,7 @@ panels['settings.pathtracer'] = Container([
     Label.title('Pathtracer'),
     Separator(),
     TextBlock('Applies to the "pathtraced" mode only.'),
-    Expander('Iterations', '', True, [
+    Expander('Iterations', '', False, [
         Value('Max. samples', 'settings.max_samples', 256, 1, 1024, 1, 16777216, snap_frac=1),
         TextBlock('Total number of rays'),
         Separator(),
@@ -797,6 +797,13 @@ panels['settings.pathtracer'] = Container([
         Value('Emission intensity', 'settings.emission_intensity', 1, 0, 2, 0, 100, snap_frac=100),
     ]),
     Expander('Sky', '', False, [
+        Expander('Presets', '', False, [
+            Button.run_command('Off', 'settings.sky_preset1', 'element settings.sky_intensity 3 0;element settings.sun_intensity 3 0;broadcast settings.apply;'),
+            Button.run_command('Dark', 'settings.sky_preset2', 'element settings.sky_intensity 3 0.2;element settings.sun_intensity 3 0;broadcast settings.apply;'),
+            Button.run_command('Default', 'settings.sky_preset3', 'element settings.sky_intensity 3 0.8;element settings.sun_intensity 3 2;broadcast settings.apply;'),
+            Button.run_command('Bright', 'settings.sky_preset4', 'element settings.sky_intensity 3 1;element settings.sun_intensity 3 10;broadcast settings.apply;'),
+        ]),
+        Separator(0),
         Value('Sky intensity', 'settings.sky_intensity', 0.8, 0, 2, 0, 100, snap_frac=100),
         Separator(),
         Value('Sun intensity', 'settings.sun_intensity', 2, 0, 4, 0, 100, snap_frac=100),
