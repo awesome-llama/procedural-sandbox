@@ -1724,6 +1724,610 @@ proc generate_test {
 
 
 ################################
+#          Language            #
+################################
+
+on "sys.hard_reset" {
+    delete instructions;
+    delete call_stack;
+    delete memory;
+    delete var_names;
+    delete var_addresses;
+    delete label_names;
+    delete label_addresses;
+    delete unresolved_jump_targets;
+}
+
+%define MEM1 memory[instructions[iptr+1]]
+%define MEM2 memory[instructions[iptr+2]]
+%define MEM3 memory[instructions[iptr+3]]
+%define MEM4 memory[instructions[iptr+4]]
+%define MEM5 memory[instructions[iptr+5]]
+
+list instructions; # machine code
+list call_stack; # used for call and return instructions in operation
+list memory; # stores variables at runtime
+
+list var_names; # lookup
+list var_addresses; # location in memory
+
+list label_names; # lookup
+list label_addresses; # location in instructions
+
+list unresolved_jump_targets; # instruction addresses that need a second pass to replace with label addresses
+
+list instruction_names = ["jump", "jump_if_true", "jump_if_false", "call", "return", "set", "increment", "decrement", "add", "subtract", "multiply", "divide", "modulo", "equal", "and", "or", "not", "less_than", "greater_than", "math", "math2", "math3", "special"];
+list instruction_args = ["L", "LV", "LV", "L", "", "AV", "A", "A", "AVV", "AVV", "AVV", "AVV", "AVV", "AVV", "AVV", "AVV", "AVV", "AVV", "AVV", "FAV", "FAVV", "FAVVV", "F"];
+
+on "lang.run" {
+    language_compile "set i 0; jump_if_true @end 0; set i \"yes\"; @end;";
+    if (compile_success) {
+        language_run;
+    }
+}
+
+
+# convert the text-based format into a list of numbers and variables
+proc language_compile script {
+
+    delete instructions;
+    delete memory;
+    delete var_names;
+    delete var_addresses;
+    delete label_names;
+    delete label_addresses;
+    delete unresolved_jump_targets;
+
+    compile_success = false;
+    input = $script & ";"; # guarantee it ends with a semicolon
+    substr = "";
+    i = 1;
+    until (i > length input) {
+        # first character at start of line
+
+        if (input[i] == "#") {
+            # comment, ignore and go to next semicolon
+            i++;
+            until (input[i] == ";") {
+                i++;
+            }
+
+        } elif (input[i] == " " or input[i] == ";") {
+            # ignore start padding or empty statement
+            i++;
+
+        } elif (input[i] == "@") {
+            # label, go to next semicolon, must be entirely alphanumeric
+            i++; # skip over @
+            _consume_name;
+
+            if (input[i] != ";") {
+                error "unexpected character, label must be terminated with a semicolon";
+                stop_this_script;
+            }
+            if (length substr == 0) {
+                error "label is empty";
+                stop_this_script;
+            }
+            if substr in label_names {
+                error "duplicate label: " & substr;
+                stop_this_script;
+            }
+
+            add substr to label_names;
+            add (length instructions + 1) to label_addresses;
+            # don't add anything to the instructions
+            substr = "";
+            
+        } elif (input[i] in "_0123456789abcdefghijklmnopqrstuvwxyz") {
+            # instruction
+            _consume_name;
+            if (not (input[i] in " ;")) {
+                error "unexpected character at end of name: " & input[i];
+                stop_this_script;
+            }
+            local ins_index = substr in instruction_names; # 1-indexed
+            if (ins_index == 0) {
+                error "unknown instruction: " & substr;
+                stop_this_script;
+            }
+            add (ins_index - 1) to instructions;
+            substr = "";
+
+            # now parse args
+            arg_index = 1;
+            until (input[i] == ";") {
+                if (input[i] == " ") {
+                    # ignore padding
+                    i++;
+                } elif (input[i] == "@") {
+                    # label as parameter
+                    if (instruction_args[ins_index][arg_index] != "L") {
+                        error "argument label expected in position " & arg_index & " of " & instruction_names[ins_index];
+                        stop_this_script;
+                    }
+
+                    i++; # skip over @
+                    _consume_name;
+                    if (length substr == 0) {
+                        error "label is empty";
+                        stop_this_script;
+                    }
+
+                    add substr to instructions; # will be replaced in a second pass, item will be used in lookup to replace with code address
+                    add (length instructions) to unresolved_jump_targets;
+                    substr = "";
+                    arg_index++;
+                
+                } elif (input[i] == "\"") {
+                    # string literal
+                    if (instruction_args[ins_index][arg_index] != "V") {
+                        error "argument label expected in position " & arg_index & " of " & instruction_names[ins_index];
+                        stop_this_script;
+                    }
+
+                    i++; # skip over first quote
+                    _consume_string;
+                    i++; # skip over last quote
+                    add substr to memory; # literal stored in memory
+                    add (length memory) to instructions; # address to memory
+                    substr = "";
+                    arg_index++;
+                
+                } elif (input[i] in "+-.0123456789") {
+                    # number literal
+                    if (instruction_args[ins_index][arg_index] != "V") {
+                        error "argument label expected in position " & arg_index & " of " & instruction_names[ins_index];
+                        stop_this_script;
+                    }
+
+                    _consume_number;
+                    add (substr + 0) to memory; # literal stored in memory
+                    add (length memory) to instructions; # address to memory
+                    substr = "";
+                    arg_index++;
+
+                } elif (input[i] in "_0123456789abcdefghijklmnopqrstuvwxyz") {
+                    # variable or field
+                    local arg_type = instruction_args[ins_index][arg_index]; # beware detection of empty string
+                    if (arg_type == "" or not (arg_type in "AVF")) {
+                        error "argument label expected in position " & arg_index & " of " & instruction_names[ins_index];
+                        stop_this_script;
+                    }
+
+                    _consume_name;
+                    
+                    if (instruction_args[ins_index][arg_index] == "F") {
+                        # is field, keep as-is
+                        # TODO convert to number depending on instruction (hard-code it)
+                        add substr to instructions;
+
+                    } else {
+                        # add var and use address to memory
+                        local var_index = substr in var_names;
+                        if (var_index == 0) {
+                            # never-seen-before var name
+                            add "unassigned " & substr to memory; # initial value, TODO
+                            add substr to var_names;
+                            add (length memory) to var_addresses;
+                            add (length memory) to instructions; # address to memory
+                        } else {
+                            add var_addresses[var_index] to instructions; # address to memory
+                        }
+                    }
+                    substr = "";
+                    arg_index++;
+
+                } else {
+                    error "unexpected character in argument: " & input[i];
+                    stop_this_script;
+                }
+            }
+
+            if ((arg_index - 1) != length instruction_args[ins_index]) {
+                error "incorrect number of args in " & instruction_names[ins_index];
+                stop_this_script;
+            }
+        
+        } else {
+            error "unexpected character: " & input[i];
+            stop_this_script;
+        }
+    }
+
+
+    # resolve the jump targets
+    i = 1;
+    repeat (length unresolved_jump_targets) {
+        local label_index = instructions[unresolved_jump_targets[i]] in label_names;
+        if (label_index > 0) {
+            instructions[unresolved_jump_targets[i]] = label_addresses[label_index];
+        } else {
+            error "label not found: " & instructions[unresolved_jump_targets[i]];
+            stop_this_script;
+        }
+    }
+
+
+    compile_success = true;
+}
+
+
+proc _consume_name {
+    until (not (input[i] in "_0123456789abcdefghijklmnopqrstuvwxyz")) {
+        substr &= input[i];
+        i++;
+    }
+}
+
+proc _consume_string {
+    until (input[i] == "\"" or input[i] == ";") {
+        if (input[i] == "\\" and input[i+1] == "\"") {
+            substr &= "\"";
+            i += 2; # jump past
+        } else {
+            substr &= input[i];
+            i++;
+        }
+    }
+}
+
+
+proc _consume_number {
+    # TODO limit use of special chars to certain positions
+    until (not (input[i] in "+-.0123456789")) {
+        substr &= input[i];
+        i++;
+    }
+}
+
+
+proc language_run {
+    delete call_stack;
+    local iptr = 1; # entry point at first item
+
+    until (iptr > length instructions) {
+        log iptr & ": " & instruction_names[instructions[iptr] + 1]; # debug
+
+        local opcode = instructions[iptr];
+        if (opcode < 16) {
+            if (opcode < 8) {
+                if (opcode < 4) {
+                    if (opcode < 2) {
+                        if (opcode < 1) {
+                            # 0: jump
+                            iptr = instructions[iptr+1];
+                        } else {
+                            # 1: jump_if_true
+                            if (MEM2) {
+                                iptr = instructions[iptr+1];
+                            } else {
+                                iptr += 3;
+                            }
+                        }
+                    } else {
+                        if (opcode < 3) {
+                            # 2: jump_if_false
+                            if (MEM2) {
+                                iptr += 3;
+                            } else {
+                                iptr = instructions[iptr+1];
+                            }
+                        } else {
+                            # 3: call
+                            add iptr to call_stack;
+                        }
+                    }
+                } else {
+                    if (opcode < 6) {
+                        if (opcode < 5) {
+                            # 4: return
+                            iptr = call_stack["last"]+1;
+                            delete call_stack["last"];
+                        } else {
+                            # 5: set memory
+                            MEM1 = MEM2;
+                            iptr += 3;
+                        }
+                    } else {
+                        if (opcode < 7) {
+                            # 6: increment
+                            MEM1 += 1;
+                            iptr += 2;
+                        } else {
+                            # 7: decrement
+                            MEM1 -= 1;
+                            iptr += 2;
+                        }
+                    }
+                }
+            } else {
+                if (opcode < 12) {
+                    if (opcode < 10) {
+                        if (opcode < 9) {
+                            # 8: add
+                            MEM1 = MEM2 + MEM3;
+                            iptr += 4;
+                        } else {
+                            # 9: subtract
+                            MEM1 = MEM2 - MEM3;
+                            iptr += 4;
+                        }
+                    } else {
+                        if (opcode < 11) {
+                            # 10: multiply
+                            MEM1 = MEM2 * MEM3;
+                            iptr += 4;
+                        } else {
+                            # 11: divide
+                            MEM1 = MEM2 / MEM3;
+                            iptr += 4;
+                        }
+                    }
+                } else {
+                    if (opcode < 14) {
+                        if (opcode < 13) {
+                            # 12: modulo
+                            MEM1 = MEM2 % MEM3;
+                            iptr += 4;
+                        } else {
+                            # 13: equal
+                            MEM1 = (MEM2 == MEM3);
+                            iptr += 4;
+                        }
+                    } else {
+                        if (opcode < 15) {
+                            # 14: and
+                            MEM1 = MEM2 and MEM3;
+                            iptr += 4;
+                        } else {
+                            # 15: or
+                            MEM1 = MEM2 or MEM3;
+                            iptr += 4;
+                        }
+                    }
+                }
+            }
+        } else {
+            if (opcode < 24) {
+                if (opcode < 20) {
+                    if (opcode < 18) {
+                        if (opcode < 17) {
+                            # 16: not
+                            MEM1 = not MEM2;
+                            iptr += 3;
+                        } else {
+                            # 17: less_than
+                            MEM1 = MEM2 < MEM3;
+                            iptr += 4;
+                        }
+                    } else {
+                        if (opcode < 19) {
+                            # 18: greater_than
+                            MEM1 = MEM2 > MEM3;
+                            iptr += 4;
+                        } else {
+                            # 19: math1
+                            local selection = instructions[iptr+1]; # read as value, not memory address
+                            
+                            if (selection < 8) {
+                                if (selection < 4) {
+                                    if (selection < 2) {
+                                        if (selection < 1) {
+                                            # 0
+                                            MEM2 = abs(MEM3);
+                                        } else {
+                                            # 1
+                                            MEM2 = round(MEM3);
+                                        }
+                                    } else {
+                                        if (selection < 3) {
+                                            # 2
+                                            MEM2 = floor(MEM3);
+                                        } else {
+                                            # 3
+                                            MEM2 = ceil(MEM3);
+                                        }
+                                    }
+                                } else {
+                                    if (selection < 6) {
+                                        if (selection < 5) {
+                                            # 4
+                                            MEM2 = sqrt(MEM3);
+                                        } else {
+                                            # 5
+                                            MEM2 = sin(MEM3);
+                                        }
+                                    } else {
+                                        if (selection < 7) {
+                                            # 6
+                                            MEM2 = cos(MEM3);
+                                        } else {
+                                            # 7
+                                            MEM2 = tan(MEM3);
+                                        }
+                                    }
+                                }
+                            } else {
+                                if (selection < 12) {
+                                    if (selection < 10) {
+                                        if (selection < 9) {
+                                            # 8
+                                            MEM2 = asin(MEM3);
+                                        } else {
+                                            # 9
+                                            MEM2 = acos(MEM3);
+                                        }
+                                    } else {
+                                        if (selection < 11) {
+                                            # 10
+                                            MEM2 = atan(MEM3);
+                                        } else {
+                                            # 11
+                                            MEM2 = ln(MEM3);
+                                        }
+                                    }
+                                } else {
+                                    if (selection < 14) {
+                                        if (selection < 13) {
+                                            # 12
+                                            MEM2 = log(MEM3);
+                                        } else {
+                                            # 13
+                                            MEM2 = antiln(MEM3);
+                                        }
+                                    } else {
+                                        if (selection < 15) {
+                                            # 14
+                                            MEM2 = antilog(MEM3);
+                                        } else {
+                                            # 15
+                                            # nothing
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            iptr += 4;
+                        }
+                    }
+                } else {
+                    if (opcode < 22) {
+                        if (opcode < 21) {
+                            # 20: math2
+                            local selection = instructions[iptr+1]; # read as value, not memory address
+
+                            if (selection < 4) {
+                                if (selection < 2) {
+                                    if (selection < 1) {
+                                        # 0: min
+                                        if (MEM3 < MEM4) {
+                                            MEM2 = MEM3;
+                                        } else {
+                                            MEM2 = MEM4;
+                                        }
+                                        
+                                    } else {
+                                        # 1: max
+                                        if (MEM3 > MEM4) {
+                                            MEM2 = MEM3;
+                                        } else {
+                                            MEM2 = MEM4;
+                                        }
+
+                                    }
+                                } else {
+                                    if (selection < 3) {
+                                        # 2: random
+                                        MEM2 = random(MEM3, MEM4);
+                                    } else {
+                                        # 3: exponent
+                                        MEM2 = POW(MEM3, MEM4);
+                                    }
+                                }
+                            } else {
+                                if (selection < 6) {
+                                    if (selection < 5) {
+                                        # 4: atan2
+                                        MEM2 = ATAN2(MEM3, MEM4);
+                                    } else {
+                                        # 5: magnitude
+                                        MEM2 = VEC2_LEN(MEM3, MEM4);
+                                    }
+                                } else {
+                                    if (selection < 7) {
+                                        # 6: letter_of
+                                        MEM2 = MEM4[MEM3];
+                                    } else {
+                                        # 7: join
+                                        MEM2 = MEM3 & MEM4;
+                                    }
+                                }
+                            }
+
+                            iptr += 5;
+                        } else {
+                            # 21: math3
+                            local selection = instructions[iptr+1]; # read as value, not memory address
+
+                            if (selection < 2) {
+                                if (selection < 1) {
+                                    # 0: lerp
+                                    MEM2 = LERP(MEM3, MEM4, MEM5);
+                                } else {
+                                    # 1: unlerp
+                                    MEM2 = UNLERP(MEM3, MEM4, MEM5);
+                                }
+                            } else {
+                                if (selection < 3) {
+                                    # 2: gate
+                                    if MEM3 {
+                                        MEM2 = MEM4;
+                                    } else {
+                                        MEM2 = MEM5;
+                                    }
+                                } else {
+                                    # 3: magnitude
+                                    MEM2 = VEC3_LEN(MEM3, MEM4, MEM5);
+                                }
+                            }
+
+                            iptr += 6;
+                        }
+                    } else {
+                        if (opcode < 23) {
+                            # 22: special
+                            call_special instructions[iptr+1];
+                            stop_this_script;
+
+                        } else {
+                            
+                        }
+                    }
+                }
+            } else {
+                if (opcode < 28) {
+                    if (opcode < 26) {
+                        if (opcode < 25) {
+
+                        } else {
+                            
+                        }
+                    } else {
+                        if (opcode < 27) {
+
+                        } else {
+                            
+                        }
+                    }
+                } else {
+                    if (opcode < 30) {
+                        if (opcode < 29) {
+
+                        } else {
+                            
+                        }
+                    } else {
+                        if (opcode < 31) {
+
+                        } else {
+                            
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+proc call_special name {
+
+}
+
+
+
+################################
 #          Templates           #
 ################################
 # Templates are used to temporarily store canvases to be loaded later or drawn by the depositor. They may be used for storing textures, shapes, etc.
