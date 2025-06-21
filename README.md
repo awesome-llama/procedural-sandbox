@@ -29,7 +29,7 @@ TextImage is the supported image format for this project. Use the converter tool
 
 ## Dependencies
 
-- [goboscript](https://github.com/aspizu/goboscript/releases/tag/v3.2.1) 3.2.1
+- [goboscript](https://github.com/aspizu/goboscript/commit/a71d04c441b4f8e2bb470698e4e66adbcc313fa1) (not the latest release, it lacks some fixes)
 - Python 3.12 (not tested on older Python 3 versions but they are probably fine too)
 
 
