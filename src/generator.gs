@@ -1756,11 +1756,22 @@ list unresolved_jump_targets; # instruction addresses that need a second pass to
 list instruction_names = ["set","add","sub","mul","div","inc","eq","lt","gt","and","or","not","lteq","gteq","dec","mod","jump","jump_if_true","jump_if_false","jump_by","min","max","call","return","random","pow","abs","round","floor","ceil","sqrt","sin","cos","tan","gate","lerp","asin","acos","atan","atan2","mag2","ln","log","antiln","antilog","special","unlerp","letter_of","join","mag3","print"];
 list instruction_args = ["AV","AVV","AVV","AVV","AVV","A","AVV","AVV","AVV","AVV","AVV","AV","AVV","AVV","A","AVV","L","LV","LV","LV","AVV","AVV","L","","AVV","AVV","AV","AV","AV","AV","AV","AV","AV","AV","AVVV","AVVV","AV","AV","AV","AVV","AVV","AV","AV","AV","AV","F","AVVV","AVV","AVV","AVVV","V"];
 
-on "lang.run" {
-    broadcast "sys.show_output";
-    language_assemble "set i 0; jump_if_true @end 0; set i \"yes\"; @end;";
-    if (assemble_success) {
-        language_run;
+
+on "gen.lang.run" {
+    stop_other_scripts;
+    ask "paste code, leave blank to cancel";
+    if (answer() != "") {
+        delete UI_return;
+        setting_from_id "gen.lang.show_output_list";
+        if (UI_return[1]) {
+            broadcast "sys.show_output";
+        }
+        language_assemble answer();
+        if (assemble_success) {
+            language_run;
+        } else {
+            broadcast "sys.show_output";
+        }
     }
 }
 
@@ -1969,7 +1980,8 @@ proc language_assemble script {
                         local var_index = substr in var_names;
                         if (var_index == 0) {
                             # never-seen-before var name
-                            add "unassigned " & substr to memory; # initial value, TODO
+                            add "" to memory; # initial value
+                            #add "unassigned " & substr to memory; # alternative initial value for debugging
                             add substr to var_names;
                             add (length memory) to var_addresses;
                             add (length memory) to instructions; # address to memory

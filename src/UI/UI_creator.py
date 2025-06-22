@@ -219,6 +219,7 @@ panels['menu.gen'] = Container([
     btn_menu_set_page('Value noise', 'gen.value_noise'),
     Separator(0, 5),
     btn_menu_set_page('Sphere', 'gen.sphere'),
+    btn_menu_set_page('Custom script', 'gen.lang'),
 ])
 
 panels['menu.fx'] = Container([
@@ -608,6 +609,17 @@ panels['gen.sphere'] = Container([
     ]),
     Button('Generate', 'gen.sphere.run'),
 ])
+
+panels['gen.lang'] = Container([
+    Label.title('Custom script'),
+    Separator(),
+    TextBlock('This project supports a purpose-built low-level programming language. Documentation available on GitHub.'),
+    Expander('Settings', '', True, [
+        Checkbox('Always show output', 'gen.lang.show_output_list', True),
+    ]),
+    Button('Input code and run', 'gen.lang.run'),
+])
+
 
 ################################
 #              FX              #
