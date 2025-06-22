@@ -1758,8 +1758,8 @@ list instruction_args = ["AV","AVV","AVV","AVV","AVV","A","AVV","AVV","AVV","AVV
 
 on "lang.run" {
     broadcast "sys.show_output";
-    language_compile "set i 0; jump_if_true @end 0; set i \"yes\"; @end;";
-    if (compile_success) {
+    language_assemble "set i 0; jump_if_true @end 0; set i \"yes\"; @end;";
+    if (assemble_success) {
         language_run;
     }
 }
@@ -1780,12 +1780,13 @@ proc clear_lang_lists {
 
 
 # convert the text-based format into a list of numbers and variables
-proc language_compile script {
+proc language_assemble script {
     clear_lang_lists;
 
-    compile_success = false;
+    assemble_success = false;
     input = $script & ";"; # guarantee it ends with a semicolon
     substr = "";
+    line_number = 1;
     i = 1;
     until (i > length input) {
         # first character at start of line
@@ -1797,8 +1798,12 @@ proc language_compile script {
                 i++;
             }
 
-        } elif (input[i] == " " or input[i] == ";") {
-            # ignore start padding or empty statement
+        } elif (input[i] == " ") {
+            # ignore start padding
+            i++;
+
+        } elif (input[i] == ";") {
+            line_number++;
             i++;
 
         } elif (input[i] == "@") {
@@ -1807,15 +1812,15 @@ proc language_compile script {
             _consume_name;
 
             if (input[i] != ";") {
-                error "unexpected character, label must be terminated with a semicolon";
+                assembler_error "unexpected character, label must be terminated with a semicolon";
                 stop_this_script;
             }
             if (length substr == 0) {
-                error "label is empty";
+                assembler_error "label is empty";
                 stop_this_script;
             }
             if substr in label_names {
-                error "duplicate label: " & substr;
+                assembler_error "duplicate label: " & substr;
                 stop_this_script;
             }
 
@@ -1828,12 +1833,12 @@ proc language_compile script {
             # instruction
             _consume_name;
             if (not (input[i] in " ;")) {
-                error "unexpected character at end of name: " & input[i];
+                assembler_error "unexpected character " & input[i] & " in name";
                 stop_this_script;
             }
             local ins_index = substr in instruction_names; # 1-indexed
             if (ins_index == 0) {
-                error "unknown instruction: " & substr;
+                assembler_error "unrecognised instruction: " & substr;
                 stop_this_script;
             }
             add (ins_index - 1) to instructions;
@@ -1848,14 +1853,18 @@ proc language_compile script {
                 } elif (input[i] == "@") {
                     # label as parameter
                     if (instruction_args[ins_index][arg_index] != "L") {
-                        error "argument label expected in position " & arg_index & " of " & instruction_names[ins_index];
+                        assembler_error "unexpected label in argument " & arg_index & " of " & instruction_names[ins_index];
                         stop_this_script;
                     }
 
                     i++; # skip over @
                     _consume_name;
                     if (length substr == 0) {
-                        error "label is empty";
+                        assembler_error "label is empty";
+                        stop_this_script;
+                    }
+                    if (not (input[i] in " ;")) {
+                        assembler_error "unexpected character " & input[i] & " in label";
                         stop_this_script;
                     }
 
@@ -1867,28 +1876,72 @@ proc language_compile script {
                 } elif (input[i] == "\"") {
                     # string literal
                     if (instruction_args[ins_index][arg_index] != "V") {
-                        error "argument label expected in position " & arg_index & " of " & instruction_names[ins_index];
+                        assembler_error "unexpected string in argument " & arg_index & " of " & instruction_names[ins_index];
                         stop_this_script;
                     }
 
                     i++; # skip over first quote
-                    _consume_string;
+                    # consume string
+                    until (input[i] == "\"" or input[i] == ";") {
+                        if (input[i] == "\\" and input[i+1] == "\"") {
+                            substr &= "\"";
+                            i += 2; # jump past
+                        } else {
+                            substr &= input[i];
+                            i++;
+                        }
+                    }
+                    if (input[i] != "\"") {
+                        assembler_error "string not terminated";
+                        stop_this_script;
+                    }
                     i++; # skip over last quote
-                    add substr to memory; # literal stored in memory
-                    add (length memory) to instructions; # address to memory
+
+                    local lit_index = substr in lit_vals;
+                    if (lit_index == 0) {
+                        # never-seen-before literal
+                        add (substr + 0) to memory; # literal stored in memory
+                        add substr to lit_vals;
+                        add (length memory) to instructions; # address to memory
+                        add (length memory) to lit_addresses;
+                    } else {
+                        add lit_addresses[lit_index] to instructions;
+                    }
+
                     substr = "";
                     arg_index++;
                 
                 } elif (input[i] in "+-.0123456789") {
                     # number literal
                     if (instruction_args[ins_index][arg_index] != "V") {
-                        error "argument label expected in position " & arg_index & " of " & instruction_names[ins_index];
+                        assembler_error "unexpected number in argument " & arg_index & " of " & instruction_names[ins_index];
                         stop_this_script;
                     }
 
-                    _consume_number;
-                    add (substr + 0) to memory; # literal stored in memory
-                    add (length memory) to instructions; # address to memory
+                    # consume number:
+                    # TODO limit use of special chars to certain positions
+                    substr &= input[i];
+                    i++;
+                    until (not (input[i] in ".0123456789")) {
+                        substr &= input[i];
+                        i++;
+                    }
+                    if (not (input[i] in " ;")) {
+                        assembler_error "unexpected character " & input[i] & " in number";
+                        stop_this_script;
+                    }
+
+                    local lit_index = substr in lit_vals;
+                    if (lit_index == 0) {
+                        # never-seen-before literal
+                        add (substr + 0) to memory; # literal stored in memory
+                        add substr to lit_vals;
+                        add (length memory) to instructions; # address to memory
+                        add (length memory) to lit_addresses;
+                    } else {
+                        add lit_addresses[lit_index] to instructions;
+                    }
+
                     substr = "";
                     arg_index++;
 
@@ -1896,11 +1949,15 @@ proc language_compile script {
                     # variable or field
                     local arg_type = instruction_args[ins_index][arg_index]; # beware detection of empty string
                     if (arg_type == "" or not (arg_type in "AVF")) {
-                        error "argument label expected in position " & arg_index & " of " & instruction_names[ins_index];
+                        assembler_error "unexpected variable in argument " & arg_index & " of " & instruction_names[ins_index];
                         stop_this_script;
                     }
 
                     _consume_name;
+                    if (not (input[i] in " ;")) {
+                        assembler_error "unexpected character " & input[i] & " in name";
+                        stop_this_script;
+                    }
                     
                     if (instruction_args[ins_index][arg_index] == "F") {
                         # is field, keep as-is
@@ -1924,18 +1981,18 @@ proc language_compile script {
                     arg_index++;
 
                 } else {
-                    error "unexpected character in argument: " & input[i];
+                    assembler_error "unexpected character in argument: " & input[i];
                     stop_this_script;
                 }
             }
 
             if ((arg_index - 1) != length instruction_args[ins_index]) {
-                error "incorrect number of args in " & instruction_names[ins_index];
+                assembler_error "incorrect number of args in " & instruction_names[ins_index];
                 stop_this_script;
             }
         
         } else {
-            error "unexpected character: " & input[i];
+            assembler_error "unexpected character: " & input[i];
             stop_this_script;
         }
     }
@@ -1948,13 +2005,13 @@ proc language_compile script {
         if (label_index > 0) {
             instructions[unresolved_jump_targets[i]] = label_addresses[label_index];
         } else {
-            error "label not found: " & instructions[unresolved_jump_targets[i]];
+            assembler_error "label not found: " & instructions[unresolved_jump_targets[i]], true;
             stop_this_script;
         }
     }
 
-
-    compile_success = true;
+    add "assembler finished successfully" to output;
+    assemble_success = true;
 }
 
 
@@ -1965,29 +2022,23 @@ proc _consume_name {
     }
 }
 
-proc _consume_string {
-    until (input[i] == "\"" or input[i] == ";") {
-        if (input[i] == "\\" and input[i+1] == "\"") {
-            substr &= "\"";
-            i += 2; # jump past
-        } else {
-            substr &= input[i];
-            i++;
-        }
-    }
-}
 
 
-proc _consume_number {
-    # TODO limit use of special chars to certain positions
-    until (not (input[i] in "+-.0123456789")) {
-        substr &= input[i];
-        i++;
+
+proc assembler_error message, raw=false {
+    if $raw {
+        add $message to output;
+    } else {
+        add "error at char " & i & " (line " & line_number & ")" to output;
+        add $message to output;
     }
+    error output["last"];
 }
+
 
 
 proc language_run {
+    delete output;
     delete call_stack;
     local iptr = 1; # entry point at first item
 
@@ -2252,6 +2303,8 @@ proc language_run {
 
         # end of until loop
     }
+
+    add "finished successfully" to output;
 }
 
 
