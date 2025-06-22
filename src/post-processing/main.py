@@ -20,7 +20,7 @@ project_data: dict = json.loads(project_archive.read('project.json'))
 
 # reorder the sprites
 
-SPRITE_ORDER = ['Stage', '_', 'main', 'stage_size', 'UI', 'transform_canvas', 'generator', 'compositor', 'renderer', 'TextImage', 'export_3D', 'project_settings', 'cmd', 'debug']
+SPRITE_ORDER = ['Stage', '_', 'main', 'stage_size', 'UI', 'transform_canvas', 'generator', 'compositor', 'renderer', 'overlay', 'TextImage', 'export_3D', 'project_settings', 'cmd', 'debug']
 
 def get_layer_number(target: dict):
     if target['name'] in SPRITE_ORDER:
@@ -47,24 +47,28 @@ costume['rotationCenterY'] = 0
 
 # add the monitors
 
-copy_list_monitor_data = {
-    "id": "copy_this",
-    "mode": "list",
-    "opcode": "data_listcontents",
-    "params": {"LIST": "copy_this"},
-    "spriteName": None,
-    "value": [],
-    "width": 400,
-    "height": 230,
-    "x": 40,
-    "y": 60,
-    "visible": False
-}
-monitor = utils.get_monitor_by_id(project_data, 'copy_this')
-if monitor is None:
-    project_data['monitors'].append(copy_list_monitor_data)
-else:
-    raise Exception('monitor already exists')
+def add_list_monitor(name: str):
+    monitor = utils.get_monitor_by_id(project_data, name)
+    if monitor is None:
+        monitor_data = {
+            "id": name,
+            "mode": "list",
+            "opcode": "data_listcontents",
+            "params": {"LIST": name},
+            "spriteName": None,
+            "value": [],
+            "width": 400,
+            "height": 230,
+            "x": 40,
+            "y": 60,
+            "visible": False
+        }
+        project_data['monitors'].append(monitor_data)
+    else:
+        raise Exception('monitor already exists')
+
+add_list_monitor('copy_this')
+add_list_monitor('output')
 
 
 

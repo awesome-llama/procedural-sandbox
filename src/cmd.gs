@@ -129,9 +129,8 @@ nowarp proc evaluate_command {
         if (command[1] == "popup") {
             delete UI_popup;
             require_viewport_refresh = true;
-        } elif (command[1] == "copy") {
-            delete copy_this;
-            hide copy_this;
+        } elif (command[1] == "list") {
+            broadcast "sys.hide_lists";
         }
 
     } else {
@@ -142,6 +141,7 @@ nowarp proc evaluate_command {
 
 
 on "sys.open_commands" {
+    broadcast "sys.hide_lists";
     hide;
     switch_costume "icon";
     stop_other_scripts;

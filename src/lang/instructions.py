@@ -66,7 +66,7 @@ instructions = [
     ['gate', [ADR, VAL, VAL, VAL], 100, 'if MEM3 {MEM2 = MEM4;} else {MEM2 = MEM5;}iptr += $SIZE;'], # pick a if true, b if false
     ['mag3', [ADR, VAL, VAL, VAL], 2000, 'MEM2 = VEC3_LEN(MEM3, MEM4, MEM5);iptr += $SIZE;'], # 3d vector magnitude
 
-    ['print', [VAL], 2000, 'print MEM1, 5;iptr += $SIZE;'],
+    ['print', [VAL], 2000, 'add MEM1 to output;iptr += $SIZE;'],
 
     ['special', [FIELD], 600, 'error "not implemented";stop_this_script;'], # no specific number of args
 ]

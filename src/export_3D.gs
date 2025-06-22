@@ -245,7 +245,7 @@ proc output_list_or_URL generate_URL, frag1, frag2 {
         }
         delete text_buffer;
     }
-    show copy_this;
+    broadcast "sys.show_copy_this";
 }
 
 

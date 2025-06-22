@@ -611,6 +611,7 @@ on "sys.hard_reset" {
 
 on "io.load_canvas.run" {
     stop_other_scripts;
+    broadcast "sys.hide_lists";
     ask "paste TextImage file, leave blank to cancel";
     if (answer() != "") {
         TextImage_file = answer();
@@ -655,6 +656,7 @@ proc copy_TI_px_buffer_to_canvas {
 
 on "io.import_height_map.run" {
     stop_other_scripts;
+    broadcast "sys.hide_lists";
     ask "paste TextImage file, leave blank to cancel";
     if (answer() != "") {
         TextImage_file = answer(); 
@@ -720,6 +722,7 @@ proc copy_TI_px_buffer_to_canvas_as_height_map erase_canvas, size_z, new_col_r, 
 
 on "io.import_color_map.run" {
     stop_other_scripts;
+    broadcast "sys.hide_lists";
     ask "paste TextImage file, leave blank to cancel";
     if (answer() != "") {
         TextImage_file = answer(); 
@@ -942,7 +945,7 @@ proc write_TextImage_end {
 proc show_copy_this {
     delete copy_this;
     add TextImage_file to copy_this;
-    show copy_this;
+    broadcast "sys.show_copy_this";
 }
 
 

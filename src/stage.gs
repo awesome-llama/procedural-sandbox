@@ -19,6 +19,7 @@ list TI_header;
 
 ####
 
+list output; # output text log
 list copy_this; # output list for copying text
 list project_messages; # console messages
 
@@ -40,6 +41,7 @@ list UI_popup;
 list hex_lookup = file ```data/hex_lookup.txt```;
 
 
+# hard_reset will run before this when required
 on "initalise" {
     version = "0.1"; # project version
     dt = 0; # delta time
@@ -90,6 +92,10 @@ on "initalise" {
     
     delete UI_popup;
 
+    delete copy_this;
+    delete output;
+    showing_lists = false;
+    
     delete project_messages;
 }
 
@@ -174,7 +180,5 @@ onflag {
 }
 
 onclick {
-    hide copy_this; # hide the list to copy from
     broadcast "sys.stage_clicked"; # each receiver checks if the hovered group is for it. This prevents the script from running in multiple places at the same time. Use the last hover variable because it stores the state where all of the UI is guaranteed to have been checked. 
 }
-

@@ -51,6 +51,7 @@ on "sys.start_main_loop" {
         }
 
         broadcast "sys.render_UI"; # always redraw, no erase. This goes to the UI sprite only.
+        broadcast "sys.render_overlay";
     }
 }
 

@@ -10,8 +10,8 @@ on "initalise" {
 
 on "sys.reset" {
     log "run this script to reset the project for sharing";
-    broadcast "initalise";
-    broadcast_and_wait "sys.hard_reset";
+    broadcast_and_wait "initalise"; # wait is required to ensure everything is done for the frame
+    broadcast "sys.hard_reset";
     switch_costume "awesome-llama";
     show;
     stop_all;
