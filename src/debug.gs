@@ -7,10 +7,10 @@ hide;
 # generate a hash from the current canvas for an easy way to verify if a canvas is identical
 on "debug.hash_canvas.run" { compute_canvas_hash; }
 proc compute_canvas_hash {
-    local hash_sum = 0;
+    local hash_sum = 0.4367;
     i = 1;
     repeat (length canvas) {
-        hash_sum = (hash_sum + (i/47.0459) + (canvas[i].r*13.19) + (canvas[i].g*17.13) + (canvas[i].b*19.09) + (canvas[i].opacity*23.67) + (canvas[i].emission*29)) % 1;
+        hash_sum = (hash_sum + (i/47.0459) + ((canvas[i].r-0.11)*13.19) + (canvas[i].g*17.13) + (canvas[i].b*19.09) + (canvas[i].opacity*23.67) + (canvas[i].emission*29)) % 1;
         i++;
     }
     
