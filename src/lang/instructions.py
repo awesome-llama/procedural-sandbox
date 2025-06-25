@@ -58,17 +58,38 @@ instructions = [
     ['random', [ADR, VAL, VAL], 40, 'MEM1 = random(MEM2, MEM3);iptr += $SIZE;'], # pick random
     ['atan2', [ADR, VAL, VAL], 400, 'MEM1 = ATAN2(MEM2, MEM3);iptr += $SIZE;'], # direction from vector
     ['mag2', [ADR, VAL, VAL], 400, 'MEM1 = VEC2_LEN(MEM2, MEM3);iptr += $SIZE;'], # 2d vector magnitude
-    ['letter_of', [ADR, VAL, VAL], 2000, 'MEM1 = MEM2[MEM3];iptr += $SIZE;'],
-    ['join', [ADR, VAL, VAL], 2000, 'MEM1 = MEM2 & MEM3;iptr += $SIZE;'],
+    ['letter_of', [ADR, VAL, VAL], 500, 'MEM1 = MEM2[MEM3];iptr += $SIZE;'],
+    ['join', [ADR, VAL, VAL], 500, 'MEM1 = MEM2 & MEM3;iptr += $SIZE;'],
 
     ['lerp', [ADR, VAL, VAL, VAL], 200, 'MEM1 = LERP(MEM2, MEM3, MEM4);iptr += $SIZE;'], # linear interpolation
     ['unlerp', [ADR, VAL, VAL, VAL], 800, 'MEM1 = UNLERP(MEM2, MEM3, MEM4);iptr += $SIZE;'], # undo linear interpolation
     ['select', [ADR, VAL, VAL, VAL], 100, 'if MEM2 {MEM1 = MEM3;} else {MEM1 = MEM4;}iptr += $SIZE;'], # pick a if true, b if false
-    ['mag3', [ADR, VAL, VAL, VAL], 2000, 'MEM1 = VEC3_LEN(MEM2, MEM3, MEM4);iptr += $SIZE;'], # 3d vector magnitude
+
+    # project-specific:
 
     ['print', [VAL], 2000, 'add MEM1 to output;iptr += $SIZE;'],
 
-    ['special', [FIELD], 600, 'error "not implemented";stop_this_script;'], # no specific number of args
+    ['clear_canvas', [VAL, VAL, VAL], 500, 'clear_canvas MEM1, MEM2, MEM3;iptr += $SIZE;'],
+    ['add_canvas_as_template', [], 500, 'add_canvas_as_template;iptr += $SIZE;'],
+
+    ['reset_depositor', [], 500, 'reset_depositor;iptr += $SIZE;'],
+    ['set_depositor_to_air', [], 500, 'set_depositor_to_air;iptr += $SIZE;'],
+    ['set_depositor_from_sRGB', [VAL, VAL, VAL], 500, 'set_depositor_from_sRGB MEM1, MEM2, MEM3;iptr += $SIZE;'],
+    ['set_depositor_from_HSV', [VAL, VAL, VAL], 500, 'set_depositor_from_HSV MEM1, MEM2, MEM3;iptr += $SIZE;'],
+    ['set_depositor_from_voxel', [VAL, VAL, VAL], 500, 'set_depositor_from_voxel MEM1, MEM2, MEM3;iptr += $SIZE;'],
+    ['set_depositor_to_template', [VAL, VAL, VAL, VAL], 500, 'set_depositor_to_template MEM1, MEM2, MEM3, MEM4;iptr += $SIZE;'],
+    ['set_depositor_opacity', [VAL], 500, 'depositor_voxel.opacity=MEM1;iptr += $SIZE;'],
+    ['set_depositor_emission', [VAL], 500, 'depositor_voxel.emission=MEM1;iptr += $SIZE;'],
+
+    ['set_voxel', [VAL, VAL, VAL], 500, 'set_voxel MEM1, MEM2, MEM3;iptr += $SIZE;'],
+    ['draw_ray', [VAL, VAL, VAL, VAL, VAL, VAL, VAL], 500, 'draw_ray MEM1, MEM2, MEM3, MEM4, MEM5, MEM6, MEM7;iptr += $SIZE;'],
+    ['draw_cuboid_corner_size', [VAL, VAL, VAL, VAL, VAL, VAL], 500, 'draw_cuboid_corner_size MEM1, MEM2, MEM3, MEM4, MEM5, MEM6;iptr += $SIZE;'],
+    ['draw_sphere', [VAL, VAL, VAL, VAL], 500, 'draw_sphere MEM1, MEM2, MEM3, MEM4;iptr += $SIZE;'],
+    ['draw_cylinder', [VAL, VAL, VAL, VAL, VAL], 500, 'draw_cylinder MEM1, MEM2, MEM3, MEM4, MEM5;iptr += $SIZE;'],
+    ['generate_value_noise', [VAL, VAL, VAL, VAL, VAL], 500, 'generate_value_noise MEM1, MEM2, MEM3, MEM4, MEM5;iptr += $SIZE;'],
+
+    ['get_depositor', [ADR, ADR, ADR, ADR, ADR], 500, 'MEM1=depositor_voxel.r;MEM2=depositor_voxel.g;MEM3=depositor_voxel.b;MEM4=depositor_voxel.opacity;MEM5=depositor_voxel.emission;iptr += $SIZE;'],
+    ['get_canvas_size', [ADR, ADR, ADR], 500, 'MEM1=canvas_size_x;MEM2=canvas_size_y;MEM3=canvas_size_z;iptr += $SIZE;'],
 ]
 
 
@@ -78,6 +99,10 @@ for ins in instructions:
         ins.append(f'# {ins[0]}')
     else:
         ins[3] = str.replace(ins[3], '$SIZE', str(1+len(ins[1])))
+        
+        if 'iptr' not in ins[3]:
+            raise Exception(f'instruction lacks instruction pointer handling, code will get stuck: {ins[3]}')
+        
 
 
 # ordered most common to least for optimisation
@@ -128,9 +153,29 @@ if __name__ == '__main__':
         add_ln(indent + END)
 
 
-    tree = search_tree.optimal_binary_tree_from_weights([item[2] for item in instructions_sorted])
-    print(tree)
+    #tree = search_tree.optimal_binary_tree_from_weights([max(item[2],50) for item in instructions_sorted])
+    #print(tree)
     
+    # custom tree (first splits are custom)
+    weights = [item[2] for item in instructions_sorted]
+    items = list(range(len(weights)))
+
+    split1 = 16
+    b1 = []
+    search_tree._optimal_binary_tree(b1, items[:split1], weights[:split1])
+    
+    split2 = 34
+    b2 = []
+    search_tree._optimal_binary_tree(b2, items[split1:split2], weights[split1:split2])
+
+    b3 = []
+    search_tree._optimal_binary_tree(b3, items[split2:], weights[split2:])
+
+    tree = [b1, [b2, b3]]
+
+
+
+    search_tree.print_depths(tree, [item[0] for item in instructions_sorted])
 
     output.append('')
     output.append(INDENT * 2 + '######')

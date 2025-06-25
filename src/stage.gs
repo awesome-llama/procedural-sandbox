@@ -94,8 +94,8 @@ on "initalise" {
 
     delete copy_this;
     delete output;
-    showing_lists = false;
-    
+    broadcast "sys.hide_lists";
+
     delete project_messages;
 }
 
@@ -141,6 +141,8 @@ on "sys.hard_reset" {
     stage_size_y = stage_max_y * 2;
     stage_min_x = -stage_max_x;
     stage_min_y = -stage_max_y;
+    
+    showing_lists = false;
     
     # project settings
     PS_slider_sensitivity = 200;
