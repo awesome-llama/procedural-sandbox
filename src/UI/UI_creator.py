@@ -615,9 +615,10 @@ panels['gen.lang'] = Container([
     Separator(),
     TextBlock('This project supports a purpose-built low-level programming language. Documentation available on GitHub.'),
     Expander('Settings', '', True, [
-        Checkbox('Always show output', 'gen.lang.show_output_list', True),
+        Checkbox('Always show run output', 'gen.lang.show_output_list', True),
     ]),
-    Button('Input code and run', 'gen.lang.run'),
+    Button('Input code', 'gen.lang.input_code'),
+    Button('Run', 'gen.lang.run'),
 ])
 
 

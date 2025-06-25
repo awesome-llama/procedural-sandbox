@@ -1752,6 +1752,8 @@ list instructions; # machine code
 list call_stack; # used for call and return instructions in operation
 list memory; # stores variables at runtime
 
+list saved_memory;
+
 list lit_vals; # lookup
 list lit_addresses; # location in memory
 
@@ -1767,28 +1769,42 @@ list unresolved_jump_targets; # instruction addresses that need a second pass to
 list instruction_names = ["set","add","sub","mul","div","inc","eq","lt","gt","and","or","not","lteq","gteq","dec","mod","jump","jump_if_true","jump_if_false","jump_by","min","max","call","return","random","pow","abs","round","floor","ceil","sqrt","sin","cos","tan","select","lerp","asin","acos","atan","atan2","mag2","ln","log","antiln","antilog","letter_of","join","clear_canvas","add_canvas_as_template","reset_depositor","set_depositor_to_air","set_depositor_from_sRGB","set_depositor_from_HSV","set_depositor_from_voxel","set_depositor_to_template","set_depositor_opacity","set_depositor_emission","set_voxel","draw_ray","draw_cuboid_corner_size","draw_sphere","draw_cylinder","generate_value_noise","get_depositor","get_canvas_size","unlerp","print"];
 list instruction_args = ["AV","AVV","AVV","AVV","AVV","A","AVV","AVV","AVV","AVV","AVV","AV","AVV","AVV","A","AVV","L","LV","LV","LV","AVV","AVV","L","","AVV","AVV","AV","AV","AV","AV","AV","AV","AV","AV","AVVV","AVVV","AV","AV","AV","AVV","AVV","AV","AV","AV","AV","AVV","AVV","VVV","","","","VVV","VVV","VVV","VVVV","V","V","VVV","VVVVVVV","VVVVVV","VVVV","VVVVV","VVVVV","AAAAA","AAA","AVVV","V"];
 
-on "gen.lang.run" {
+on "gen.lang.input_code" {
     stop_other_scripts;
     ask "paste code, leave blank to cancel";
     if (answer() != "") {
-        delete UI_return;
-        setting_from_id "gen.lang.show_output_list";
-        if (UI_return[1]) {
-            broadcast "sys.show_output";
-        }
         language_assemble answer();
         if (assemble_success) {
-            language_run;
+            print "assembled successfully", 3;
         } else {
             broadcast "sys.show_output";
         }
     }
 }
 
+on "gen.lang.run" {
+    if (assemble_success) {
+        delete UI_return;
+        setting_from_id "gen.lang.show_output_list";
+        if (UI_return[1]) {
+            broadcast "sys.show_output";
+        }
+        language_run;
+        if (not UI_return[1]) {
+            print "finished successfully", 3;
+        }
+    } else {
+        print "no valid code available", 3;
+    }
+}
 
+
+# hard reset
 proc clear_lang_lists {
+    assemble_success = false;
     delete instructions;
     delete memory;
+    delete saved_memory;
     delete lit_vals;
     delete lit_addresses;
     delete var_names;
@@ -1921,10 +1937,10 @@ proc language_assemble script {
                     local lit_index = substr in lit_vals;
                     if (lit_index == 0) {
                         # never-seen-before literal
-                        add substr to memory; # literal stored in memory
+                        add substr to saved_memory; # literal stored in memory
                         add substr to lit_vals;
-                        add (length memory) to instructions; # address to memory
-                        add (length memory) to lit_addresses;
+                        add (length saved_memory) to instructions; # address to memory
+                        add (length saved_memory) to lit_addresses;
                     } else {
                         add lit_addresses[lit_index] to instructions;
                     }
@@ -1955,10 +1971,10 @@ proc language_assemble script {
                     local lit_index = substr in lit_vals;
                     if (lit_index == 0) {
                         # never-seen-before literal
-                        add (substr + 0) to memory; # literal stored in memory
+                        add (substr + 0) to saved_memory; # literal stored in memory
                         add (substr + 0) to lit_vals;
-                        add (length memory) to instructions; # address to memory
-                        add (length memory) to lit_addresses;
+                        add (length saved_memory) to instructions; # address to memory
+                        add (length saved_memory) to lit_addresses;
                     } else {
                         add lit_addresses[lit_index] to instructions;
                     }
@@ -1990,11 +2006,11 @@ proc language_assemble script {
                         local var_index = substr in var_names;
                         if (var_index == 0) {
                             # never-seen-before var name
-                            add "" to memory; # initial value
+                            add "" to saved_memory; # initial value
                             #add "unassigned " & substr to memory; # alternative initial value for debugging
                             add substr to var_names;
-                            add (length memory) to var_addresses;
-                            add (length memory) to instructions; # address to memory
+                            add (length saved_memory) to var_addresses;
+                            add (length saved_memory) to instructions; # address to memory
                         } else {
                             add var_addresses[var_index] to instructions; # address to memory
                         }
@@ -2046,8 +2062,6 @@ proc _consume_name {
 }
 
 
-
-
 proc assembler_error message, raw=false {
     if $raw {
         add $message to output;
@@ -2063,6 +2077,15 @@ proc assembler_error message, raw=false {
 proc language_run {
     delete output;
     delete call_stack;
+
+    # load memory
+    delete memory;
+    i = 1;
+    repeat length(saved_memory) {
+        add saved_memory[i] to memory;
+        i++;
+    }
+
     local iptr = 1; # entry point at first item
 
     until (iptr > length instructions) {
