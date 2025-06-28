@@ -135,12 +135,9 @@ on "sys.composite" {
 
 
 on "sys.iterative_compositor" {
-    if (UI_popup[1]) {
-        stop_this_script; # pause rendering whilst a popup is open (prioritise UI performance)
+    if (iterative_compositor_paused) {
+        stop_this_script; # pause rendering (e.g. prioritise UI performance)
     }
-    #if (not (UI_last_hovered_group == "" or UI_last_hovered_group == "viewport")) {
-    #    stop_this_script; # pause rendering whilst the interface is hovered
-    #}
 
     if (viewport_mode == ViewportMode.ALIGNED) {
         if (compositor_mode == CompositorMode.SHADED) {

@@ -327,6 +327,11 @@ proc render_top_bar x, y {
     top_bar_button "zoom out", "zoom out", TOP_BAR_OFFSET(8), $y-10, false;
     top_bar_button "zoom fit", "zoom fit", TOP_BAR_OFFSET(9), $y-10, false;
     top_bar_button "zoom in", "zoom in", TOP_BAR_OFFSET(10), $y-10, false;
+
+    if (iterative_compositor_paused and require_iterative_compositor) {
+        set_pen_color "#ffb3f8";
+        plainText TOP_BAR_OFFSET(11), $y-14, 1, "PAUSED";
+    }
 }
 
 # custom implementation, not general-purpose

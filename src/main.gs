@@ -37,6 +37,8 @@ on "sys.start_main_loop" {
             UI_hovered_element = "";
         }
 
+        iterative_compositor_paused = (require_composite != true) and ((not (UI_last_hovered_group == "viewport" or UI_last_hovered_group == "")) or UI_popup[1]);
+
         if (require_composite == true) {
             broadcast_and_wait "sys.composite";
         }

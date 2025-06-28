@@ -86,6 +86,8 @@ on "initalise" {
     UI_last_hovered_element = "";
     #UI_last_hovered_subelement = "";
 
+    iterative_compositor_paused = false;
+
     if (PS_reset_render_on_flag) { UI_sidebar_width = 160; }; # set to 0 to hide
     
     cmd_string = "";
