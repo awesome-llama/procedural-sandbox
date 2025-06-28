@@ -66,6 +66,7 @@ onkey "6" {
 on "sys.composite" {
     require_iterative_compositor = false; # default off
     render_resolution = requested_render_resolution; # this is the only time the resolution is set
+    counted_samples = 1;
 
     # run different custom blocks depending on mode
     if (viewport_mode == ViewportMode.ALIGNED) {

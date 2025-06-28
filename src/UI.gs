@@ -365,9 +365,14 @@ proc render_viewport_overlay {
     # Text
     set_pen_color THEME_COL_TEXT;
     plainText stage_min_x+UI_sidebar_width+5, stage_max_y-TOP_BAR_HEIGHT-10, 1, ("canvas size: " & ((((canvas_size_x & ", ") & canvas_size_y) & ", ") & canvas_size_z));
-    plainText stage_min_x+UI_sidebar_width+5, stage_max_y-TOP_BAR_HEIGHT-20, 1, (compositor_mode);
-    plainText stage_min_x+UI_sidebar_width+5, stage_max_y-TOP_BAR_HEIGHT-30, 1, ("cam scale: " & round(cam_scale*100)/100);
-    plainText stage_min_x+UI_sidebar_width+5, stage_max_y-TOP_BAR_HEIGHT-40, 1, ("timer: " & floor(( 100 * ((86400 * days_since_2000()) % 1))) & ", " & counted_samples & "/" & PS_max_samples);
+    plainText stage_min_x+UI_sidebar_width+5, stage_max_y-TOP_BAR_HEIGHT-20, 1, ("cam scale: " & round(cam_scale*100)/100);
+    plainText stage_min_x+UI_sidebar_width+5, stage_max_y-TOP_BAR_HEIGHT-30, 1, (compositor_mode);
+    
+    if (require_iterative_compositor) {
+        plainText stage_min_x+UI_sidebar_width+5, stage_max_y-TOP_BAR_HEIGHT-40, 1, ("samples: " & MIN(counted_samples, PS_max_samples) & "/" & PS_max_samples);
+    }
+    
+    #plainText stage_min_x+UI_sidebar_width+5, stage_max_y-TOP_BAR_HEIGHT-50, 1, ("timer: " & floor(( 100 * ((86400 * days_since_2000()) % 1))));
   
     # Axes
     draw_axes stage_min_x+UI_sidebar_width+15, stage_min_y+15, 10;
