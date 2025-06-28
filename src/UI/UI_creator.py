@@ -208,10 +208,10 @@ panels['menu.gen'] = Container([
     btn_menu_set_page('Printed circuit board', 'gen.pcb'),
     btn_menu_set_page('Refinery', 'gen.refinery'),
     Separator(0, 5), # patterns, specific
-    btn_menu_set_page('Erosion', 'gen.erosion'),
     btn_menu_set_page('Extruded grid', 'gen.extruded_grid'),
     btn_menu_set_page('Fibres', 'gen.fibres'),
     btn_menu_set_page('Hedge', 'gen.hedge'),
+    btn_menu_set_page('Terrain', 'gen.terrain'),
     Separator(0, 5), # patterns, misc
     btn_menu_set_page('Ball Pit', 'gen.ballpit'),
     btn_menu_set_page('Elem. cellular automata', 'gen.eca'),
@@ -470,31 +470,31 @@ panels['gen.eca'] = Container([
     Button('Generate', 'gen.eca.run'),
 ])
 
-panels['gen.erosion'] = Container([
-    Label.title('Hydraulic erosion'),
+panels['gen.terrain'] = Container([
+    Label.title('Terrain'),
     Separator(),
-    Expander('Initial terrain', '', True, [
-        Value.canvas_size('Size X', 'gen.erosion.size_x', 64),
-        Value.canvas_size('Size Y', 'gen.erosion.size_y', 64),
-        Value.canvas_size('Size Z', 'gen.erosion.size_z', 16, 64),
-        Value('Noise scale', 'gen.erosion.scale', 16, 1, 256, 0, 4096, snap_frac=1),
-        Color('Ground color', 'gen.erosion.ground_col', '#AA997C'),
-        Button('Generate', 'gen.erosion.run.generate'),
+    Expander('Dimensions', '', True, [
+        Value.canvas_size('Size X', 'gen.terrain.size_x', 64),
+        Value.canvas_size('Size Y', 'gen.terrain.size_y', 64),
+        Value.canvas_size('Size Z', 'gen.terrain.size_z', 16, 64),
+        Value('Noise scale XY', 'gen.terrain.noise_scale_xy', 10, 1, 64, 0, 4096, snap_frac=1),
+        Value('Noise scale Z', 'gen.terrain.noise_scale_z', 1, 0, 1, 0, 4096, snap_frac=1000),
     ]),
-    Expander('Erode', '', False, [
-        Value('Steps', 'gen.erosion.steps', 0.5, 0, 1, 0, 100, snap_frac=1000, shape='full'),
-        Value('Stream capacity', 'gen.erosion.capacity', 5, 0, 10, 0, snap_frac=1000),
-        Value.fraction('Stream strength', 'gen.erosion.strength', 0.1),
-        Button('Run', 'gen.erosion.run.erode'),
+    Expander('Water', '', True, [
+        Value('Water level', 'gen.terrain.water_level_fac', 0.4, 0, 1, snap_frac=1000),
+        Color('Water color', 'gen.terrain.water_col', "#355156"),
     ]),
-    Expander('Finalise', '', False, [
-        Value('Water level', 'gen.erosion.water_level_fac', 0.2, 0, 1, snap_frac=1000),
-        Color('Water color', 'gen.erosion.water_col', '#3e5c90'),
-        Value('Grass amount', 'gen.erosion.grass_fac', 0.5, 0, 1, snap_frac=1000),
-        Color('Grass color', 'gen.erosion.grass_col', '#70aa60'),
-        Value('Tree amount', 'gen.erosion.tree_fac', 0.2, 0, 1, snap_frac=1000),
-        Button('Run', 'gen.erosion.run.finalise'),
+    Expander('Ground', '', True, [
+        Color('Rock color', 'gen.terrain.rock_col', "#686766"),
+        Color('Soil color', 'gen.terrain.soil_col', "#55453b"),
+        Color('Grass color', 'gen.terrain.grass_col', "#6e9c45"),
+        Value('Grass slope', 'gen.terrain.grass_fac', 1, 0, 2, snap_frac=1000),
     ]),
+    Expander('Trees', '', True, [
+        Color('Tree color', 'gen.terrain.tree_col', "#4c6a39"),
+        Value('Tree density', 'gen.terrain.tree_fac', 0.2, 0, 1, snap_frac=1000),
+    ]),
+    Button('Run', 'gen.terrain.run'),
 ])
 
 panels['gen.extruded_grid'] = Container([ # "I call them cities"

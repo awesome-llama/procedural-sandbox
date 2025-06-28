@@ -512,6 +512,7 @@ proc generate_city size_x, size_y, size_z, buildings, bridges, glow {
         set_depositor_from_HSV RANDOM_0_1(), random(0.0, 0.4), random(0.2, 0.7);
         depositor_replace = false;
         random_walk_any RANDOM_X(), RANDOM_Y(), random(3,5), random(0,7)*45, random(2,4), random(5,32), 45;
+        depositor_replace = true;
     }
 
     # skyscrapers
@@ -921,299 +922,156 @@ proc generate_elementary_cellular_automata size_x, size_y, extrude_z, rule, rand
 }
 
 
+%define NRM_KERNEL_X(DX,DY,WX) \
+dx += WX*(temp_canvas_mono[INDEX_FROM_2D_INTS(ix+(DX), iy+(DY), canvas_size_x, canvas_size_y)] - h);
 
-on "gen.erosion.run.generate" {
+%define NRM_KERNEL_Y(DX,DY,WY) \
+dy += WY*(temp_canvas_mono[INDEX_FROM_2D_INTS(ix+(DX), iy+(DY), canvas_size_x, canvas_size_y)] - h);
+
+%define NRM_KERNEL_XY(DX,DY,WX,WY) \
+local kernel_h = (temp_canvas_mono[INDEX_FROM_2D_INTS(ix+(DX), iy+(DY), canvas_size_x, canvas_size_y)] - h);\
+dx += WX*kernel_h;\
+dy += WY*kernel_h;\
+
+%define W_EDGE 0.25
+%define W_CORNER 0.125
+
+on "gen.terrain.run" {
     delete UI_return;
-    setting_from_id "gen.erosion.size_x";
-    setting_from_id "gen.erosion.size_y";
-    setting_from_id "gen.erosion.size_z";
-    setting_from_id "gen.erosion.scale";
-    setting_from_id "gen.erosion.ground_col";
-    generate_terrain UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5];
+    setting_from_id "gen.terrain.size_x";
+    setting_from_id "gen.terrain.size_y";
+    setting_from_id "gen.terrain.size_z";
+    setting_from_id "gen.terrain.noise_scale_xy";
+    setting_from_id "gen.terrain.noise_scale_z";
+
+    setting_from_id "gen.terrain.water_level_fac";
+    setting_from_id "gen.terrain.water_col";
+
+    setting_from_id "gen.terrain.rock_col";
+    setting_from_id "gen.terrain.soil_col";
+    setting_from_id "gen.terrain.grass_col";
+    setting_from_id "gen.terrain.grass_fac";
+
+    setting_from_id "gen.terrain.tree_col";
+    setting_from_id "gen.terrain.tree_fac";
+    generate_terrain UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6], UI_return[7], UI_return[8], UI_return[9], UI_return[10], UI_return[11], UI_return[12], UI_return[13];
 }
-proc generate_terrain size_x, size_y, size_z, scale, color {
-    reset_generator 1, 1, $size_z; # column defining rock strata
-    set_depositor_from_number $color;
+proc generate_terrain size_x, size_y, size_z, noise_scale_xy, noise_scale_z, water_level_fac, water_col, rock_col, soil_col, grass_col, grass_fac, tree_col, tree_fac {
+    reset_generator 1, 1, $size_z; # column defining rock strata TODO add soil gradient here?
+    set_depositor_from_number $rock_col;
     local HSV col = RGB_to_HSV(depositor_voxel.r, depositor_voxel.g, depositor_voxel.b);
     iz = 0;
     repeat ($size_z) {
-        set_depositor_from_HSV col.h+random("-0.05","0.05"), col.s+random("-0.05","0.05"), col.v+random("-0.1","0.1");
+        set_depositor_from_HSV col.h+random("-0.05","0.05"), col.s+random("-0.05","0.05"), col.v+random("-0.05","0.05");
         set_voxel 0, 0, iz;
         iz++;
     }
     add_canvas_as_template; # template 1
 
-    clear_canvas $size_x, $size_y, $size_z;
-    generate_value_noise canvas_size_x, canvas_size_y, $scale, 8, false; # doesn't write to the canvas
 
-    # remap noise
+    clear_canvas $size_x, $size_y, $size_z;
+    
+    generate_value_noise canvas_size_x, canvas_size_y, $noise_scale_xy, 8, false; # doesn't write to the canvas
+
+    # rescale to fill the canvas height
     i = 1;
     repeat (canvas_size_x * canvas_size_y) {
-        temp_canvas_mono[i] = (((temp_canvas_mono[i] * 1.6) - 0.3) * canvas_size_z);
-        if (temp_canvas_mono[i] < 1) {
-            temp_canvas_mono[i] = 1;
-        }
+        temp_canvas_mono[i] = (((temp_canvas_mono[i] - 0.1)/0.8) * canvas_size_z * $noise_scale_z);
         i++;
     }
 
-    # convert height into rock formation
-    set_depositor_to_template 1, 0, 0, 0;
-    temp_canvas_mono_to_canvas;
-    delete temp_canvas_mono;
 
-    generator_finished;
-}
-
-proc temp_canvas_mono_to_canvas {
+    # generate columns in a single pass (rock, soil, water, grass, tree)
     i = 1;
     iy = 0;
     repeat (canvas_size_y) {
         ix = 0;
         repeat (canvas_size_x) {
-            draw_column ix, iy, 0, temp_canvas_mono[i];
-            ix++;
-            i++;
-        }
-        iy++;
-    }
-}
+            local dx = 0;
+            local dy = 0;
+            local h = temp_canvas_mono[i];
 
-
-on "gen.erosion.run.erode" {
-    delete UI_return;
-    setting_from_id "gen.erosion.steps";
-    setting_from_id "gen.erosion.capacity";
-    setting_from_id "gen.erosion.strength";
-    erode UI_return[1], UI_return[2], UI_return[3];
-}
-proc erode steps, capacity, strength {
-    create_erosion_lut 2;
-
-    # convert canvas into temp_canvas_mono representing heights
-    # it was originally planned to move around real voxels but that's too expensive, even for turbowarp
-    delete temp_canvas_mono;
-    layer_size = (canvas_size_x * canvas_size_y);
-    i = 1;
-    repeat layer_size {
-        iz = canvas_size_z-1;
-        until ((iz < 0) or (canvas[i + (iz * layer_size)].opacity > 0)) {
-            iz += -1;
-        }
-        add iz+1 to temp_canvas_mono;
-        i++;
-    }
-
-    # create flows
-    repeat ((canvas_size_x * canvas_size_y) * $steps) {
-        erode_flow RANDOM_X(), RANDOM_Y(), $capacity, $capacity*$strength;
-    }
-
-    # update the terrain by removing air where necessary and adding voxels
-
-    i = 1;
-    iy = 0;
-    repeat (canvas_size_y) {
-        ix = 0;
-        repeat (canvas_size_x) {
-            set_depositor_to_air;
-            iz = canvas_size_z-1;
-            repeat (canvas_size_z-temp_canvas_mono[i]) {
-                set_voxel ix, iy, iz;
-                iz += -1;
-            }
-            # now search down until solid is found
-            #repeat (temp_canvas_mono[i]) {
-            #    set_voxel ix, iy, iz;
-            #    iz += -1;
-            #}
-
-            #draw_column ix, iy, 0, temp_canvas_mono[i];
-            ix++;
-            i++;
-        }
-        iy++;
-    }
-    
-    #delete temp_canvas_mono;
-
-    generator_finished;
-}
-
-
-proc create_erosion_lut radius {
-    delete custom_lut;
-
-    # create grid
-    local radius = ceil($radius);
-    local sum = 0;
-    iy = -radius;
-    repeat (1+radius*2) {
-        ix = -radius;
-        repeat (1+radius*2) {
-            local val = $radius - VEC2_LEN(ix, iy);
-            if (val > 0) {
-                add ix to custom_lut;
-                add iy to custom_lut;
-                add val to custom_lut;
-                sum += val;
-            }
-            ix++;
-        }
-        iy++;
-    }
-
-    # normalise to 1
-    i = 3;
-    repeat (length custom_lut / 3) {
-        custom_lut[i] /= sum;
-        i += 3;
-    }
-}
-
-
-# heightmap of the topmost non-transparent voxel, normalised to greyscale 0-1
-%define FLOW_KERNEL_X(DX,DY,WX) \
-agent_dx += WX*(temp_canvas_mono[INDEX_FROM_2D_INTS(agent_x+(DX), agent_y, canvas_size_x, canvas_size_y)] - h);
-
-%define FLOW_KERNEL_Y(DX,DY,WY) \
-agent_dy += WY*(temp_canvas_mono[INDEX_FROM_2D_INTS(agent_x, agent_y+(DY), canvas_size_x, canvas_size_y)] - h);
-
-%define FLOW_KERNEL_XY(DX,DY,WX,WY) \
-local kernel_h = (temp_canvas_mono[INDEX_FROM_2D_INTS(agent_x+(DX), agent_y+(DY), canvas_size_x, canvas_size_y)] - h);\
-agent_dx += WX*kernel_h;\
-agent_dy += WY*kernel_h;\
-
-%define W_EDGE 0.5
-%define W_CORNER 0.25
-
-
-
-proc erode_flow x, y, capacity, strength {
-    agent_x = $x;
-    agent_y = $y;
-    local current_capacity = $capacity;
-    
-    local speed = 0;
-    local evaporation_rate = $strength;
-    local sediment = 0;
-    local capacity_fac = 0;
-    local capacity_fac_change = 5 / (current_capacity / evaporation_rate);
-    repeat (current_capacity // evaporation_rate) {
-        #log agent_x & "," & agent_y;
-        agent_i = INDEX_FROM_2D_NOWRAP_INTS(agent_x, agent_y, canvas_size_x);
-        
-        # 3D terrain generator method
-        _terr_change sediment - (capacity_fac * current_capacity);
-        sediment += (capacity_fac * current_capacity) - sediment;
-
-        current_capacity -= evaporation_rate;
-
-        #log sediment & "/" & current_capacity;
-
-        # pick a way to move (but only move at the end after erosion, so erosion doesn't affect direction)
-        local agent_dx = 0;
-        local agent_dy = 0;
-        local h = temp_canvas_mono[agent_i];
-
-        # x
-        FLOW_KERNEL_X(-1,0,W_EDGE)
-        FLOW_KERNEL_X(1,0,-W_EDGE)
-        
-        # y
-        FLOW_KERNEL_Y(0,-1,W_EDGE)
-        FLOW_KERNEL_Y(0,1,-W_EDGE)
-
-        # corners
-        FLOW_KERNEL_XY(1,1,-W_CORNER,-W_CORNER)
-        FLOW_KERNEL_XY(-1,1,W_CORNER,-W_CORNER)
-        FLOW_KERNEL_XY(1,-1,-W_CORNER,W_CORNER)
-        FLOW_KERNEL_XY(-1,-1,W_CORNER,W_CORNER)
-
-        # move
-        speed = VEC2_LEN(agent_dx, agent_dy);
-        if (speed < 0.1) {
-            _terr_change sediment; # might be unnecessary
-            stop_this_script;
-        }
-
-        # find new location
-        local new_x = (agent_x + ((agent_dx>0)*2-1)) % canvas_size_x;
-        local new_y = (agent_y + ((agent_dy>0)*2-1)) % canvas_size_y;
-
-        agent_x = new_x;
-        agent_y = new_y;
-
-        capacity_fac += capacity_fac_change;
-        if (capacity_fac > 1) {
-            capacity_fac = 1;
-        }
-    }
-    _terr_change -sediment;
-}
-
-
-proc _terr_change amount {
-    # can be optimised
-    local terr_change_i = 1;
-    repeat length custom_lut / 3 {
-        local deposit_i = INDEX_FROM_2D_INTS(agent_x+custom_lut[terr_change_i], agent_y+custom_lut[terr_change_i+1], canvas_size_x, canvas_size_y);
-        temp_canvas_mono[deposit_i] += $amount * custom_lut[terr_change_i+2];
-        if temp_canvas_mono[deposit_i] < 0 {
-            temp_canvas_mono[deposit_i] = 0;
-        }
-        terr_change_i += 3;
-    }
-}
-
-
-on "gen.erosion.run.finalise" {
-    delete UI_return;
-    setting_from_id "gen.erosion.water_level_fac";
-    setting_from_id "gen.erosion.water_col";
-    setting_from_id "gen.erosion.grass_fac";
-    setting_from_id "gen.erosion.grass_col";
-    setting_from_id "gen.erosion.tree_fac";
-    finalise_terrain UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5];
-}
-proc finalise_terrain water_level_fac, water_col, grass_fac, grass_col, tree_fac {
-    # search every voxel and add water
-    reset_depositor;
-    set_depositor_from_number $water_col;
-    depositor_replace = false;
-    draw_cuboid_corner_size 0, 0, 0, canvas_size_x, canvas_size_y, canvas_size_z * $water_level_fac;
-
-    # add trees (must not overlap)
-    iy = 0;
-    repeat (canvas_size_y) {
-        ix = 0;
-        repeat (canvas_size_x) {
-            if (PROBABILITY($tree_fac)) {
-                _plant_tree ix, iy, (canvas_size_z * $water_level_fac) + 1;
-            }
-            ix++;
-        }
-        iy++;
-    }
-
-    generator_finished;
-}
-proc _plant_tree x, y, min_elevation {
-    iz = $min_elevation;
-    i = INDEX_FROM_3D_CANVAS($x, $y, iz, canvas_size_x, canvas_size_y);
-    layer_size = (canvas_size_x * canvas_size_y);
-    # find first non-air voxel
-    repeat (canvas_size_z) {
-        if (canvas[i].opacity == 0 and canvas[i-layer_size].opacity > 0) {
-            # plant the tree here
-            set_depositor_from_HSV 0.25, 0.5, 0.5;
-            randomise_depositor_by_HSV 0.05, 0.05, 0.05;
-            draw_column $x, $y, iz, random(1,random(2,4));
+            # get gradient then rescale
+            # x
+            NRM_KERNEL_X(-1,0,W_EDGE)
+            NRM_KERNEL_X(1,0,-W_EDGE)
             
-            stop_this_script;
+            # y
+            NRM_KERNEL_Y(0,-1,W_EDGE)
+            NRM_KERNEL_Y(0,1,-W_EDGE)
+
+            # corners
+            NRM_KERNEL_XY(1,1,-W_CORNER,-W_CORNER)
+            NRM_KERNEL_XY(-1,1,W_CORNER,-W_CORNER)
+            NRM_KERNEL_XY(1,-1,-W_CORNER,W_CORNER)
+            NRM_KERNEL_XY(-1,-1,W_CORNER,W_CORNER)
+            
+
+            local slope = VEC2_LEN(dx, dy);
+            local water_level = (canvas_size_z * $water_level_fac);
+
+            # rock
+            set_depositor_to_template 1, 0, 0, random(0,1);
+            draw_column ix, iy, 0, floor(h)+1;
+
+            # mud
+            if (floor(h) < floor(water_level + random("-1.0", "1.0"))) {
+                set_depositor_from_number $soil_col;
+                set_voxel ix, iy, floor(h);
+            } else {
+                # soil
+                if (slope < 1.2 * $grass_fac) {
+                    set_depositor_from_number $soil_col;
+                    set_voxel ix, iy, floor(h);
+                }
+
+                # grass
+                if (slope < 1 * $grass_fac) {
+                    set_depositor_from_number $grass_col;
+                    randomise_depositor_by_HSV 0.02, 0.02, 0.02;
+                    set_voxel ix, iy, floor(h);
+
+                    if ((floor(h) > 0) and PROBABILITY(0.5)) {
+                        # soil under grass (usually not seen)
+                        set_depositor_from_number $soil_col;
+                        set_voxel ix, iy, floor(h)-1;
+                    }
+                }
+            }
+
+            if (floor(h) < floor(water_level)) {
+                # water
+                set_depositor_from_number $water_col;
+                depositor_replace = false;
+                local water_lerp = (water_level - h) * 0.05;
+                lerp_depositor_towards_number 0, MIN(0.3, water_lerp);
+                draw_column ix, iy, 0, floor(water_level);
+                depositor_replace = true;
+            } else {
+                if ((slope < 0.8 * $grass_fac) and PROBABILITY($tree_fac)) {
+                    # tree
+                    set_depositor_from_number $tree_col;
+                    depositor_replace = false;
+                    randomise_depositor_by_HSV 0.02, 0.05, 0.05;
+                    iz = random(1,random(2,4));
+                    repeat iz {
+                        set_voxel ix, iy, h+iz;
+                        lerp_depositor_towards_number 0, 0.05;
+                        iz--;
+                    }
+                    depositor_replace = true;
+                }
+            }
+            
+            ix++;
+            i++;
         }
-        i += layer_size;
-        iz++;
+        iy++;
     }
+
+    delete temp_canvas_mono;
+
+    generator_finished;
 }
 
 
