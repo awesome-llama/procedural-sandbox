@@ -552,14 +552,19 @@ panels['gen.maze'] = Container([
 ])
 
 panels['gen.nucleus'] = Container([
-    Label.title('Generate "nucleus"'),
+    Label.title('Generate "Nucleus"'),
     Separator(),
-    Expander('Canvas', '', True, [
-        Value('Radius', 'gen.nucleus.radius', 64, 1, 256, 0, 4096, snap_frac=1),
+    Expander('Dimensions', '', True, [
+        Value('Radius', 'gen.nucleus.radius', 32, 1, 128, 0, 4096, snap_frac=1),
         Value.canvas_size('Size Z', 'gen.nucleus.size_z', 16, 64),
     ]),
+    Expander('Shape', '', True, [
+        Value('Rings', 'gen.nucleus.rings', 1, 0, 2, 0, 16),
+        Value('Rays', 'gen.nucleus.rays', 1, 0, 2, 0, 16),
+        Value('Cuboids', 'gen.nucleus.cuboids', 1, 0, 2, 0, 16),
+    ]),
     Expander('Color', '', True, [
-        #Color('Ground color', 'gen.nucleus.ground_col', 'aaaaaa'),
+        Value('Glow', 'gen.nucleus.glow', 0.5, 0, 2, 0, 16),
     ]),
     Button('Generate', 'gen.nucleus.run'),
 ])
@@ -795,7 +800,7 @@ panels['settings.pathtracer'] = Container([
     Separator(),
     TextBlock('Applies to the "pathtraced" mode only.'),
     Expander('Iterations', '', False, [
-        Value('Max. samples', 'settings.max_samples', 256, 1, 1024, 1, 16777216, snap_frac=1),
+        Value('Max. samples', 'settings.max_samples', 512, 1, 4096, 1, 16777216, snap_frac=1),
         TextBlock('Total number of rays'),
         Separator(),
         Value('Max. frame time', 'settings.max_frame_time', 0.1, 0, 0.5, 0, 60, snap_frac=100),

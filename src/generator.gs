@@ -1241,18 +1241,19 @@ on "gen.nucleus.run" {
     delete UI_return;
     setting_from_id "gen.nucleus.radius";
     setting_from_id "gen.nucleus.size_z";
-    setting_from_id "gen.nucleus.ground_col";
-    generate_nucleus UI_return[1], UI_return[2], UI_return[3];
+    setting_from_id "gen.nucleus.rings";
+    setting_from_id "gen.nucleus.rays";
+    setting_from_id "gen.nucleus.cuboids";
+    setting_from_id "gen.nucleus.glow";
+    generate_nucleus UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6];
 }
-proc generate_nucleus radius, size_z, ground_col {
+proc generate_nucleus radius, size_z, ring_fac, ray_fac, cuboid_fac, glow {
     # first create a section on the XZ plane
     reset_generator $radius, 1, $size_z;
 
-    set_depositor_from_number $ground_col;
-
     # TODO probability distributions
     local radius = $radius * random("0.4", "0.8");
-    repeat (0.2 * canvas_size_x) { # cuboids
+    repeat (0.2 * canvas_size_x * $ring_fac) { # cuboids
         set_depositor_from_HSV RANDOM_0_1(), random("0.0", "0.1"), RANDOM_0_1();
 
         local c1x = random(0, radius);
@@ -1261,16 +1262,21 @@ proc generate_nucleus radius, size_z, ground_col {
         draw_cuboid_corner_size c1x, 0, 0, cube_x, 1, cube_z-1;
         draw_cuboid_corner_size c1x+1, 0, 0, cube_x-2, 1, cube_z;
     }
-    repeat (0.1 * canvas_size_x) { # pipes, grey
+    repeat (0.1 * canvas_size_x * $ring_fac) { # pipes, grey
         set_depositor_from_HSV RANDOM_0_1(), random("0.0", "0.1"), random("0.5", "0.7");
         set_voxel random(0, canvas_size_x*0.8), 0, random(1, canvas_size_z-2);
     }
-    repeat (0.05 * canvas_size_x) { # pipes multicolor
+    repeat (0.05 * canvas_size_x * $ring_fac) { # pipes multicolor
         set_depositor_from_HSV RANDOM_0_1(), random("0.1", "0.8"), random("0.4", "1.0");
         set_voxel random(0, canvas_size_x*0.8), 0, random(1, canvas_size_z-1);
     }
-    repeat (0.05 * canvas_size_x) { # pipes
+    repeat (0.05 * canvas_size_x * $ring_fac) { # pipes
         set_depositor_from_HSV RANDOM_0_1(), random("0.4", "0.6"), random("0.4", "0.8");
+        set_voxel random(0, canvas_size_x*0.8), 0, random(1, canvas_size_z-1);
+    }
+    repeat (0.1 * canvas_size_x * $ring_fac * $glow) { # glowing pipes
+        set_depositor_from_HSV RANDOM_0_1(), RANDOM_0_1(), random("0.7", "1.0");
+        depositor_voxel.emission = 1;
         set_voxel random(0, canvas_size_x*0.8), 0, random(1, canvas_size_z-1);
     }
 
@@ -1279,19 +1285,16 @@ proc generate_nucleus radius, size_z, ground_col {
     glbfx_jitter 0.01, 0;
     glbfx_revolve 0;
 
-    # draw the base layer to fill the void
+    # ground
     set_depositor_from_HSV RANDOM_0_1(), random("0.0", "0.1"), RANDOM_0_1();
-    draw_base_layer;
-
-    # radial pipes low
-    local turn = random(0,2)*45; # turn angle for random walk
-    local steps = random(1,12);
-    set_depositor_from_HSV RANDOM_0_1(), random("0.0", "0.1"), RANDOM_0_1();
-    repeat (random("0.0", "0.02") * canvas_size_x * canvas_size_y) {
-        local dist = random(0, canvas_size_x*1.3); # random walk start distance from center
-        local rot = RANDOM_ANGLE();
-        random_walk_any (canvas_size_x/2)+dist*cos(rot), (canvas_size_y/2)+dist*sin(rot), random(0, canvas_size_z*0.2), rot, steps, canvas_size_x*random("0.05", "0.1"), turn;
+    repeat (random("0.0", "0.1") * (canvas_size_x * canvas_size_y) * $cuboid_fac) {
+        randomise_depositor_by_HSV 0.005, 0.005, 0.005;
+        draw_cuboid_corner_size RANDOM_X(), RANDOM_Y(), random(0, canvas_size_z*0.2), random(1, radius * 0.5), random(1, radius * 0.5), 1;
     }
+    # draw the base layer to fill the void
+    depositor_replace = false;
+    draw_base_layer;
+    depositor_replace = true;
 
     # add radial pipes
     local turn = random(0,2)*45; # turn angle for random walk
@@ -1305,7 +1308,7 @@ proc generate_nucleus radius, size_z, ground_col {
     } else {
         set_depositor_from_sRGB RANDOM_0_1(), RANDOM_0_1(), RANDOM_0_1();
     }
-    repeat (random("0.0", "6.0")*dist) {
+    repeat (random("0.0", "6.0") * dist * $ray_fac) {
         local rot = RANDOM_ANGLE();
         random_walk_any (canvas_size_x/2)+dist*cos(rot), (canvas_size_y/2)+dist*sin(rot), random(elev_min, elev_max), rot, steps, canvas_size_x*random("0.05", "0.1"), turn;
     }
