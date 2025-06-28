@@ -1365,37 +1365,6 @@ proc generate_fibres size_x, size_y, size_z, density, cl_count, cl_rad, seg_len,
 }
 
 
-on "gen.refinery.run" {
-    delete UI_return;
-    generate_refinery;
-}
-proc generate_refinery {
-    reset_generator 64, 64, 16;
-    set_depositor_from_sRGB 0.7, 0.7, 0.6;
-    draw_base_layer;
-
-    local tank_rad = 8;
-    # spherical tanks
-    repeat 3 {
-        set_depositor_from_sRGB_value random(0.9, 1);
-        
-        local tank_x = floor(RANDOM_X() * 16)/16;
-        local tank_y = floor(RANDOM_Y() * 16)/16;
-
-        draw_sphere tank_x, tank_y, tank_rad/2, tank_rad;
-
-        set_depositor_from_sRGB_value random(0.5, 1);
-
-        random_walk_taxicab tank_x+tank_rad, tank_y, random(1, tank_rad/2), 12, 16;
-        random_walk_taxicab tank_x-tank_rad, tank_y, random(1, tank_rad/2), 12, 16;
-        random_walk_taxicab tank_x, tank_y+tank_rad, random(1, tank_rad/2), 12, 16;
-        random_walk_taxicab tank_x, tank_y-tank_rad, random(1, tank_rad/2), 12, 16;
-    }
-    
-    generator_finished;
-}
-
-
 on "gen.value_noise.run" {
     delete UI_return;
     setting_from_id "gen.value_noise.size_x";

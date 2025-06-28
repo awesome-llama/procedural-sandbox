@@ -206,7 +206,6 @@ panels['menu.gen'] = Container([
     btn_menu_set_page('Control panel', 'gen.control_panel'),
     btn_menu_set_page('Nucleus', 'gen.nucleus'),
     btn_menu_set_page('Printed circuit board', 'gen.pcb'),
-    btn_menu_set_page('Refinery', 'gen.refinery'),
     Separator(0, 5), # patterns, specific
     btn_menu_set_page('Extruded grid', 'gen.extruded_grid'),
     btn_menu_set_page('Fibres', 'gen.fibres'),
@@ -533,7 +532,6 @@ panels['gen.hedge'] = Container([
     Button('Generate', 'gen.hedge.run'),
 ])
 
-
 panels['gen.maze'] = Container([
     Label.title('Generate maze'),
     Separator(),
@@ -569,20 +567,6 @@ panels['gen.nucleus'] = Container([
     Button('Generate', 'gen.nucleus.run'),
 ])
 
-panels['gen.refinery'] = Container([
-    Label.title('Generate refinery'),
-    Separator(),
-    Expander('Canvas', '', True, [
-        Value.canvas_size('Size X', 'gen.refinery.size_x', 64),
-        Value.canvas_size('Size Y', 'gen.refinery.size_y', 64),
-        Value.canvas_size('Size Z', 'gen.refinery.size_z', 16, 64),
-    ]),
-    Expander('Color', '', True, [
-        Color('Ground color', 'gen.refinery.ground_col', '#aaaaaa'),
-    ]),
-    Button('Generate', 'gen.refinery.run'),
-])
-
 # https://en.wikipedia.org/wiki/Value_noise
 panels['gen.value_noise'] = Container([
     Label.title('Value noise (2D)'),
@@ -597,7 +581,6 @@ panels['gen.value_noise'] = Container([
     ]),
     Button('Generate', 'gen.value_noise.run'),
 ])
-
 
 panels['gen.sphere'] = Container([
     Label.title('Sphere'),
