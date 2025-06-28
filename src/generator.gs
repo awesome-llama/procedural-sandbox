@@ -1587,6 +1587,7 @@ list lit_addresses; # location in memory
 
 list var_names; # lookup
 list var_addresses; # location in memory
+list var_usage_count;
 
 list label_names; # lookup
 list label_addresses; # location in instructions
@@ -1617,7 +1618,9 @@ on "gen.lang.run" {
         if (UI_return[1]) {
             broadcast "sys.show_output";
         }
+        reset_depositor;
         language_run;
+        generator_finished;
         if (not UI_return[1]) {
             print "finished successfully", 3;
         }
@@ -1638,6 +1641,7 @@ proc clear_lang_lists {
     delete lit_addresses;
     delete var_names;
     delete var_addresses;
+    delete var_usage_count;
     delete label_names;
     delete label_addresses;
     delete unresolved_jump_targets;
@@ -1837,10 +1841,12 @@ proc language_assemble script {
                             add "" to saved_memory; # initial value
                             #add "unassigned " & substr to memory; # alternative initial value for debugging
                             add substr to var_names;
+                            add 1 to var_usage_count;
                             add (length saved_memory) to var_addresses;
                             add (length saved_memory) to instructions; # address to memory
                         } else {
                             add var_addresses[var_index] to instructions; # address to memory
+                            var_usage_count[var_index] += 1;
                         }
                     }
                     substr = "";
@@ -1863,7 +1869,6 @@ proc language_assemble script {
         }
     }
 
-
     # resolve the jump targets
     i = 1;
     repeat (length unresolved_jump_targets) {
@@ -1877,7 +1882,18 @@ proc language_assemble script {
         i++;
     }
 
-    add "assembler finished successfully" to output;
+    # warn for unused variables
+    i = 1;
+    repeat (length var_names) {
+        if (var_names[i] != "_" and var_usage_count[i] < 2) {
+            add "unused variable: " & var_names[i] to output;
+            warn "unused variable: " & var_names[i];
+            broadcast "sys.show_output";
+        }
+        i++;
+    }
+
+    add "assembler finished" to output;
     assemble_success = true;
 }
 
@@ -2260,7 +2276,7 @@ proc language_run {
         # end of until loop
     }
 
-    add "finished successfully" to output;
+    add "finished" to output;
 }
 
 
