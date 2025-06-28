@@ -94,8 +94,6 @@ on "sys.render_UI" {
         tab_button tab_offset, 37, "Gen", "menu.gen";
         tab_button tab_offset, 31, "FX", "menu.fx";
         tab_button tab_offset, 58, "Settings", "menu.settings";
-
-        # TODO note in top bar
     }
 
     render_popup;

@@ -402,7 +402,7 @@ proc cmp_orbit_normal {
 ################################
 
 
-# used by both ao and shaded modes. TODO: investiagate whether the 3D AO code could replace it
+# used by both ao and shaded modes
 proc init_aligned_ao_pass {
     generate_pass_topmost;
     counted_samples = 1;

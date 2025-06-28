@@ -98,12 +98,6 @@ proc move_camera dx, dy {
 }
 
 
-onkey "p" {
-    # TODO remove
-    #broadcast "gen.test.run"; # debug
-}
-
-
 %define UPDATE_MOUSE() prev_mouse_x = mouse_x(); prev_mouse_y = mouse_y();
 
 # click and drag to pan
@@ -201,6 +195,8 @@ proc limit_scroll  {
 
 on "sys.zoom_extents" { zoom_extents; }
 proc zoom_extents {
+    # TODO: scale is calculated incorrectly, sometimes the canvas doesn't fit the viewport
+
     # first get avail width and height of viewport
     local viewport_width = stage_size_x-UI_sidebar_width;
     local viewport_height = stage_size_y-20;
@@ -212,7 +208,7 @@ proc zoom_extents {
         cam_scale = 1;
     } elif ((canvas_size_x/canvas_size_y) > (viewport_width/viewport_height)) { # find which side will reach the limit first
         # x is largest
-        cam_scale = ceil((0.5+(ln((viewport_width/canvas_size_x))/ln(2)))); # TODO
+        cam_scale = ceil((0.5+(ln((viewport_width/canvas_size_x))/ln(2))));
     } else {
         # y is largest
         cam_scale = ceil((0.5+(ln((viewport_height/canvas_size_y))/ln(2))));

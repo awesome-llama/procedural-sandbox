@@ -957,7 +957,7 @@ on "gen.terrain.run" {
     generate_terrain UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6], UI_return[7], UI_return[8], UI_return[9], UI_return[10], UI_return[11], UI_return[12], UI_return[13];
 }
 proc generate_terrain size_x, size_y, size_z, noise_scale_xy, noise_scale_z, water_level_fac, water_col, rock_col, soil_col, grass_col, grass_fac, tree_col, tree_fac {
-    reset_generator 1, 1, $size_z; # column defining rock strata TODO add soil gradient here?
+    reset_generator 1, 1, $size_z; # column defining rock strata
     set_depositor_from_number $rock_col;
     local HSV col = RGB_to_HSV(depositor_voxel.r, depositor_voxel.g, depositor_voxel.b);
     iz = 0;
@@ -1251,7 +1251,6 @@ proc generate_nucleus radius, size_z, ring_fac, ray_fac, cuboid_fac, glow {
     # first create a section on the XZ plane
     reset_generator $radius, 1, $size_z;
 
-    # TODO probability distributions
     local radius = $radius * random("0.4", "0.8");
     repeat (0.2 * canvas_size_x * $ring_fac) { # cuboids
         set_depositor_from_HSV RANDOM_0_1(), random("0.0", "0.1"), RANDOM_0_1();
@@ -1566,7 +1565,6 @@ proc generate_test {
 ################################
 
 on "sys.hard_reset" {
-    delete call_stack;
     clear_lang_lists;
 }
 
@@ -1633,6 +1631,7 @@ on "gen.lang.run" {
 proc clear_lang_lists {
     assemble_success = false;
     delete instructions;
+    delete call_stack;
     delete memory;
     delete saved_memory;
     delete lit_vals;
@@ -1786,7 +1785,7 @@ proc language_assemble script {
                     }
 
                     # consume number:
-                    # TODO limit use of special chars to certain positions
+                    # TODO limit use of special chars to certain positions in number
                     substr &= input[i];
                     i++;
                     until (not (input[i] in ".0123456789")) {
@@ -1828,7 +1827,6 @@ proc language_assemble script {
                     
                     if (instruction_args[ins_index][arg_index] == "F") {
                         # is field, keep as-is
-                        # TODO convert to number depending on instruction (hard-code it)
                         add substr to instructions;
 
                     } else {
@@ -2943,12 +2941,6 @@ proc glbfx_revolve dist_offset {
     
     delete temp_canvas;
 }
-
-
-proc radial_array dist_offset {
-    # TODO
-}
-
 
 
 on "fx.mirror.mirror_x" {
