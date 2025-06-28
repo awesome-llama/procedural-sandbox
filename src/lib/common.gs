@@ -152,6 +152,9 @@ struct template_metadata {
 %define DOT_PRODUCT_3D(X1,Y1,Z1,X2,Y2,Z2) ((X1)*(X2) + (Y1)*(Y2) + (Z1)*(Z2))
 
 
+# Approximately equal to
+%define APPROX(A,B,TOLERANCE) (abs((B)-(A)) < (TOLERANCE))
+
 
 ### Specific to this project:
 

@@ -55,9 +55,17 @@ proc render_canvas_2D {
     local ss_origin_y = floor(-cam_y * cam_scale);
 
     if (pixel_screen_size > 1) {
-        set_pen_size ((1.45-(0.33/(pixel_screen_size-0.26)))*pixel_screen_size);
         ss_origin_x += (0.5*pixel_screen_size);
         ss_origin_y += (0.5*pixel_screen_size);
+        
+        set_pen_size ((1.45-(0.33/(pixel_screen_size-0.26)))*pixel_screen_size);
+
+        # special cases optimising for visual quality in low-quality pen
+        if APPROX(pixel_screen_size, 1.5, 0.49) {
+            set_pen_size 2;
+        } elif APPROX(pixel_screen_size, 2.5, 0.49) {
+            set_pen_size 4;
+        }
     } else {
         set_pen_size pixel_screen_size;
     }
