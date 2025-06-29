@@ -12,7 +12,7 @@ instructions = [
     ['jump', [LABEL], 30, 'iptr = instructions[iptr+1];'],
     ['jump_if_true', [LABEL, VAL], 30, 'if (MEM2) {iptr = instructions[iptr+1];} else {iptr += $SIZE;}'],
     ['jump_if_false', [LABEL, VAL], 30, 'if (MEM2) {iptr += $SIZE;} else {iptr = instructions[iptr+1];}'],
-    ['jump_by', [LABEL, VAL], 30, 'iptr += MEM2;'], # jump by address offset
+    ['jump_by', [VAL], 30, 'iptr += MEM1;'], # jump by address offset
     ['call', [LABEL], 40, 'add iptr+$SIZE to call_stack;iptr = instructions[iptr+1];'],
     ['return', [], 40, 'iptr = call_stack["last"];delete call_stack["last"];'],
 
@@ -70,6 +70,7 @@ instructions = [
     ['print', [VAL], 2000, 'add MEM1 to output;iptr += $SIZE;'],
 
     ['clear_canvas', [VAL, VAL, VAL], 500, 'clear_canvas MEM1, MEM2, MEM3;iptr += $SIZE;'],
+    ['get_canvas_size', [ADR, ADR, ADR], 500, 'MEM1=canvas_size_x;MEM2=canvas_size_y;MEM3=canvas_size_z;iptr += $SIZE;'],
     ['add_canvas_as_template', [], 500, 'add_canvas_as_template;iptr += $SIZE;'],
 
     ['reset_depositor', [], 500, 'reset_depositor;iptr += $SIZE;'],
@@ -80,6 +81,7 @@ instructions = [
     ['set_depositor_to_template', [VAL, VAL, VAL, VAL], 500, 'set_depositor_to_template MEM1, MEM2, MEM3, MEM4;iptr += $SIZE;'],
     ['set_depositor_opacity', [VAL], 500, 'depositor_voxel.opacity=MEM1;iptr += $SIZE;'],
     ['set_depositor_emission', [VAL], 500, 'depositor_voxel.emission=MEM1;iptr += $SIZE;'],
+    ['get_depositor', [ADR, ADR, ADR, ADR, ADR], 500, 'MEM1=depositor_voxel.r;MEM2=depositor_voxel.g;MEM3=depositor_voxel.b;MEM4=depositor_voxel.opacity;MEM5=depositor_voxel.emission;iptr += $SIZE;'],
 
     ['set_voxel', [VAL, VAL, VAL], 500, 'set_voxel MEM1, MEM2, MEM3;iptr += $SIZE;'],
     ['draw_ray', [VAL, VAL, VAL, VAL, VAL, VAL, VAL], 500, 'draw_ray MEM1, MEM2, MEM3, MEM4, MEM5, MEM6, MEM7;iptr += $SIZE;'],
@@ -87,9 +89,7 @@ instructions = [
     ['draw_sphere', [VAL, VAL, VAL, VAL], 500, 'draw_sphere MEM1, MEM2, MEM3, MEM4;iptr += $SIZE;'],
     ['draw_cylinder', [VAL, VAL, VAL, VAL, VAL], 500, 'draw_cylinder MEM1, MEM2, MEM3, MEM4, MEM5;iptr += $SIZE;'],
     ['generate_value_noise', [VAL, VAL, VAL, VAL, VAL], 500, 'generate_value_noise MEM1, MEM2, MEM3, MEM4, MEM5;iptr += $SIZE;'],
-
-    ['get_depositor', [ADR, ADR, ADR, ADR, ADR], 500, 'MEM1=depositor_voxel.r;MEM2=depositor_voxel.g;MEM3=depositor_voxel.b;MEM4=depositor_voxel.opacity;MEM5=depositor_voxel.emission;iptr += $SIZE;'],
-    ['get_canvas_size', [ADR, ADR, ADR], 500, 'MEM1=canvas_size_x;MEM2=canvas_size_y;MEM3=canvas_size_z;iptr += $SIZE;'],
+    
 ]
 
 

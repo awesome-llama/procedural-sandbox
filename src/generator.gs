@@ -1604,7 +1604,7 @@ on "gen.lang.input_code" {
     if (answer() != "") {
         language_assemble answer();
         if (assemble_success) {
-            print "assembled successfully", 3;
+            print_no_duplicates "assembled successfully", 3;
         } else {
             broadcast "sys.show_output";
         }
@@ -1618,14 +1618,15 @@ on "gen.lang.run" {
         if (UI_return[1]) {
             broadcast "sys.show_output";
         }
+        delete_all_templates;
         reset_depositor;
         language_run;
         generator_finished;
         if (not UI_return[1]) {
-            print "finished successfully", 3;
+            print_no_duplicates "finished successfully", 3;
         }
     } else {
-        print "no valid code available", 3;
+        print_no_duplicates "no valid code available", 3;
     }
 }
 
@@ -1699,7 +1700,7 @@ proc language_assemble script {
             # don't add anything to the instructions
             substr = "";
             
-        } elif (input[i] in "_0123456789abcdefghijklmnopqrstuvwxyz") {
+        } elif (input[i] in "_abcdefghijklmnopqrstuvwxyz") {
             # instruction
             _consume_name;
             if (not (input[i] in " ;")) {
@@ -1767,11 +1768,11 @@ proc language_assemble script {
                     }
                     i++; # skip over last quote
 
-                    local lit_index = substr in lit_vals;
+                    local lit_index = ("s" & substr) in lit_vals;
                     if (lit_index == 0) {
                         # never-seen-before literal
                         add substr to saved_memory; # literal stored in memory
-                        add substr to lit_vals;
+                        add ("s" & substr) to lit_vals;
                         add (length saved_memory) to instructions; # address to memory
                         add (length saved_memory) to lit_addresses;
                     } else {
@@ -1815,7 +1816,7 @@ proc language_assemble script {
                     substr = "";
                     arg_index++;
 
-                } elif (input[i] in "_0123456789abcdefghijklmnopqrstuvwxyz") {
+                } elif (input[i] in "_abcdefghijklmnopqrstuvwxyz") {
                     # variable or field
                     local arg_type = instruction_args[ins_index][arg_index]; # beware detection of empty string
                     if (arg_type == "" or not (arg_type in "AVF")) {
@@ -1933,7 +1934,7 @@ proc language_run {
     local iptr = 1; # entry point at first item
 
     until (iptr > length instructions) {
-        log iptr & ": " & instruction_names[instructions[iptr] + 1]; # debug
+        #log iptr & ": " & instruction_names[instructions[iptr] + 1]; # debug
 
         local opcode = instructions[iptr];
         ######
@@ -2036,7 +2037,7 @@ proc language_run {
                                 if (MEM2) {iptr += 3;} else {iptr = instructions[iptr+1];}
                             } else {
                                 # 19: jump_by
-                                iptr += MEM2;
+                                iptr += MEM1;
                             }
                         }
                     } else {
