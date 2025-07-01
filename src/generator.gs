@@ -2251,7 +2251,7 @@ proc language_run {
                             if (opcode < 64) {
                                 if (opcode < 63) {
                                     # 62: generate_value_noise
-                                    generate_value_noise MEM1, MEM2, MEM3, MEM4, MEM5;iptr += 6;
+                                    generate_value_noise MEM1, MEM2, MEM3, MEM4, true;iptr += 6;
                                 } else {
                                     # 63: get_depositor
                                     MEM1=depositor_voxel.r;MEM2=depositor_voxel.g;MEM3=depositor_voxel.b;MEM4=depositor_voxel.opacity;MEM5=depositor_voxel.emission;iptr += 6;

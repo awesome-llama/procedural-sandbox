@@ -88,7 +88,7 @@ instructions = [
     ['draw_cuboid_corner_size', [VAL, VAL, VAL, VAL, VAL, VAL], 500, 'draw_cuboid_corner_size MEM1, MEM2, MEM3, MEM4, MEM5, MEM6;iptr += $SIZE;'],
     ['draw_sphere', [VAL, VAL, VAL, VAL], 500, 'draw_sphere MEM1, MEM2, MEM3, MEM4;iptr += $SIZE;'],
     ['draw_cylinder', [VAL, VAL, VAL, VAL, VAL], 500, 'draw_cylinder MEM1, MEM2, MEM3, MEM4, MEM5;iptr += $SIZE;'],
-    ['generate_value_noise', [VAL, VAL, VAL, VAL, VAL], 500, 'generate_value_noise MEM1, MEM2, MEM3, MEM4, MEM5;iptr += $SIZE;'],
+    ['generate_value_noise', [VAL, VAL, VAL, VAL], 500, 'generate_value_noise MEM1, MEM2, MEM3, MEM4, true;iptr += $SIZE;'],
     
 ]
 
