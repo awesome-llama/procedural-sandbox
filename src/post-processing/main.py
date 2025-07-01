@@ -45,6 +45,11 @@ costume['bitmapResolution'] = 2
 costume['rotationCenterX'] = 2
 costume['rotationCenterY'] = 0
 
+# mouse position finder
+target = utils.get_target_by_name(project_data, 'UI')
+costume = utils.get_costume_by_name(target, 'mouse detect')
+costume['rotationCenterX'] = 240
+costume['rotationCenterY'] = 180
 
 # backdrop checker
 if False:
