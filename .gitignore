@@ -6,7 +6,6 @@ test*.py
 project.json
 *.sb3
 notes.txt
-build.bat
 
 
 # folders for organisation

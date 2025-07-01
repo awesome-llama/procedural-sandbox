@@ -25,21 +25,30 @@ TextImage is the supported image format for this project. Use the converter tool
 
 ## Dependencies
 
-- [goboscript](https://github.com/aspizu/goboscript/commit/a71d04c441b4f8e2bb470698e4e66adbcc313fa1) (not release v3.2.1, it lacks some fixes)
+- [goboscript](https://github.com/aspizu/goboscript/commit/2426c99b526e5e02e1dd9b42e2ccb38320726da5) **(not release v3.2.1, it lacks some fixes)**
 - Python 3.12 (not tested on older Python 3 versions but they are probably fine too)
 
 
 ## Building
 
-Assuming you have the above dependencies installed and the repo is cloned to your computer...
+TL;DR: Run `build.bat`. If you are using VSCode, alternatively run the "Build (full)" task. The completed project file is `Procedural Sandbox.sb3`.
+
+
+The build process could be seen as 3 parts: 
+
+1. Generating list data with Python
+2. Building the project with goboscript
+3. .sb3 file post-processing with Python
+
+A full build process would be as follows:
 
 1. Run `src/data_URL/process.py` to generate the data URL list data.
 2. Run `src/UI/UI_creator.py` to create the user interface list data.
 3. Run the goboscript build command: `goboscript build -i src -o "Procedural Sandbox.sb3"`. An sb3 file will be generated.
 4. Run `src/post-processing/main.py` to perform final clean up on the sb3 file. 
-5. The sb3 file can be opened up in Scratch or [TurboWarp](https://turbowarp.org/) (recommended).
+5. The sb3 file `Procedural Sandbox.sb3` can be opened up in Scratch or [TurboWarp](https://turbowarp.org/) (recommended).
 
-If using Visual Studio Code, you can run the build tasks. The default task does not generate lists. Use the full build for this.
+This can be automated by running `build.bat` or the various VSCode tasks. You really only need to generate the list data if it's the first time building or you've made a change to it. For this reason, the VSCode build task defaults to the other two parts.
 
 
 ## Contributing
