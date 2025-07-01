@@ -3,6 +3,7 @@ import json
 import datetime
 import os
 import sys
+import subprocess
 
 import utils
 import clean_up_blocks
@@ -111,7 +112,6 @@ for target in project_data['targets']:
 print(f'fields updated: {fields_updated_count}')
 
 
-
 # add a comment to the thumbnail containing project info
 
 target = utils.get_target_by_name(project_data, '_')
@@ -120,6 +120,12 @@ try:
     gs_ver = project_data['meta']['agent'].removeprefix('goboscript v')
 except:
     gs_ver = '?'
+
+try:
+    git_hash = str(subprocess.check_output(["git", "describe", "--always"]).strip(), encoding='utf-8')
+    print(git_hash)
+except:
+    git_hash = '?'
 
 utils.add_comment_to_target(target, "\n".join([
     'Procedural Sandbox',
@@ -130,6 +136,7 @@ utils.add_comment_to_target(target, "\n".join([
     f'approx_json_size: {round(len(utils.serialize_project_json(project_data))/1000)/1000} MB',
     f'gs_ver: {gs_ver}',
     f'py_ver: {sys.version_info.major}.{sys.version_info.minor}',
+    f'git_hash: {git_hash}',
 ]), x=500, width=500, height=600)
 
 

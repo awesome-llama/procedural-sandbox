@@ -103,6 +103,8 @@ on "initalise" {
 
 
 on "sys.hard_reset" {
+    user_first_time = true;
+
     delete canvas;
 
     canvas_size_x = 0;
@@ -174,9 +176,19 @@ on "sys.hard_reset" {
 }
 
 onflag {
-    if (not_first_time == false) { # goboscript hack to reset the project on first load
-        broadcast_and_wait "sys.hard_reset";
-        not_first_time = 1;
+    if (goboscript_init_done == false) {
+        # goboscript hack to reset the project on first load (the variable defaults to false)
+        goboscript_init_done = true;
+        broadcast_and_wait "sys.reset"; # stop all is in the thumbnail
+        stop_this_script;
+    }
+    if (user_first_time) {
+        if ($tw_is_turbowarp) {
+            set_resolution 4;
+        } else {
+            set_resolution 6;
+        }
+        user_first_time = false;
     }
     broadcast "sys.get_stage_size"; # this happens before init just in case anything needs stage size
     broadcast "initalise"; # all receivers must complete within the frame, no loops allowed to start. Think of it as a soft reset.
@@ -185,4 +197,13 @@ onflag {
 
 onclick {
     broadcast "sys.stage_clicked"; # each receiver checks if the hovered group is for it. This prevents the script from running in multiple places at the same time. Use the last hover variable because it stores the state where all of the UI is guaranteed to have been checked. 
+}
+
+
+proc set_resolution target {
+    if (PS_render_resolution_default_orbit != $target) {
+        PS_render_resolution_default_orbit = $target;
+        cmd_string = "element settings.resolution 3 " & $target;
+        broadcast "sys.run_command";
+    }
 }
