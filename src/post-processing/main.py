@@ -25,7 +25,7 @@ SPRITE_ORDER = ['Stage', '_', 'main', 'stage_size', 'UI', 'transform_canvas', 'g
 def get_layer_number(target: dict):
     if target['name'] in SPRITE_ORDER:
         return SPRITE_ORDER.index(target['name'])
-    print(f'unknown layer name: {target['name']}')
+    print(f"unknown layer name: {target['name']}")
     return 1000 # no order given, move to the end
 
 project_data['targets'].sort(key=get_layer_number)
@@ -35,13 +35,33 @@ for i, tgt in enumerate(project_data['targets']):
 
 
 
-# fix the stage size costume
+# fix the costume sizes
 
+# stage size finder
 target = utils.get_target_by_name(project_data, 'stage_size')
 costume = utils.get_costume_by_name(target, 'probe')
 costume['bitmapResolution'] = 2
 costume['rotationCenterX'] = 2
 costume['rotationCenterY'] = 0
+
+
+# backdrop checker
+if False:
+    # for some reason, not setting these lets the backdrop work for Scratch *and* TurboWarp custom resolution.
+    # I don't understand it.
+    target = utils.get_target_by_name(project_data, 'Stage')
+    costume = utils.get_costume_by_name(target, 'darkchecker')
+    costume['bitmapResolution'] = 2
+    costume['rotationCenterX'] = 960 # turbowarp does weird things
+    costume['rotationCenterY'] = 720
+
+
+# thumbnail (960x720)
+target = utils.get_target_by_name(project_data, '_')
+costume = utils.get_costume_by_name(target, 'awesome-llama')
+costume['bitmapResolution'] = 2
+costume['rotationCenterX'] = 480
+costume['rotationCenterY'] = 360
 
 
 

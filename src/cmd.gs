@@ -76,7 +76,6 @@ nowarp proc evaluate_command {
 
     if (command_name == "reset") {
         broadcast "sys.reset";
-        stop_all;
     }
     
     #if dev != 1 { # no developer mode in this project. # buttons also may trigger the command.
