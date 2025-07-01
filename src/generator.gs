@@ -653,6 +653,8 @@ proc generate_control_panel cells_x, cells_y, cell_size, repetition_fac, panel_c
         i += 5;
     }
     
+    crop_air_z;
+
     generator_finished;
 }
 
@@ -2889,6 +2891,43 @@ proc glbfx_smudge coverage, probability_z {
             canvas[jitter_i2] = canvas[jitter_i1];
         }
     }
+}
+
+
+
+on "fx.crop_air.run" { crop_air_z; }
+
+# remove layers of air for faster rendering
+proc crop_air_z {
+    iz = canvas_size_z - 1;
+    repeat canvas_size_z {
+        if _check_air_layer(iz) {
+            log "found air on layer " & iz;
+            canvas_size_z--;
+            i = INDEX_FROM_3D_CANVAS(-1, -1, iz, canvas_size_x, canvas_size_y);
+            repeat (canvas_size_x * canvas_size_y) {
+                delete canvas[i];
+                i--;
+            }
+        } else {
+            stop_this_script;
+        }
+        iz--;
+    }
+}
+
+func _check_air_layer(iz) {
+    i = INDEX_FROM_3D_CANVAS(0, 0, $iz, canvas_size_x, canvas_size_y);
+    if (canvas[i].opacity == "") { # check out of bounds
+        return false;
+    }
+    repeat (canvas_size_x * canvas_size_y) {
+        if (canvas[i].opacity > 0) {
+            return false;
+        }
+        i++;
+    }
+    return true;
 }
 
 
