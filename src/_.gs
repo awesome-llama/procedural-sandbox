@@ -1,6 +1,6 @@
 # THUMBNAIL SPRITE
 
-costumes "costumes/stage/darkchecker.png" as "awesome-llama", "costumes/blank.svg" as "blank";
+costumes "costumes/thumbnail.png" as "awesome-llama", "costumes/blank.svg" as "blank";
 
 
 on "initalise" {
