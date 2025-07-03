@@ -795,12 +795,12 @@ proc create_custom_grid_recursive_rectangles x, y, size_x, size_y, seed, probabi
                     add_custom_grid_rect stack[1]+split_position, stack[2], stack[3]-split_position, stack[4], hash, stack[6]+1;
                 } elif (((stack[5]*907.2345) % 1) < $probability_similar) {
                     # split anywhere
-                    local split_position = round(stack[3] * 0.25+((stack[5]*163.9334) % 0.5));
+                    local split_position = round(stack[3] * (0.25+((stack[5]*163.9334) % 0.5)));
                     add_custom_grid_rect stack[1], stack[2], split_position, stack[4], ((stack[5]*585.5398) % 1), stack[6]+1;
                     add_custom_grid_rect stack[1]+split_position, stack[2], stack[3]-split_position, stack[4], ((stack[5]*777.043) % 1), stack[6]+1;
                 } else {
                     # split randomly anywhere
-                    local split_position = round(stack[3] * 0.25+((stack[5]*578.9234) % 0.5));
+                    local split_position = round(stack[3] * (0.25+((stack[5]*578.9234) % 0.5)));
                     add_custom_grid_rect stack[1], stack[2], split_position, stack[4], RANDOM_0_1(), stack[6]+1;
                     add_custom_grid_rect stack[1]+split_position, stack[2], stack[3]-split_position, stack[4], RANDOM_0_1(), stack[6]+1;
                 }
@@ -815,12 +815,12 @@ proc create_custom_grid_recursive_rectangles x, y, size_x, size_y, seed, probabi
                     add_custom_grid_rect stack[1], stack[2]+split_position, stack[3], stack[4]-split_position, hash, stack[6]+1;
                 } elif (((stack[5]*965.3475) % 1) < $probability_similar) {
                     # split anywhere
-                    local split_position = round(stack[4] * 0.25+((stack[5]*241.3661) % 0.5));
+                    local split_position = round(stack[4] * (0.25+((stack[5]*241.3661) % 0.5)));
                     add_custom_grid_rect stack[1], stack[2], stack[3], split_position, ((stack[5]*169.5327) % 1), stack[6]+1;
                     add_custom_grid_rect stack[1], stack[2]+split_position, stack[3], stack[4]-split_position, ((stack[5]*371.5121) % 1), stack[6]+1;
                 } else {
                     # split randomly anywhere
-                    local split_position = round(stack[3] * 0.25+((stack[5]*7435.3425) % 0.5));
+                    local split_position = round(stack[4] * (0.25+((stack[5]*7435.3425) % 0.5)));
                     add_custom_grid_rect stack[1], stack[2], stack[3], split_position, RANDOM_0_1(), stack[6]+1;
                     add_custom_grid_rect stack[1], stack[2]+split_position, stack[3], stack[4]-split_position, RANDOM_0_1(), stack[6]+1;
                 }
