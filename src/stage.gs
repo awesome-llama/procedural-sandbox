@@ -43,7 +43,6 @@ list hex_lookup = file ```data/hex_lookup.txt```;
 
 # hard_reset will run before this when required
 on "initalise" {
-    version = "0.1"; # project version
     dt = 0; # delta time
     
     if (PS_reset_render_on_flag) {

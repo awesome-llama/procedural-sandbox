@@ -4,6 +4,7 @@ MARGIN = 8
 SCRIPT_SPACING = GRID_SIZE*2
 
 
+# some hats should be closer to the top than others for readability
 HAT_PRIORITY = [
     'event_whenflagclicked',
     'event_whenkeypressed',
@@ -36,7 +37,6 @@ def clean_target(target):
         block = blocks[parent[0]]
         block['x'] = x
         block['y'] = y
-        #curr_x += 20
         y += (script_height(blocks, block_id)) + SCRIPT_SPACING
 
 

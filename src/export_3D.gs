@@ -33,7 +33,7 @@ proc export_ply_point_cloud include_air, create_data_url {
     add "ply" to text_buffer;
     add "format ascii 1.0" to text_buffer;
 
-    add "comment Created with awesome-llama's Procedural Sandbox v" & version to text_buffer;
+    add "comment Created with awesome-llama's Procedural Sandbox" to text_buffer;
     add "comment x:" & canvas_size_x & ", y:" & canvas_size_y & ", z:" & canvas_size_z to text_buffer;
 
     add "element vertex 0" to text_buffer; # number of elements
@@ -156,7 +156,7 @@ proc export_obj_surface right_handed_z_up, create_data_url {
 
     # create file
     delete text_buffer;
-    add "# Created with awesome-llama's Procedural Sandbox v" & version to text_buffer;
+    add "# Created with awesome-llama's Procedural Sandbox" to text_buffer;
     add "# x:" & canvas_size_x & ", y:" & canvas_size_y & ", z:" & canvas_size_z to text_buffer;
     add "o canvas" to text_buffer;
 

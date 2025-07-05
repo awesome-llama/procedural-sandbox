@@ -27,7 +27,7 @@ def get_layer_number(target: dict):
     if target['name'] in SPRITE_ORDER:
         return SPRITE_ORDER.index(target['name'])
     print(f"unknown layer name: {target['name']}")
-    return 1000 # no order given, move to the end
+    return 1000 # no order given, rank it last
 
 project_data['targets'].sort(key=get_layer_number)
 
@@ -52,15 +52,12 @@ costume['rotationCenterX'] = 240
 costume['rotationCenterY'] = 180
 
 # backdrop checker
-if False:
-    # for some reason, not setting these lets the backdrop work for Scratch *and* TurboWarp custom resolution.
-    # I don't understand it.
-    target = utils.get_target_by_name(project_data, 'Stage')
-    costume = utils.get_costume_by_name(target, 'darkchecker')
-    costume['bitmapResolution'] = 2
-    costume['rotationCenterX'] = 960 # turbowarp does weird things
-    costume['rotationCenterY'] = 720
-
+target = utils.get_target_by_name(project_data, 'Stage')
+costume = utils.get_costume_by_name(target, 'darkchecker')
+costume['bitmapResolution'] = 1
+# for some reason, not setting these lets the backdrop work for Scratch *and* TurboWarp custom resolution. I don't understand it.
+if 'rotationCenterX' in costume: costume.pop('rotationCenterX')
+if 'rotationCenterY' in costume: costume.pop('rotationCenterY')
 
 # thumbnail (960x720)
 target = utils.get_target_by_name(project_data, '_')
@@ -117,6 +114,7 @@ for target in project_data['targets']:
 print(f'fields updated: {fields_updated_count}')
 
 
+
 # add a comment to the thumbnail containing project info
 
 target = utils.get_target_by_name(project_data, '_')
@@ -135,6 +133,7 @@ except:
 utils.add_comment_to_target(target, "\n".join([
     'Procedural Sandbox',
     'Created by awesome-llama',
+    'https://scratch.mit.edu/projects/62182952/',
     '',
     '======',
     f'build_date: {datetime.datetime.now(datetime.timezone.utc)}',

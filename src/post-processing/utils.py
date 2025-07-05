@@ -16,21 +16,21 @@ def random_id(prefix='', avoid=None):
     raise Exception('no vacant ids')
 
 
-def get_costume_by_name(target: dict, name: str):
+def get_costume_by_name(target: dict, name: str) -> dict | None:
     for costume in target.get('costumes', []):
         if costume.get('name') == name:
             return costume
     return None # no costume found
 
 
-def get_target_by_name(project: dict, name: str):
+def get_target_by_name(project: dict, name: str) -> dict | None:
     for target in project.get('targets', []):
         if target.get('name') == name:
             return target
     return None # no target found
 
 
-def get_monitor_by_id(project: dict, monitor_id: str):
+def get_monitor_by_id(project: dict, monitor_id: str) -> dict | None:
     for monitor in project.get('monitors', []):
         if monitor.get('id') == monitor_id:
             return monitor
