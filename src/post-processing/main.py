@@ -21,18 +21,23 @@ project_data: dict = json.loads(project_archive.read('project.json'))
 
 # reorder the sprites
 
-SPRITE_ORDER = ['Stage', '_', 'main', 'stage_size', 'UI', 'transform_canvas', 'generator', 'compositor', 'renderer', 'overlay', 'TextImage', 'export_3D', 'project_settings', 'cmd', 'debug']
+SPRITE_ORDER = ['_', 'main', 'stage_size', 'UI', 'transform_canvas', 'generator', 'compositor', 'renderer', 'overlay', 'TextImage', 'export_3D', 'project_settings', 'cmd', 'debug']
 
 def get_layer_number(target: dict):
+    if target['name'] == 'Stage':
+        return 0
     if target['name'] in SPRITE_ORDER:
-        return SPRITE_ORDER.index(target['name'])
+        return 1 + SPRITE_ORDER.index(target['name'])
     print(f"unknown layer name: {target['name']}")
     return 1000 # no order given, rank it last
 
+# order sprites in the editor list
 project_data['targets'].sort(key=get_layer_number)
 
+# set sprite layer order (the layer as controlled by blocks)
 for i, tgt in enumerate(project_data['targets']):
-    tgt['layerOrder'] = i # update layerOrder to reflect new list order
+    if tgt['name'] != 'Stage':
+        tgt['layerOrder'] = i
 
 
 
