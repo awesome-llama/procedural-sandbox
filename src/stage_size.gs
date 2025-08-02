@@ -4,6 +4,17 @@
 costumes "costumes/stage_size/icon.svg" as "icon", "costumes/stage_size/probe.png" as "probe";
 hide;
 
+
+on "sys.hard_reset" {
+    stage_max_x = 240;
+    stage_max_y = 180;
+    stage_size_x = stage_max_x * 2;
+    stage_size_y = stage_max_y * 2;
+    stage_min_x = -stage_max_x;
+    stage_min_y = -stage_max_y;
+}
+
+
 on "sys.get_stage_size" { get_stage_size; }
 proc get_stage_size {
     switch_costume "probe";

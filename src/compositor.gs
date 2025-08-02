@@ -9,10 +9,12 @@ list buffer_r;
 list buffer_g;
 list buffer_b;
 list XYZ raytracer_ray_origins;
+var XYZ raytracer_ray_direction;
+
 
 on "initalise" {
     if (PS_reset_render_on_flag) {
-        XYZ raytracer_ray_direction = XYZ {x:0, y:0, z:0}; # this would have to be a list if perspective rendering was done (or create a new script specifically for it)
+        raytracer_ray_direction = XYZ {x:0, y:0, z:0}; # this would have to be a list if perspective rendering was done (or create a new script specifically for it)
         
         last_raytracer_config = "undefined"; # keeps track of the state of the raytracer lists so they only get updated when needed.
     }
@@ -25,6 +27,7 @@ on "sys.hard_reset" {
     delete buffer_g;
     delete buffer_b;
     delete raytracer_ray_origins;
+    delete render_buffer_final_col;
 }
 
 onkey "1" {

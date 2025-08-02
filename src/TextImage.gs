@@ -13,13 +13,23 @@ list data_stream_list;
 list source_data_stream_list;
 list hash_table; # hash operation
 
-list volumes = file ```data/TextImage_volumes.txt```; # similarity volume data
-list op_sizes = file ```data/TextImage_operation_sizes.txt```; # number of characters for each operation, for RLE
+list volumes "data/TextImage_volumes.txt"; # similarity volume data
+list op_sizes "data/TextImage_operation_sizes.txt"; # number of characters for each operation, for RLE
+
+list TI_1_r;
+list TI_2_g;
+list TI_3_b;
+list TI_4_a;
+list TI_header;
+var TextImage_file;
+var TI_image_size_x;
+var TI_image_size_y;
 
 
 on "initalise" {
     hide;
 }
+
 
 on "sys.hard_reset" {
     clear_all_shared_data;
@@ -29,6 +39,7 @@ on "sys.hard_reset" {
     delete source_data_stream_list;
     delete hash_table;
 }
+
 
 proc _decompress_RGB8 data_stream, width {
     _get_character_codes_from_data_stream $data_stream;

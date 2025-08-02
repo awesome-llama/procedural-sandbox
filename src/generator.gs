@@ -5,6 +5,19 @@
 costumes "costumes/generator/icon.svg" as "icon";
 hide;
 
+
+# the "depositor" is a description of what voxel will be placed by the procedural tools. It may be a single voxel or it may be a 3D template.
+var depositor_mode = DepositorMode.DRAW;
+var depositor_replace = true; # bool [false=keep existing (non-air voxel) intact | true=replace (incl. with new air)]
+
+var voxel depositor_voxel;
+var depositor_template_index = 0; # which template to use, 1-indexed
+var XYZ depositor_template_origin; # origin of the template in canvas space
+
+list template_metadata depositor_template_metadata; # pointers into the template list
+list voxel depositor_template_voxels;
+
+
 # The following lists are named by purpose and can be used by any generator procedure.
 list custom_graph;
 list custom_grid;
@@ -14,8 +27,16 @@ list voxel temp_canvas; # temporary voxel canvas
 list stack;
 list agents;
 
+
+
+
 on "initalise" {
     hide;
+    depositor_mode = DepositorMode.DRAW;
+    depositor_replace = true; # bool [false=keep existing (non-air voxel) intact | true=replace (incl. with new air)]
+    depositor_voxel = VOXEL_SOLID_GREY(1);
+    depositor_template_index = 0; # which template to use, 1-indexed
+    depositor_template_origin = XYZ {x:0, y:0, z:0}; # origin of the template in canvas space
 }
 
 
@@ -27,6 +48,9 @@ on "sys.hard_reset" {
     delete temp_canvas;
     delete stack;
     delete agents;
+
+    delete depositor_template_metadata;
+    delete depositor_template_voxels;
 }
 
 

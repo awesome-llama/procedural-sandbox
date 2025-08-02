@@ -18,6 +18,11 @@ on "initalise" {
         set_size 110*(stage_size_y/360); # y is largest
     }
     switch_costume "large";
+    
+    
+    delete copy_this;
+    delete output;
+    broadcast "sys.hide_lists";
 }
 
 on "sys.hard_reset" {

@@ -13,6 +13,7 @@ on "initalise" {
 
 on "sys.hard_reset" {
     delete command;
+    cmd_string = "";
 }
 
 onkey "/" {

@@ -6,6 +6,34 @@
 costumes "costumes/blank.svg" as "blank";
 
 
+on "sys.hard_reset" {
+    PS_slider_sensitivity = 200;
+
+    PS_emission_intensity = 1;
+
+    PS_sky_intensity = 1;
+    PS_sun_intensity = 1;
+    PS_sun_bearing = 0;
+    PS_sun_elevation = 45;
+
+    PS_filter_size_fac_2D_PT = 0;
+    PS_filter_size_fac_3D_PT = 1;
+
+    PS_use_tone_map = false;
+
+    PS_max_samples = 256;
+    PS_max_iteration_time = 0.1;
+    PS_render_resolution_default_orbit = 4;
+
+    PS_reset_render_on_flag = true;
+
+    PS_normal_map_intensity = 1;
+    PS_normal_map_kernel_size = 2;
+
+    broadcast "settings.apply"; # update the project settings from UI (which is always the source)
+}
+
+
 on "settings.apply" {
     # Interface
     PS_slider_sensitivity = get_setting_from_id("settings.slider_sensitivity");

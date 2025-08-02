@@ -26,10 +26,21 @@ hide;
 on "initalise" {
     hide;
     unfenced_mouse_x = 0;
+
+    delete UI_popup;
+
+    if (PS_reset_render_on_flag) { UI_sidebar_width = 160; };
 }
 
 on "sys.hard_reset" {
     UI_sidebar_width = 160;
+
+    delete UI_return;
+    delete UI_popup;
+    
+    UI_current_panel = "menu.gen";
+
+    UI_clipboard_source = 0;
 }
 
 %define TOP_BAR_HEIGHT 20
@@ -878,7 +889,7 @@ onkey "v" {
 
 # For more info see: https://scratch.mit.edu/projects/934459716/
 
-list PTE_font = file ```data/5x7 printable ASCII.txt```;
+list PTE_font "data/5x7 printable ASCII.txt";
 
 %define CURR_COST_CHAR_INDEX() (costume_number() + 5)
 

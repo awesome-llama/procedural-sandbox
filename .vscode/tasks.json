@@ -7,7 +7,7 @@
 			"command": "goboscript",
 			"args": [
 				"build",
-				"-i", "src",
+				"src",
 				"-o", "Procedural Sandbox goboscript.sb3"
 			],
 			"group": {

@@ -9,7 +9,7 @@ echo Generating list data for UI...
 python3 "src/UI/UI_creator.py"
 
 :: Build the goboscript project
-goboscript build -i src -o "Procedural Sandbox goboscript.sb3"
+goboscript build src -o "Procedural Sandbox goboscript.sb3"
 
 :: post-processing
 echo Running post-process...
