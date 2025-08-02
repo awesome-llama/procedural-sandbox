@@ -1,6 +1,7 @@
 # Procedural Sandbox
 
-https://scratch.mit.edu/projects/62182952/
+[**Scratch**](https://scratch.mit.edu/projects/62182952)  |  [**TurboWarp**](https://turbowarp.org/62182952)  |  [**Wiki**](https://github.com/awesome-llama/procedural-sandbox/wiki)
+
 
 ![](banner.png)
 
@@ -12,9 +13,9 @@ This project intends on:
 - Testing goboscript, which is a programming language that compiles to Scratch.
 - Developing Python-based tools for generating data and editing projects.
 - Further developing user interface handling for Scratch projects.
-- Experimenting with exporting to different file formats such as [TextImage](https://github.com/awesome-llama/TextImage) and generation of [data URLs](https://developer.mozilla.org/en-US/docs/Web/URI/Reference/Schemes/data) for a way to download these files.
-- Testing variations on the "main loop" and similar techniques as seen in previous projects.
-- Being an opportunity to learn path tracing implementations.
+- Experimenting with exporting to different file formats such as [TextImage](https://github.com/awesome-llama/TextImage) and a way to download these files using [data URLs](https://developer.mozilla.org/en-US/docs/Web/URI/Reference/Schemes/data).
+- Testing variations of the "main loop" and similar techniques seen in previous projects.
+- Being an opportunity to learn path tracing.
 - Exploring the feasibility of a programming language running in Scratch.
 
 
@@ -25,7 +26,7 @@ TextImage is the supported image format for this project. Use the converter tool
 
 ## Dependencies
 
-- [goboscript](https://github.com/aspizu/goboscript/commit/1a1915f990df6a2230e8c5a596d32cbed78208a1) commit `1a1915f`, not release build
+- [goboscript](https://github.com/aspizu/goboscript/) commit `1a1915f`, not release build
 - Python 3.12
 
 
@@ -48,13 +49,13 @@ A full build process would be as follows:
 4. Run `src/post-processing/main.py` to perform final clean up on the sb3 file. 
 5. The sb3 file `Procedural Sandbox.sb3` can be opened up in Scratch or [TurboWarp](https://turbowarp.org/) (recommended).
 
-This can be automated by running `build.bat` or the various VSCode tasks. You really only need to generate the list data if it's the first time building or you've made a change to it. For this reason, the VSCode build task defaults to the other two parts.
+This can be automated by running `build.bat` or the various VSCode tasks. You only need to generate the list data if it's the first time building or you've made a change to it. For this reason, the VSCode build task defaults to the other two parts.
 
 
 ## Contributing
 
 Feel free to fork the repository and make pull requests. There are no specific contributing guidelines currently, it's an open-ended "do whatever you think would fit". If you are unsure whether a change would be accepted, consider asking.
 
-Places where improvements could be seen include new texture generators (especially this!), path tracing, and more supported file formats. For mostly standalone code such as generators, you may alternatively remix the Scratch project. This is less efficient as you won't be able to make use of goboscript's features and someone would have to translate it into goboscript to be added to this repo. Writing the generator in the custom programming language is allowed too.
+Places where improvements could be seen include new texture generators (especially this!), path tracing, and more supported file formats.
 
 Accepted code contributions will be credited in the project's built-in credits page (in settings) as well as in the Scratch "notes and credits" box.
