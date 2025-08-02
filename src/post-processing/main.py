@@ -120,6 +120,16 @@ print(f'fields updated: {fields_updated_count}')
 
 
 
+# move the turbowarp config comment
+target = utils.get_target_by_name(project_data, 'Stage')
+twconfig_comment = utils.get_comment_by_id(target, 'twconfig')
+twconfig_comment['x'] = 420
+twconfig_comment['y'] = 0
+twconfig_comment['width'] = 560
+twconfig_comment['height'] = 200
+
+
+
 # add a comment to the thumbnail containing project info
 
 target = utils.get_target_by_name(project_data, '_')
@@ -138,13 +148,14 @@ except:
 utils.add_comment_to_target(target, "\n".join([
     'Procedural Sandbox',
     'Created by awesome-llama',
-    'https://scratch.mit.edu/projects/62182952/',
+    'https://scratch.mit.edu/projects/62182952',
+    'https://github.com/awesome-llama/procedural-sandbox',
     '',
     '======',
     f'build_date: {datetime.datetime.now(datetime.timezone.utc)}',
     f'approx_json_size: {round(len(utils.serialize_project_json(project_data))/1000)/1000} MB',
-    f'gs_ver: {gs_ver}',
-    f'py_ver: {sys.version_info.major}.{sys.version_info.minor}',
+    f'goboscript_version: {gs_ver}',
+    f'python_version: {sys.version_info.major}.{sys.version_info.minor}',
     f'git_hash: {git_hash}',
 ]), x=500, width=500, height=600)
 

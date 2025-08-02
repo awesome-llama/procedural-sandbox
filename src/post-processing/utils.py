@@ -37,6 +37,12 @@ def get_monitor_by_id(project: dict, monitor_id: str) -> dict | None:
     return None # no monitor found
 
 
+def get_comment_by_id(target: dict, comment_id: str) -> dict | None:
+    if 'comments' not in target:
+        return None
+    return target['comments'].get(comment_id, None)
+
+
 def add_comment_to_target(target: dict, text, x=0, y=0, width=200, height=200, minimized=False, blockId=None):
     if 'comments' not in target:
         target['comments'] = {}
