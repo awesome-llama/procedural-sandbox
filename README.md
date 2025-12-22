@@ -5,7 +5,7 @@
 
 ![](banner.png)
 
-A Scratch project designed to procedurally generate image textures. You could think of it as a combination of *[Image Editor](https://scratch.mit.edu/projects/552647396/)* and *[3D Terrain Generator](https://scratch.mit.edu/projects/600000129/)*.
+A Scratch project that procedurally generates image textures. You could think of it as a combination of *[Image Editor](https://scratch.mit.edu/projects/552647396/)* and *[3D Terrain Generator](https://scratch.mit.edu/projects/600000129/)*.
 
 This project intends on:
 
@@ -26,7 +26,7 @@ TextImage is the supported image format for this project. Use the converter tool
 
 ## Dependencies
 
-- [goboscript](https://github.com/aspizu/goboscript/) commit `1a1915f`, not release build
+- [goboscript](https://github.com/aspizu/goboscript/) commit `1a1915f`, NOT release build 3.2.1 as it is missing features.
 - Python 3.12
 
 
@@ -56,6 +56,6 @@ This can be automated by running `build.bat` or the various VSCode tasks. You on
 
 Feel free to fork the repository and make pull requests. There are no specific contributing guidelines currently, it's an open-ended "do whatever you think would fit". If you are unsure whether a change would be accepted, consider asking.
 
-Places where improvements could be seen include new texture generators (especially this!), path tracing, and more supported file formats.
+Places where improvements could be seen include new texture generators, path tracing, and more supported file formats.
 
 Accepted code contributions will be credited in the project's built-in credits page (in settings) as well as in the Scratch "notes and credits" box.
