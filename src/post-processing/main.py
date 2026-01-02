@@ -135,15 +135,15 @@ twconfig_comment['height'] = 200
 target = utils.get_target_by_name(project_data, '_')
 
 try:
-    gs_ver = project_data['meta']['agent'].removeprefix('goboscript v')
-except:
-    gs_ver = '?'
-
-try:
     git_hash = str(subprocess.check_output(["git", "describe", "--always"]).strip(), encoding='utf-8')
     print(git_hash)
 except:
     git_hash = '?'
+
+try:
+    gs_ver = project_data['meta']['agent'].removeprefix('goboscript v')
+except:
+    gs_ver = '?'
 
 utils.add_comment_to_target(target, "\n".join([
     'Procedural Sandbox',
@@ -153,10 +153,10 @@ utils.add_comment_to_target(target, "\n".join([
     '',
     '======',
     f'build_date: {datetime.datetime.now(datetime.timezone.utc)}',
+    f'git_hash: {git_hash}',
     f'approx_json_size: {round(len(utils.serialize_project_json(project_data))/1000)/1000} MB',
     f'goboscript_version: {gs_ver}',
     f'python_version: {sys.version_info.major}.{sys.version_info.minor}',
-    f'git_hash: {git_hash}',
 ]), x=500, width=500, height=600)
 
 

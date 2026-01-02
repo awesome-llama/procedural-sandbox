@@ -10,7 +10,7 @@ costumes "costumes/stage/darkchecker.png" as "darkchecker";
 # delta time, the elapsed time since the last frame.
 var dt;
 
-# goboscript hack to reset the project on first load (the variable defaults to false)
+# the project should be reset on first load to initalise variables
 var goboscript_init_done = false;
 
 # is it the user's first time clicking the green flag?

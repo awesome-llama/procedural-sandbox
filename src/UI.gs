@@ -263,7 +263,7 @@ proc create_popup type, x, y, width, height {
 proc render_project_messages {
     local msg_i = 1;
 
-    # update list of messages, not for rendering them
+    # update list of messages
     local msg_i = 1;
     repeat ((length project_messages) / 2) {
         project_messages[msg_i+1] -= dt; # replace this with delta time
@@ -1107,7 +1107,7 @@ proc get_unfenced_mouse {
         switch_costume "mouse detect";
         goto 0, mouse_y();
         point_in_direction 90+(mouse_x()<0)*180;
-        #point_towards_mouse_pointer;
+        
         repeat 40 {
             if (touching_mouse_pointer()) {
                 # mouse found, go back and try again with smaller step
