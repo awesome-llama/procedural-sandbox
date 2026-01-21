@@ -1,184 +1,82 @@
-import zipfile
-import json
-import datetime
 import os
-import sys
-import subprocess
-
-import utils
-import clean_up_blocks
+import post_processing
 
 
 ROOT_DIR = ''
 PATH_SOURCE_PROJECT = os.path.join(ROOT_DIR, 'Procedural Sandbox goboscript.sb3')
-PATH_TARGET_JSON = os.path.join(ROOT_DIR, 'project.json')
 PATH_TARGET_PROJECT = os.path.join(ROOT_DIR, 'Procedural Sandbox.sb3')
 
 
-project_archive = zipfile.ZipFile(PATH_SOURCE_PROJECT, 'r')
-project_data: dict = json.loads(project_archive.read('project.json'))
+
+with post_processing.ScratchProject(PATH_SOURCE_PROJECT, PATH_TARGET_PROJECT) as project:
+    project.order_sprites(['_', 'main', 'stage_size', 'UI', 'transform_canvas', 'generator', 'compositor', 'renderer', 'overlay', 'TextImage', 'export_3D', 'project_settings', 'cmd', 'debug'])
+    project.clean_up_blocks()
+    project.remove_field_text()
+    project.move_turbowarp_comment()
+
+    
+    # Fix the costume sizes
+
+    def get_costume(target_name, costume_name) -> dict:
+        target = post_processing.get_target_by_name(project.project_data, target_name)
+        if target is None: raise Exception('Failed to find target name')
+        costume = post_processing.get_costume_by_name(target, costume_name)
+        if costume is None: raise Exception('Failed to find costume name')
+        return costume
 
 
-# reorder the sprites
+    # backdrop checker
+    costume = get_costume('Stage', 'darkchecker')
+    costume['bitmapResolution'] = 1
+    # for some reason, not setting these lets the backdrop work for Scratch *and* TurboWarp custom resolution. I don't understand it.
+    if 'rotationCenterX' in costume: costume.pop('rotationCenterX')
+    if 'rotationCenterY' in costume: costume.pop('rotationCenterY')
 
-SPRITE_ORDER = ['_', 'main', 'stage_size', 'UI', 'transform_canvas', 'generator', 'compositor', 'renderer', 'overlay', 'TextImage', 'export_3D', 'project_settings', 'cmd', 'debug']
+    # stage size finder
+    costume = get_costume('stage_size', 'probe')
+    costume['bitmapResolution'] = 2
+    costume['rotationCenterX'] = 2
+    costume['rotationCenterY'] = 0
 
-def get_layer_number(target: dict):
-    if target['name'] == 'Stage':
-        return 0
-    if target['name'] in SPRITE_ORDER:
-        return 1 + SPRITE_ORDER.index(target['name'])
-    print(f"unknown layer name: {target['name']}")
-    return 1000 # no order given, rank it last
+    # mouse position finder
+    costume = get_costume('UI', 'mouse detect')
+    costume['rotationCenterX'] = 240
+    costume['rotationCenterY'] = 180
 
-# order sprites in the editor list
-project_data['targets'].sort(key=get_layer_number)
-
-# set sprite layer order (the layer as controlled by blocks)
-for i, tgt in enumerate(project_data['targets']):
-    if tgt['name'] != 'Stage':
-        tgt['layerOrder'] = i
-
-
-
-# fix the costume sizes
-
-# stage size finder
-target = utils.get_target_by_name(project_data, 'stage_size')
-costume = utils.get_costume_by_name(target, 'probe')
-costume['bitmapResolution'] = 2
-costume['rotationCenterX'] = 2
-costume['rotationCenterY'] = 0
-
-# mouse position finder
-target = utils.get_target_by_name(project_data, 'UI')
-costume = utils.get_costume_by_name(target, 'mouse detect')
-costume['rotationCenterX'] = 240
-costume['rotationCenterY'] = 180
-
-# backdrop checker
-target = utils.get_target_by_name(project_data, 'Stage')
-costume = utils.get_costume_by_name(target, 'darkchecker')
-costume['bitmapResolution'] = 1
-# for some reason, not setting these lets the backdrop work for Scratch *and* TurboWarp custom resolution. I don't understand it.
-if 'rotationCenterX' in costume: costume.pop('rotationCenterX')
-if 'rotationCenterY' in costume: costume.pop('rotationCenterY')
-
-# thumbnail (960x720)
-target = utils.get_target_by_name(project_data, '_')
-costume = utils.get_costume_by_name(target, 'awesome-llama')
-costume['bitmapResolution'] = 2
-costume['rotationCenterX'] = 480
-costume['rotationCenterY'] = 360
+    # thumbnail (960x720)
+    costume = get_costume('_', 'awesome-llama')
+    costume['bitmapResolution'] = 2
+    costume['rotationCenterX'] = 480
+    costume['rotationCenterY'] = 360
 
 
 
-# add the monitors
+    # Add the monitors
 
-def add_list_monitor(name: str):
-    monitor = utils.get_monitor_by_id(project_data, name)
-    if monitor is None:
-        monitor_data = {
-            "id": name,
-            "mode": "list",
-            "opcode": "data_listcontents",
-            "params": {"LIST": name},
-            "spriteName": None,
-            "value": [],
-            "width": 400,
-            "height": 230,
-            "x": 40,
-            "y": 60,
-            "visible": False
-        }
-        project_data['monitors'].append(monitor_data)
-    else:
-        raise Exception('monitor already exists')
-
-add_list_monitor('copy_this')
-add_list_monitor('output')
-
-
-
-# move the blocks so they don't overlap
-
-for target in project_data['targets']:
-    clean_up_blocks.clean_target(target)
-
-
-
-# remove field text
-
-fields_updated_count = 0
-for target in project_data['targets']:
-    for block in target['blocks'].values():
-        for field in block.get('fields', {}).values():
-            if isinstance(field, list) and field[0] == 'make gh issue if this bothers u':
-                field[0] = ''
-                fields_updated_count += 1
-print(f'fields updated: {fields_updated_count}')
-
-
-
-# move the turbowarp config comment
-target = utils.get_target_by_name(project_data, 'Stage')
-twconfig_comment = utils.get_comment_by_id(target, 'twconfig')
-twconfig_comment['x'] = 420
-twconfig_comment['y'] = 0
-twconfig_comment['width'] = 560
-twconfig_comment['height'] = 200
-
-
-
-# add a comment to the thumbnail containing project info
-
-target = utils.get_target_by_name(project_data, '_')
-
-try:
-    git_hash = str(subprocess.check_output(["git", "describe", "--always"]).strip(), encoding='utf-8')
-    print(git_hash)
-except:
-    git_hash = '?'
-
-try:
-    gs_ver = project_data['meta']['agent'].removeprefix('goboscript v')
-except:
-    gs_ver = '?'
-
-utils.add_comment_to_target(target, "\n".join([
-    'Procedural Sandbox',
-    'Created by awesome-llama',
-    'https://scratch.mit.edu/projects/62182952',
-    'https://github.com/awesome-llama/procedural-sandbox',
-    '',
-    '======',
-    f'build_date: {datetime.datetime.now(datetime.timezone.utc)}',
-    f'git_hash: {git_hash}',
-    f'approx_json_size: {round(len(utils.serialize_project_json(project_data))/1000)/1000} MB',
-    f'goboscript_version: {gs_ver}',
-    f'python_version: {sys.version_info.major}.{sys.version_info.minor}',
-]), x=500, width=500, height=600)
-
-
-
-# save
-
-#with open(PATH_TARGET_JSON, 'w', encoding='utf-8') as f:
-#    f.write(serialize_project_json(project_data, indent=1))
-
-
-with zipfile.ZipFile(PATH_TARGET_PROJECT, 'w') as new_archive:
-    for item in project_archive.infolist():
-        if item.filename == 'project.json':
-            # Replace project.json with updated version
-            json_data = utils.serialize_project_json(project_data)
-            new_archive.writestr('project.json', json_data, zipfile.ZIP_DEFLATED)
+    def add_list_monitor(name: str):
+        monitor = post_processing.get_monitor_by_id(project.project_data, name)
+        if monitor is None:
+            monitor_data = {
+                "id": name,
+                "mode": "list",
+                "opcode": "data_listcontents",
+                "params": {"LIST": name},
+                "spriteName": None,
+                "value": [],
+                "width": 400,
+                "height": 230,
+                "x": 40,
+                "y": 60,
+                "visible": False
+            }
+            project.project_data['monitors'].append(monitor_data)
         else:
-            # Copy other files as-is
-            file_data = project_archive.read(item.filename)
-            new_archive.writestr(item, file_data)
+            raise Exception('monitor already exists')
+
+    add_list_monitor('copy_this')
+    add_list_monitor('output')
 
 
+    project.add_build_comment('Procedural Sandbox\nCreated by awesome-llama\nhttps://scratch.mit.edu/projects/62182952\nhttps://github.com/awesome-llama/procedural-sandbox')
 
-project_archive.close()
-print(f'saved to {PATH_TARGET_PROJECT}')
+
