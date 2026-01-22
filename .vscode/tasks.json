@@ -8,7 +8,7 @@
 			"args": [
 				"build",
 				"src",
-				"-o", "Procedural Sandbox goboscript.sb3"
+				"-o", "project.sb3"
 			],
 			"group": {
 				"kind": "build",

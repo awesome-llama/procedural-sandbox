@@ -14,39 +14,8 @@ def serialize_project_json(project, indent=None):
     return json.dumps(project, ensure_ascii=False, indent=indent, separators=(',', ':'))
 
 
-def random_id(prefix='', avoid=None):
-    if not isinstance(avoid, (dict, set, list)): avoid = {}
-    for _ in range(100):
-        temp = str(prefix) + "".join(random.choices('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', k=12))
-        if temp not in avoid: return temp
-    raise Exception('no vacant ids')
-
-
-def get_costume_by_name(target: dict, name: str) -> dict | None:
-    for costume in target.get('costumes', []):
-        if costume.get('name') == name:
-            return costume
-    return None # no costume found
-
-
-def get_target_by_name(project: dict, name: str) -> dict | None:
-    for target in project.get('targets', []):
-        if target.get('name') == name:
-            return target
-    return None # no target found
-
-
-def get_monitor_by_id(project: dict, monitor_id: str) -> dict | None:
-    for monitor in project.get('monitors', []):
-        if monitor.get('id') == monitor_id:
-            return monitor
-    return None # no monitor found
-
-
-def get_comment_by_id(target: dict, comment_id: str) -> dict | None:
-    if 'comments' not in target:
-        return None
-    return target['comments'].get(comment_id, None)
+def random_id(prefix='', length=12):
+    return str(prefix) + "".join(random.choices('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', k=length))
 
 
 
@@ -54,7 +23,7 @@ def get_comment_by_id(target: dict, comment_id: str) -> dict | None:
 class ScratchProject:
     """An opened Scratch 3 project"""
 
-    def __init__(self, source_path='project.sb3', destination_path='project.sb3') -> None:
+    def __init__(self, source_path='project.sb3', destination_path='project_processed.sb3') -> None:
         if source_path == destination_path: raise Exception('Paths are identical')
         self.source_path = source_path
         self.destination_path = destination_path
@@ -67,28 +36,92 @@ class ScratchProject:
 
 
     def __exit__(self, exc_type, exc_value, traceback):
-
         # Save the project in a new zip file
-        with zipfile.ZipFile(self.destination_path, 'w') as new_archive:
-            for item in self.project_archive.infolist():
-                if item.filename == 'project.json':
-                    # Substitute project.json with updated version
-                    json_data = serialize_project_json(self.project_data)
-                    new_archive.writestr('project.json', json_data, zipfile.ZIP_DEFLATED)
-                else:
-                    # Copy other files as-is
-                    file_data = self.project_archive.read(item.filename)
-                    new_archive.writestr(item, file_data)
+        if exc_type is None:
+            with zipfile.ZipFile(self.destination_path, 'w') as new_archive:
+                for item in self.project_archive.infolist():
+                    if item.filename == 'project.json':
+                        # Substitute project.json with updated version
+                        json_data = serialize_project_json(self.project_data)
+                        new_archive.writestr('project.json', json_data, zipfile.ZIP_DEFLATED)
+                    else:
+                        # Copy other files as-is
+                        file_data = self.project_archive.read(item.filename)
+                        new_archive.writestr(item, file_data)
+            print(f'saved to {self.destination_path}')
+        else:
+            print('saving cancelled due to exception')
 
         self.project_archive.close()
-        print(f'saved to {self.destination_path}')
 
 
+
+    ################################
+    #          Utilities           #
+    ################################
+
+
+
+    def get_monitor_by_id(self, monitor_id: str) -> dict:
+        for monitor in self.project_data.get('monitors', []):
+            if monitor.get('id') == monitor_id:
+                return monitor
+        raise Exception(f'No monitor found with id {monitor_id}')
+
+
+
+    def get_target_by_name(self, target_name: str) -> dict:
+        for target in self.project_data.get('targets', []):
+            if target.get('name') == target_name:
+                return target
+        raise Exception(f'No target found with name {target_name}')
+
+
+
+    def get_costume_by_name(self, target_name: str, costume_name: str) -> dict:
+        for costume in self.get_target_by_name(target_name).get('costumes', []):
+            if costume.get('name') == costume_name:
+                return costume
+        raise Exception(f'No costume found with name {target_name}')
+
+
+
+    def get_comment_by_id(self, target_name: str, comment_id: str) -> dict:
+        comments = self.get_target_by_name(target_name).get('comments', {})
+        if comment_id in comments:
+            return comments[comment_id]
+        raise Exception(f'No comment found with id {comment_id}')
+
+
+
+
+    def add_comment_to_target(self, target_name: str, text: str, x=0, y=0, width=200, height=200, minimized=False, blockId=None):
+        """Add a comment to a target"""
+
+        target = self.get_target_by_name(target_name)
+        if 'comments' not in target: target['comments'] = {}
+
+        target['comments'][random_id()] = {
+            'blockId': blockId,
+            'x': x,
+            'y': y,
+            'width': width,
+            'height': height,
+            'minimized': minimized,
+            'text': text,
+        }
+
+
+
+
+    ################################
+    #       Common processes       #
+    ################################
 
     def order_sprites(self, order=['_', 'main', 'cmd']):
         """Order the sprites following a list of sprite names. Sprites not in the list will be placed at the end."""
 
-        def get_layer_number(target: dict):
+        def _get_layer_number(target: dict):
             if target['name'] == 'Stage':
                 return 0
             if target['name'] in order:
@@ -97,7 +130,7 @@ class ScratchProject:
             return 1000 # no order given, rank it last
 
         # order sprites in the editor list
-        self.project_data['targets'].sort(key=get_layer_number)
+        self.project_data['targets'].sort(key=_get_layer_number)
 
         # set sprite layer order (the layer as controlled by blocks)
         for i, tgt in enumerate(self.project_data['targets']):
@@ -116,6 +149,7 @@ class ScratchProject:
 
     def remove_field_text(self):
         """Remove unnecessary strings in some fields"""
+        
         fields_updated_count = 0
         for target in self.project_data['targets']:
             for block in target['blocks'].values():
@@ -127,45 +161,23 @@ class ScratchProject:
 
 
 
-    def move_turbowarp_comment(self, x=420, y=0):
+    def move_turbowarp_comment(self, x=420, y=0, width=560, height=200):
         """Move the TurboWarp config comment"""
 
-        target = get_target_by_name(self.project_data, 'Stage')
-        if not target: raise Exception('Target not found')
-
-        twconfig_comment = get_comment_by_id(target, 'twconfig')
+        twconfig_comment = self.get_comment_by_id('Stage', 'twconfig')
         if not twconfig_comment: raise Exception('Comment not found')
 
         twconfig_comment['x'] = x
         twconfig_comment['y'] = y
-        twconfig_comment['width'] = 560
-        twconfig_comment['height'] = 200
+        twconfig_comment['width'] = width
+        twconfig_comment['height'] = height
 
 
 
-    def add_comment_to_target(self, target: dict, text, x=0, y=0, width=200, height=200, minimized=False, blockId=None):
-        """Add a comment to a target"""
-
-        if 'comments' not in target:
-            target['comments'] = {}
-        
-        target['comments'][random_id()] = {
-            'blockId': blockId,
-            'x': x,
-            'y': y,
-            'width': width,
-            'height': height,
-            'minimized': minimized,
-            'text': text,
-        }
-
-
-
-
-    def add_build_comment(self, header:str|None = None, sprite_name='_'):
+    def add_build_comment(self, header:str|None = None, target_name='_'):
         """Add an informative comment to a sprite"""
 
-        target = get_target_by_name(self.project_data, sprite_name)
+        target = self.get_target_by_name(target_name)
         if not target: raise Exception('Target not found')
 
         try:
@@ -174,7 +186,7 @@ class ScratchProject:
             gs_ver = '?'
 
         try:
-            git_hash = str(subprocess.check_output(["git", "describe", "--always"]).strip(), encoding='utf-8')
+            git_hash = str(subprocess.check_output(['git', 'describe', '--always']).strip(), encoding='utf-8')
         except:
             git_hash = '?'
 
@@ -189,5 +201,8 @@ class ScratchProject:
             f'git_hash: {git_hash}',
         ])
         
-        self.add_comment_to_target(target, comment_text, x=500, width=500, height=600)
+        self.add_comment_to_target(target_name, comment_text, x=500, width=500, height=600)
         print(comment_text)
+
+
+
