@@ -1,7 +1,6 @@
-# Sample the stage size.
-# From testing TurboWarp, it is best to round the stage size up. We never want to see anything beyond the known boundary so thinking the boundary is larger than it is will ensure this. The "max" variables should be positive integers and the entire size should be even numbers.
+# Sample the stage size. See https://scratch.mit.edu/projects/560529322/
 
-costumes "costumes/stage_size/icon.svg" as "icon", "costumes/stage_size/probe.png" as "probe";
+costumes "costumes/stage_size/icon.svg" as "icon", "costumes/blank.svg" as "blank";
 hide;
 
 
@@ -10,56 +9,30 @@ on "sys.hard_reset" {
     stage_max_y = 180;
     stage_size_x = stage_max_x * 2;
     stage_size_y = stage_max_y * 2;
-    stage_min_x = -stage_max_x;
-    stage_min_y = -stage_max_y;
+    stage_min_x = stage_size_x - stage_max_x;
+    stage_min_y = stage_size_y - stage_max_y;
 }
 
 
 on "sys.get_stage_size" { get_stage_size; }
 proc get_stage_size {
-    switch_costume "probe";
+    switch_costume "blank";
     set_size 100;
-    show;
+    goto 10000000, 10000000;
+    if_on_edge_bounce;
 
-    # find max x
-    goto 0, 0;
-    step_size = 256;
-    stage_max_x = 0;
-    until (step_size < 1 or stage_max_x > 65536) {
-        set_x stage_max_x;
-        if touching_edge() {
-            stage_max_x -= step_size;
-            step_size /= 2;
-        } else {
-            stage_max_x += step_size;
-        }
-    }
-    stage_max_x = ceil(stage_max_x);
-    if (stage_max_x < 0) { stage_max_x = 0; }
+    stage_max_x = ceil(x_position()); # it's better to think the stage is larger than it is so round up
+    stage_max_y = ceil(y_position());
+
     stage_size_x = stage_max_x * 2;
-    stage_min_x = stage_max_x - stage_size_x;
-
-    # find max y
-    goto 0, 0;
-    step_size = 256;
-    stage_max_y = 0;
-    until (step_size < 1 or stage_max_y > 65536) {
-        set_y stage_max_y;
-        if touching_edge() {
-            stage_max_y -= step_size;
-            step_size /= 2;
-        } else {
-            stage_max_y += step_size;
-        }
-    }
-    stage_max_y = ceil(stage_max_y);
-    if (stage_max_y < 0) { stage_max_y = 0; }
     stage_size_y = stage_max_y * 2;
+
+    stage_min_x = stage_max_x - stage_size_x;
     stage_min_y = stage_max_y - stage_size_y;
 
     # done
     goto 0, 0;
-    hide;
+    point_in_direction 90;
     switch_costume "icon";
 }
     

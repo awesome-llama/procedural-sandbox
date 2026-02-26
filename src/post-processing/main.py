@@ -24,12 +24,6 @@ with post_processing.ScratchProject(PATH_SOURCE_PROJECT, PATH_TARGET_PROJECT) as
     if 'rotationCenterX' in costume: costume.pop('rotationCenterX')
     if 'rotationCenterY' in costume: costume.pop('rotationCenterY')
 
-    # stage size finder
-    costume = project.get_costume_by_name('stage_size', 'probe')
-    costume['bitmapResolution'] = 2
-    costume['rotationCenterX'] = 2
-    costume['rotationCenterY'] = 0
-
     # mouse position finder
     costume = project.get_costume_by_name('UI', 'mouse detect')
     costume['rotationCenterX'] = 240
