@@ -4,7 +4,7 @@ from elements import *
 
 ################################
 
-panels = {}
+panels:dict[str,Element] = {}
 
 
 ################################
@@ -744,35 +744,4 @@ panels['project.compositor_mode'] = Container([
 #    Generate lists & save     #
 ################################
 
-element_list = [""]*10 # element data, initalised with empty items as a fail safe
-panel_lookup = [] # list of where the panels begin
-element_lookup = [] # k-v tuple list of where the elements are
-
-element_ids = {}
-
-for name, p in panels.items(): 
-    p: Element
-    flat = p.to_flat_list(element_ids)
-    if flat[-1] != End().items[0]: raise Exception('missing end')
-
-    panel_lookup.append(name)
-    panel_lookup.append(1+len(element_list))
-    
-    element_list.extend(flat)
-
-for e, offset in element_ids.items():
-    element_lookup.append((e, element_list.index(e)+offset+1))
-
-# SAVE
-def save_list(path, data:list):
-    with open(path, 'w', encoding='UTF-8') as f:
-        f.writelines([f"{elem}\n" for elem in data])
-
-save_list('src/UI/UI_data.txt', element_list)
-save_list('src/UI/UI_data_panels.txt', panel_lookup)
-
-# split tuples into separate lists:
-save_list('src/UI/UI_data_element_id.txt', [l[0] for l in element_lookup])
-save_list('src/UI/UI_data_element_index.txt', [l[1] for l in element_lookup])
-
-print(f'saved {len(element_list)} items')
+save_panels(panels, "src/UI/")
