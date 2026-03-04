@@ -659,28 +659,29 @@ proc UI_check_touching_mouse x, y, width, height, hov_group, hov_elem {
 
 on "sys.stage_clicked" {
     stop_other_scripts; # stop previous ask block
-    clicked_element = UI_last_hovered_element; # alias
+    clicked_element = UI_hovered_element; # alias
+    clicked_group = UI_hovered_group; # alias
 
-    if (UI_last_hovered_group == "message") {
-        if (UI_last_hovered_element % 2) == 1 {
+    if (clicked_group == "message") {
+        if (clicked_element % 2) == 1 {
             # delete message
-            delete project_messages[UI_last_hovered_element];
-            delete project_messages[UI_last_hovered_element];
+            delete project_messages[clicked_element];
+            delete project_messages[clicked_element];
             require_viewport_refresh = true;
         }
         
         stop_this_script;
     }
 
-    if (UI_last_hovered_group == "popup") {
+    if (clicked_group == "popup") {
         
-        if (UI_last_hovered_element == "HSV_2D") {
+        if (clicked_element == "HSV_2D") {
             # set hue and val by mouse position
             until not mouse_down() {
                 set_value_element UI_data_element_index["popup.color_picker.hue" in UI_data_element_id], (mouse_x()-(UI_popup[3]+5))/120, true;
                 set_value_element UI_data_element_index["popup.color_picker.val" in UI_data_element_id], (mouse_y()-(UI_popup[4]-30-80))/80, true;
             }
-        } elif (UI_last_hovered_element == "set_col_from_hex") {
+        } elif (clicked_element == "set_col_from_hex") {
             ask "input a color (6-digit hex code)";
             if (answer() != "") {
                 if (answer()[1] == "#") {
@@ -705,7 +706,7 @@ on "sys.stage_clicked" {
     }
 
 
-    if (UI_last_hovered_group == "side bar" or UI_last_hovered_group == "popup") {
+    if (clicked_group == "side bar" or clicked_group == "popup") {
         if (UI_data[clicked_element] == "BUTTON") {
             # check for button behvaviour type
             if (UI_data[clicked_element+3] == "set_page") {
@@ -778,13 +779,13 @@ on "sys.stage_clicked" {
             UI_data[clicked_element+3] = 1 - UI_data[clicked_element+3];
         }
     
-    } elif (UI_last_hovered_group == "tabs") {
+    } elif (clicked_group == "tabs") {
 
         if (clicked_element != "") {
             UI_current_panel = clicked_element;
         }
 
-    } elif (UI_last_hovered_group == "top bar") {
+    } elif (clicked_group == "top bar") {
         # top bar
         if (clicked_element == "close side bar") {
             UI_sidebar_width = 0;

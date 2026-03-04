@@ -102,7 +102,7 @@ proc move_camera dx, dy {
 
 # click and drag to pan
 on "sys.stage_clicked" {
-    if (UI_last_hovered_group == "viewport") {
+    if (UI_hovered_group == "viewport") {
         if (viewport_mode == ViewportMode.ALIGNED) {
             
             wait_until_mouse_moves;
