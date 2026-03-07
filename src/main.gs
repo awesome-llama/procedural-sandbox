@@ -24,13 +24,7 @@ on "sys.start_main_loop" {
         
         # reset hover detection
         if (not mouse_down()) {
-            # the "last_hovered" variables are so that the click detection hats have usable data guaranteed to be correct as the entire frame was completed.
-
-            if (not (mouse_x() > stage_min_x and mouse_x() < stage_max_x and mouse_y() > stage_min_y and mouse_y() < stage_max_y)) {
-                UI_hovered_group = ""; # out of bounds (this takes priority over every hovered element)
-                UI_hovered_element = "";
-            }
-
+            # the "last_hovered" variables are for highlighting hovered elements.
             UI_last_hovered_group = UI_hovered_group;
             UI_last_hovered_element = UI_hovered_element;
             UI_hovered_group = "";
@@ -54,6 +48,14 @@ on "sys.start_main_loop" {
 
         broadcast "sys.render_UI"; # always redraw, no erase. This goes to the UI sprite only.
         broadcast "sys.render_overlay";
+
+        if (mouse_x() > stage_min_x or mouse_x() < stage_max_x or mouse_y() > stage_min_y or mouse_y() < stage_max_y) {
+            # out of bounds (this takes priority over every hovered element)
+            UI_hovered_group = "";
+            UI_hovered_element = "";
+            UI_last_hovered_group = "";
+            UI_last_hovered_element = "";
+        }
     }
 }
 
