@@ -49,7 +49,7 @@ on "sys.start_main_loop" {
         broadcast "sys.render_UI"; # always redraw, no erase. This goes to the UI sprite only.
         broadcast "sys.render_overlay";
 
-        if (mouse_x() > stage_min_x or mouse_x() < stage_max_x or mouse_y() > stage_min_y or mouse_y() < stage_max_y) {
+        if (not ((mouse_x() > stage_min_x or mouse_x() < stage_max_x) or (mouse_y() > stage_min_y or mouse_y() < stage_max_y))) {
             # out of bounds (this takes priority over every hovered element)
             UI_hovered_group = "";
             UI_hovered_element = "";
