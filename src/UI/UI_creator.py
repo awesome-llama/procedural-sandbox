@@ -4,7 +4,19 @@ from elements import *
 
 ################################
 
-panels:dict[str,Element] = {}
+panels:dict[str,Container] = {}
+
+
+def title(text:str):
+    """Create a title label with title color."""
+    return Label(text, "#FF8CFF")
+
+
+def canvas_size(label, id:str, value:ScratchNum=64, soft_max:ScratchNum|None=None):
+    """Create a value representing a canvas dimension. Always `>= 0`."""
+    if soft_max is None: soft_max = 512
+    return Value(label, id, value, 1, soft_max, hard_min=0, hard_max=4096, snap_frac=1)
+
 
 
 ################################
@@ -12,7 +24,7 @@ panels:dict[str,Element] = {}
 ################################
 
 panels['popup.color_picker'] = Container([
-    Label.title('Color picker'),
+    title('Color picker'),
     Color('Color', 'popup.color_picker.color', '#ff3000'),
     Value('Mode', 'popup.color_picker.mode', 0, 0, 2, snap_frac=1), # 0=HSV, 1=RGB
     
@@ -26,9 +38,9 @@ panels['popup.color_picker'] = Container([
     #Value.fraction('B', 'popup.color_picker.b', 1.0),
     #End(),
     
-    Button('Cancel', 'popup.color_picker.cancel'),
+    Button.broadcast('Cancel', 'popup.color_picker.cancel'),
     End(),
-    Button('Apply', 'popup.color_picker.apply'),
+    Button.broadcast('Apply', 'popup.color_picker.apply'),
     End(),
 ])
 
@@ -42,14 +54,14 @@ def btn_menu_set_page(label, page):
     return Button.set_page(label, 'menu.'+page, page)
 
 panels['menu.io'] = Container([
-    Label.title('Import/export'),
+    title('Import/export'),
     Separator(),
     btn_menu_set_page('New canvas', 'io.new_canvas'),
     Separator(0, 5),
     btn_menu_set_page('Save canvas', 'io.save_canvas'),
-    Button('Load canvas', 'io.load_canvas.run'), # run button, no page
+    Button.broadcast('Load canvas', 'io.load_canvas.run'), # run button, no page
     Separator(0, 5),
-    Button('Export displayed canvas', 'io.export_rendered_canvas.run'), # run button, no page
+    Button.broadcast('Export displayed canvas', 'io.export_rendered_canvas.run'), # run button, no page
     
     Separator(0, 5),
 
@@ -66,7 +78,7 @@ panels['menu.io'] = Container([
 ])
 
 panels['menu.gen'] = Container([
-    Label.title('Generate'),
+    title('Generate'),
     Separator(), # featured structures
     btn_menu_set_page('City', 'gen.city'),
     btn_menu_set_page('Control panel', 'gen.control_panel'),
@@ -88,7 +100,7 @@ panels['menu.gen'] = Container([
 ])
 
 panels['menu.fx'] = Container([
-    Label.title('Effects'),
+    title('Effects'),
     Separator(),
     btn_menu_set_page('Translate', 'fx.translate'),
     btn_menu_set_page('Rotate', 'fx.rotate'),
@@ -107,7 +119,7 @@ panels['menu.fx'] = Container([
 ])
 
 panels['menu.settings'] = Container([
-    Label.title('Settings'),
+    title('Settings'),
     Separator(),
     btn_menu_set_page('Misc.', 'settings.misc'),
     btn_menu_set_page('Pathtracer', 'settings.pathtracer'),
@@ -123,37 +135,37 @@ panels['menu.settings'] = Container([
 ################################
 
 panels['io.new_canvas'] = Container([
-    Label.title('New empty canvas'),
+    title('New empty canvas'),
     Separator(),
     Expander('Dimensions', '', True, [
-        Value.canvas_size('Size X', 'io.new_canvas.size_x', 64),
-        Value.canvas_size('Size Y', 'io.new_canvas.size_y', 64),
-        Value.canvas_size('Size Z', 'io.new_canvas.size_z', 16, 64),
+        canvas_size('Size X', 'io.new_canvas.size_x', 64),
+        canvas_size('Size Y', 'io.new_canvas.size_y', 64),
+        canvas_size('Size Z', 'io.new_canvas.size_z', 16, 64),
     ]),
     Expander('Base layer', '', True, [
         Checkbox('Include base layer', 'io.new_canvas.include_base', False),
         Color('Base color', 'io.new_canvas.base_col', '#808080'),
     ]),
-    Button('Create new canvas', 'io.new_canvas.run'),
+    Button.broadcast('Create new canvas', 'io.new_canvas.run'),
 ])
 
 panels['io.save_canvas'] = Container([
-    Label.title('Save canvas'),
+    title('Save canvas'),
     Separator(),
     TextBlock('Save all canvas data, quantized to 8-bit.'),
     Expander('Layers', '', True, [
         Checkbox('Include opacity (alpha)', 'io.save_canvas.include_opacity', True),
         Checkbox('Include emission', 'io.save_canvas.include_emission', True),
     ]),
-    Button('Save', 'io.save_canvas.run'),
+    Button.broadcast('Save', 'io.save_canvas.run'),
 ])
 
 panels['io.import_height_map'] = Container([
-    Label.title('Import height map'),
+    title('Import height map'),
     Separator(),
     Expander('Canvas', '', True, [
         Checkbox('Erase canvas', 'io.import_height_map.erase_canvas', True),
-        Value.canvas_size('New size Z', 'io.import_height_map.size_z', 16, 64),
+        canvas_size('New size Z', 'io.import_height_map.size_z', 16, 64),
         Color('New voxel color', 'io.import_height_map.new_color', '#aaaaaa'),
     ]),
     Expander('Channel weights', '', False, [
@@ -166,48 +178,48 @@ panels['io.import_height_map'] = Container([
         Value('Map 0 to height', 'io.import_height_map.map_0', 0, -2, 2, snap_frac=1000),
         Value('Map 1 to height', 'io.import_height_map.map_1', 1, -2, 2, snap_frac=1000),
     ]),
-    Button('Input height map', 'io.import_height_map.run'),
+    Button.broadcast('Input height map', 'io.import_height_map.run'),
 ])
 
 panels['io.import_color_map'] = Container([
-    Label.title('Import color map'),
+    title('Import color map'),
     Separator(),
     TextBlock('Replaces voxel colors only. Does not affect opacity.'),
     Expander('Settings', '', True, [
         Checkbox('Resize canvas if needed', 'io.import_color_map.resize_canvas', True),
         Checkbox('Interpret as linear', 'io.import_color_map.interpret_linear', False),
     ]),
-    Button('Input color map', 'io.import_color_map.run'),
+    Button.broadcast('Input color map', 'io.import_color_map.run'),
 ])
 
 panels['io.export_height_map'] = Container([
-    Label.title('Export height map'),
+    title('Export height map'),
     Separator(),
     Expander('Map normalised heights', '', True, [
         Value('Map 0 to value', 'io.export_height_map.map_0', 0, -2, 2, snap_frac=1000),
         Value('Map 1 to value', 'io.export_height_map.map_1', 1, -2, 2, snap_frac=1000),
     ]),
-    Button('Export height map', 'io.export_height_map.run'),
+    Button.broadcast('Export height map', 'io.export_height_map.run'),
 ])
 
 panels['io.export_ply_point_cloud'] = Container([
-    Label.title('Export point cloud'),
+    title('Export point cloud'),
     Separator(),
     Expander('Settings', '', True, [
         Checkbox('Include 0 opacity voxels', 'io.export_ply_point_cloud.include_air', False),
         Checkbox('Create data URL', 'io.export_ply_point_cloud.create_data_url', True),
     ]),
-    Button('Export', 'io.export_ply_point_cloud.run'),
+    Button.broadcast('Export', 'io.export_ply_point_cloud.run'),
 ])
 
 panels['io.export_obj_surface'] = Container([
-    Label.title('Export mesh surface'),
+    title('Export mesh surface'),
     Separator(),
     Expander('Settings', '', True, [
         Checkbox('Right-handed Z-up', 'io.export_obj_surface.right_handed_z_up', True),
         Checkbox('Create data URL', 'io.export_obj_surface.create_data_url', True),
     ]),
-    Button('Export', 'io.export_obj_surface.run'),
+    Button.broadcast('Export', 'io.export_obj_surface.run'),
 ])
 
 ################################
@@ -215,12 +227,12 @@ panels['io.export_obj_surface'] = Container([
 ################################
 
 panels['gen.fibres'] = Container([
-    Label.title('Generate fibres'),
+    title('Generate fibres'),
     Separator(),
     Expander('Canvas', '', True, [
-        Value.canvas_size('Size X', 'gen.fibres.size_x', 64),
-        Value.canvas_size('Size Y', 'gen.fibres.size_y', 64),
-        Value.canvas_size('Size Z', 'gen.fibres.size_z', 4, 64),
+        canvas_size('Size X', 'gen.fibres.size_x', 64),
+        canvas_size('Size Y', 'gen.fibres.size_y', 64),
+        canvas_size('Size Z', 'gen.fibres.size_z', 4, 64),
     ]),
     Expander('Fibre', '', True, [
         Value('Density', 'gen.fibres.density', 0.05, 0, 0.5, 0, 10, 1000),
@@ -235,16 +247,16 @@ panels['gen.fibres'] = Container([
         Color('Color 2', 'gen.fibres.col2', "#c1b9b0"),
         Color('Color 3', 'gen.fibres.col3', "#bd936d"),
     ]),
-    Button('Generate', 'gen.fibres.run'),
+    Button.broadcast('Generate', 'gen.fibres.run'),
 ])
 
 panels['gen.ballpit'] = Container([
-    Label.title('Generate ball pit'),
+    title('Generate ball pit'),
     Separator(),
     Expander('Canvas', '', True, [
-        Value.canvas_size('Size X', 'gen.ballpit.size_x', 64),
-        Value.canvas_size('Size Y', 'gen.ballpit.size_y', 64),
-        Value.canvas_size('Size Z', 'gen.ballpit.size_z', 16, 64),
+        canvas_size('Size X', 'gen.ballpit.size_x', 64),
+        canvas_size('Size Y', 'gen.ballpit.size_y', 64),
+        canvas_size('Size Z', 'gen.ballpit.size_z', 16, 64),
         Color('Ground color', 'gen.ballpit.ground_col', '#aaaaaa'),
     ]),
     Expander('Balls', '', True, [
@@ -260,11 +272,11 @@ panels['gen.ballpit'] = Container([
             Value.fraction('Glow', 'gen.ballpit.variance_glow', 0.5),
         ]),
     ]),
-    Button('Generate', 'gen.ballpit.run'),
+    Button.broadcast('Generate', 'gen.ballpit.run'),
 ])
 
 panels['gen.pcb'] = Container([
-    Label.title('Generate PCB'),
+    title('Generate PCB'),
     Separator(),
     Expander('Canvas', '', True, [
         Value('Size X', 'gen.pcb.size_x', 64, 32, 256, 0, 4096, 1),
@@ -276,15 +288,15 @@ panels['gen.pcb'] = Container([
         Color('Trace', 'gen.pcb.trace_col', '#07892D'),
         Color('Via', 'gen.pcb.via_col', "#a48b3e"),
     ]),
-    Button('Generate', 'gen.pcb.run'),
+    Button.broadcast('Generate', 'gen.pcb.run'),
 ])
 
 panels['gen.city'] = Container([
-    Label.title('Generate city'),
+    title('Generate city'),
     Separator(),
     Expander('Canvas', '', True, [
-        Value.canvas_size('Size X', 'gen.city.size_x', 64),
-        Value.canvas_size('Size Y', 'gen.city.size_y', 64),
+        canvas_size('Size X', 'gen.city.size_x', 64),
+        canvas_size('Size Y', 'gen.city.size_y', 64),
         Value('Size Z', 'gen.city.size_z', 16, 8, 32, 4, 256, snap_frac=1),
     ]),
     Expander('Form', '', True, [
@@ -292,11 +304,11 @@ panels['gen.city'] = Container([
         Value('Sky bridges', 'gen.city.bridges', 1, 0, 2, 0, 1000),
         Value('Glow', 'gen.city.glow', 1, 0, 2, 0, 1000),
     ]),
-    Button('Generate', 'gen.city.run'),
+    Button.broadcast('Generate', 'gen.city.run'),
 ])
 
 panels['gen.control_panel'] = Container([
-    Label.title('Generate control panel'),
+    title('Generate control panel'),
     Separator(),
     Expander('Dimensions', '', True, [
         Value('Cell count X', 'gen.control_panel.cell_count_x', 12, 1, 64, 1, 1024, snap_frac=1),
@@ -311,15 +323,15 @@ panels['gen.control_panel'] = Container([
         Color('Accent color 1', 'gen.control_panel.accent1', "#6f6f6f"),
         Color('Accent color 2', 'gen.control_panel.accent2', "#c5c5c5"),
     ]),
-    Button('Generate', 'gen.control_panel.run'),
+    Button.broadcast('Generate', 'gen.control_panel.run'),
 ])
 
 panels['gen.eca'] = Container([
-    Label.title('Elementary cellular automata'),
+    title('Elementary cellular automata'),
     Separator(),
     Expander('Canvas', '', True, [
-        Value.canvas_size('Size X', 'gen.eca.size_x', 64),
-        Value.canvas_size('Size Y', 'gen.eca.size_y', 64),
+        canvas_size('Size X', 'gen.eca.size_x', 64),
+        canvas_size('Size Y', 'gen.eca.size_y', 64),
         Value('Extrude Z', 'gen.eca.extrude_z', 1, 0, 4, 0, 4096, 1)
     ]),
     Expander('Variant', '', True, [
@@ -332,16 +344,16 @@ panels['gen.eca'] = Container([
         Color('State 0', 'gen.eca.state_0_col', '#303030'),
         Color('State 1', 'gen.eca.state_1_col', '#ffffff'),
     ]),
-    Button('Generate', 'gen.eca.run'),
+    Button.broadcast('Generate', 'gen.eca.run'),
 ])
 
 panels['gen.terrain'] = Container([
-    Label.title('Terrain'),
+    title('Terrain'),
     Separator(),
     Expander('Dimensions', '', True, [
-        Value.canvas_size('Size X', 'gen.terrain.size_x', 64),
-        Value.canvas_size('Size Y', 'gen.terrain.size_y', 64),
-        Value.canvas_size('Size Z', 'gen.terrain.size_z', 16, 64),
+        canvas_size('Size X', 'gen.terrain.size_x', 64),
+        canvas_size('Size Y', 'gen.terrain.size_y', 64),
+        canvas_size('Size Z', 'gen.terrain.size_z', 16, 64),
         Value('Noise scale XY', 'gen.terrain.noise_scale_xy', 10, 1, 64, 0, 4096, snap_frac=1),
         Value('Noise scale Z', 'gen.terrain.noise_scale_z', 1, 0, 1, 0, 4096, snap_frac=1000),
     ]),
@@ -359,11 +371,11 @@ panels['gen.terrain'] = Container([
         Color('Tree color', 'gen.terrain.tree_col', "#4c6a39"),
         Value('Tree density', 'gen.terrain.tree_fac', 0.2, 0, 1, snap_frac=1000),
     ]),
-    Button('Run', 'gen.terrain.run'),
+    Button.broadcast('Run', 'gen.terrain.run'),
 ])
 
 panels['gen.extruded_grid'] = Container([ # "I call them cities"
-    Label.title('Generate extruded grid'),
+    title('Generate extruded grid'),
     Separator(),
     Expander('Dimensions', '', True, [
         Value('Cell count', 'gen.extruded_grid.cell_count', 16, 1, 64, 1, 1024, snap_frac=1),
@@ -377,16 +389,16 @@ panels['gen.extruded_grid'] = Container([ # "I call them cities"
         Color('Color 2', 'gen.extruded_grid.col2', '#FDFE7F'),
         Value.fraction('Glow', 'gen.extruded_grid.glow', 0),
     ]),
-    Button('Generate', 'gen.extruded_grid.run'),
+    Button.broadcast('Generate', 'gen.extruded_grid.run'),
 ])
 
 panels['gen.hedge'] = Container([
-    Label.title('Generate hedge'),
+    title('Generate hedge'),
     Separator(),
     Expander('Dimensions', '', True, [
-        Value.canvas_size('Size X', 'gen.hedge.size_x', 64),
-        Value.canvas_size('Size Y', 'gen.hedge.size_y', 64),
-        Value.canvas_size('Size Z', 'gen.hedge.size_z', 4, 16),
+        canvas_size('Size X', 'gen.hedge.size_x', 64),
+        canvas_size('Size Y', 'gen.hedge.size_y', 64),
+        canvas_size('Size Z', 'gen.hedge.size_z', 4, 16),
         Value('Leaf density', 'gen.hedge.leaf_density', 2, 0, 4, 0, 64, snap_frac=100),
         Value('Leaf size', 'gen.hedge.leaf_size', 3, 1, 16, 1, 256, snap_frac=10),
     ]),
@@ -395,11 +407,11 @@ panels['gen.hedge'] = Container([
         Color('Color 2', 'gen.hedge.col2', "#2F6517"),
         Color('Color 3', 'gen.hedge.col3', "#7C9C41"),
     ]),
-    Button('Generate', 'gen.hedge.run'),
+    Button.broadcast('Generate', 'gen.hedge.run'),
 ])
 
 panels['gen.maze'] = Container([
-    Label.title('Generate maze'),
+    title('Generate maze'),
     Separator(),
     Expander('Dimensions', '', True, [
         Value('Cell count', 'gen.maze.cell_count', 24, 1, 64, 1, 1024, snap_frac=1),
@@ -412,15 +424,15 @@ panels['gen.maze'] = Container([
         Color('Ground color', 'gen.maze.ground_col', '#ffffff'),
         Color('Wall color', 'gen.maze.wall_col', '#000000'),
     ]),
-    Button('Generate', 'gen.maze.run'),
+    Button.broadcast('Generate', 'gen.maze.run'),
 ])
 
 panels['gen.nucleus'] = Container([
-    Label.title('Generate "Nucleus"'),
+    title('Generate "Nucleus"'),
     Separator(),
     Expander('Dimensions', '', True, [
         Value('Radius', 'gen.nucleus.radius', 32, 1, 128, 0, 4096, snap_frac=1),
-        Value.canvas_size('Size Z', 'gen.nucleus.size_z', 16, 64),
+        canvas_size('Size Z', 'gen.nucleus.size_z', 16, 64),
     ]),
     Expander('Shape', '', True, [
         Value('Rings', 'gen.nucleus.rings', 1, 0, 2, 0, 16),
@@ -430,26 +442,26 @@ panels['gen.nucleus'] = Container([
     Expander('Color', '', True, [
         Value('Glow', 'gen.nucleus.glow', 0.5, 0, 2, 0, 16),
     ]),
-    Button('Generate', 'gen.nucleus.run'),
+    Button.broadcast('Generate', 'gen.nucleus.run'),
 ])
 
 # https://en.wikipedia.org/wiki/Value_noise
 panels['gen.value_noise'] = Container([
-    Label.title('Value noise (2D)'),
+    title('Value noise (2D)'),
     Separator(),
     Expander('Dimensions', '', True, [
-        Value.canvas_size('Size X', 'gen.value_noise.size_x', 64),
-        Value.canvas_size('Size Y', 'gen.value_noise.size_y', 64),
+        canvas_size('Size X', 'gen.value_noise.size_x', 64),
+        canvas_size('Size Y', 'gen.value_noise.size_y', 64),
     ]),
     Expander('Shape', '', True, [
         Value('Scale', 'gen.value_noise.scale', 16, 1, 64, 0, 4096, snap_frac=1),
         Value('Max. octaves', 'gen.value_noise.octaves', 5, 1, 8, 0, 64, snap_frac=1),
     ]),
-    Button('Generate', 'gen.value_noise.run'),
+    Button.broadcast('Generate', 'gen.value_noise.run'),
 ])
 
 panels['gen.sphere'] = Container([
-    Label.title('Sphere'),
+    title('Sphere'),
     Separator(),
     Expander('Canvas', '', True, [
         Value('Canvas radius', 'gen.sphere.canvas_size', 16, 1, 256, 0, 4096, snap_frac=1),
@@ -457,22 +469,22 @@ panels['gen.sphere'] = Container([
         Color('Ground color', 'gen.sphere.ground_col', '#aaaaaa'),
     ]),
     Expander('Sphere', '', True, [
-        Value.canvas_size('Radius', 'gen.sphere.sphere_radius', 4),
+        canvas_size('Radius', 'gen.sphere.sphere_radius', 4),
         Color('Color', 'gen.sphere.sphere_color', '#00ff00'),
         Value.fraction('Emission', 'gen.sphere.sphere_emission', 0),
     ]),
-    Button('Generate', 'gen.sphere.run'),
+    Button.broadcast('Generate', 'gen.sphere.run'),
 ])
 
 panels['gen.lang'] = Container([
-    Label.title('Custom script'),
+    title('Custom script'),
     Separator(),
     TextBlock('This project supports a purpose-built low-level programming language. Documentation available on GitHub.'),
     Expander('Settings', '', True, [
         Checkbox('Always show run output', 'gen.lang.show_output_list', False),
     ]),
-    Button('Input code', 'gen.lang.input_code'),
-    Button('Run', 'gen.lang.run'),
+    Button.broadcast('Input code', 'gen.lang.input_code'),
+    Button.broadcast('Run', 'gen.lang.run'),
 ])
 
 
@@ -481,89 +493,89 @@ panels['gen.lang'] = Container([
 ################################
 
 panels['fx.translate'] = Container([
-    Label.title('Translate canvas'),
+    title('Translate canvas'),
     Separator(),
     Expander('Translation vector', '', True, [
         Value('X', 'fx.translate.dx', 0, -512, 512, -4096, 4096, snap_frac=1),
         Value('Y', 'fx.translate.dy', 0, -512, 512, -4096, 4096, snap_frac=1),
         Value('Z', 'fx.translate.dz', 0, -512, 512, -4096, 4096, snap_frac=1),
         Separator(0),
-        Button('Set to 0', 'fx.translate.set_0'),
-        Button('Set half canvas x,y', 'fx.translate.set_half_canvas_xy'),
+        Button.broadcast('Set to 0', 'fx.translate.set_0'),
+        Button.broadcast('Set half canvas x,y', 'fx.translate.set_half_canvas_xy'),
     ]),
-    Button('Run', 'fx.translate.run'),
+    Button.broadcast('Run', 'fx.translate.run'),
 ])
 
 panels['fx.scale'] = Container([
-    Label.title('Scale canvas'),
+    title('Scale canvas'),
     Separator(),
     Expander('Scale vector', '', True, [
         Value('X', 'fx.scale.dx', 1, 0.25, 4, -4096, 4096, snap_frac=1000),
         Value('Y', 'fx.scale.dy', 1, 0.25, 4, -4096, 4096, snap_frac=1000),
         Value('Z', 'fx.scale.dz', 1, 0.25, 4, -4096, 4096, snap_frac=1000),
         Separator(0),
-        Button('Set to 0.5', 'fx.scale.set_x0.5'),
-        Button('Set to 1', 'fx.scale.set_x1'),
-        Button('Set to 2', 'fx.scale.set_x2'),
+        Button.broadcast('Set to 0.5', 'fx.scale.set_x0.5'),
+        Button.broadcast('Set to 1', 'fx.scale.set_x1'),
+        Button.broadcast('Set to 2', 'fx.scale.set_x2'),
     ]),
-    Button('Run', 'fx.scale.run'),
+    Button.broadcast('Run', 'fx.scale.run'),
 ])
 
 panels['fx.rotate'] = Container([
-    Label.title('Rotate canvas XY'),
+    title('Rotate canvas XY'),
     Separator(),
-    Button('Rotate +90 (CCW)', 'fx.rotate.rotate_+90'),
-    Button('Rotate -90 (CW)', 'fx.rotate.rotate_-90'),
+    Button.broadcast('Rotate +90 (CCW)', 'fx.rotate.rotate_+90'),
+    Button.broadcast('Rotate -90 (CW)', 'fx.rotate.rotate_-90'),
     Separator(0),
     Expander('Advanced', '', False, [
         Value('Angle (CCW)', 'fx.rotate.angle', 0, -180, 180),
         Separator(0),
         Value('Origin X', 'fx.rotate.ox', 0, -256, 256, -4096, 4096),
         Value('Origin Y', 'fx.rotate.oy', 0, -256, 256, -4096, 4096),
-        Button('Set origin  to 0,0', 'fx.rotate.set_origin_0'),
-        Button('Set origin to center', 'fx.rotate.set_origin_center'),
+        Button.broadcast('Set origin  to 0,0', 'fx.rotate.set_origin_0'),
+        Button.broadcast('Set origin to center', 'fx.rotate.set_origin_center'),
         Separator(0),
-        Button('Rotate', 'fx.rotate.run'),
+        Button.broadcast('Rotate', 'fx.rotate.run'),
     ]),
 ])
 
 panels['fx.mirror'] = Container([
-    Label.title('Mirror'),
+    title('Mirror'),
     Separator(),
     Expander('Flip (nondestructive)', '', True, [
-        Button('Flip X', 'fx.mirror.flip_x'),
-        Button('Flip Y', 'fx.mirror.flip_y'),
+        Button.broadcast('Flip X', 'fx.mirror.flip_x'),
+        Button.broadcast('Flip Y', 'fx.mirror.flip_y'),
     ]),
     Expander('Mirror (destructive)', '', True, [
-        Button('Mirror X', 'fx.mirror.mirror_x'),
-        Button('Mirror Y', 'fx.mirror.mirror_y'),
+        Button.broadcast('Mirror X', 'fx.mirror.mirror_x'),
+        Button.broadcast('Mirror Y', 'fx.mirror.mirror_y'),
     ]),
 ])
 
 panels['fx.repeated_symmetry'] = Container([
-    Label.title('Repeated symmetry'),
+    title('Repeated symmetry'),
     Separator(),
     TextBlock('Randomly translate and mirror the canvas, often resulting in panel-like shapes.'),
     Expander('Settings', '', True, [
         Value('Steps', 'fx.repeated_symmetry.steps', 3, 1, 20, 1, snap_frac=1),
         Value.fraction('X:Y bias', 'fx.repeated_symmetry.xy_bias', 0.5),
     ]),
-    Button('Run', 'fx.repeated_symmetry.run'),
+    Button.broadcast('Run', 'fx.repeated_symmetry.run'),
 ])
 
 panels['fx.crop_xy'] = Container([
-    Label.title('Crop XY'),
+    title('Crop XY'),
     Separator(),
     Expander('Dimensions', '', True, [
-        Value.canvas_size('Size X', 'fx.crop_xy.size_x', 64),
-        Value.canvas_size('Size Y', 'fx.crop_xy.size_y', 64),
+        canvas_size('Size X', 'fx.crop_xy.size_x', 64),
+        canvas_size('Size Y', 'fx.crop_xy.size_y', 64),
         Checkbox('Centered', 'fx.crop_xy.centered', True),
     ]),
-    Button('Crop', 'fx.crop_xy.run'),
+    Button.broadcast('Crop', 'fx.crop_xy.run'),
 ])
 
 panels['fx.recolor'] = Container([
-    Label.title('Gradient recolor'),
+    title('Gradient recolor'),
     Separator(),
     Expander('Channel weights', '', False, [
         Value('Red', 'fx.recolor.weight_r', 0.25, 0, 1, snap_frac=1000),
@@ -581,46 +593,46 @@ panels['fx.recolor'] = Container([
     ]),
     Checkbox('Interpolate in sRGB', 'fx.recolor.use_sRGB', True),
     Separator(0),
-    Button('Run', 'fx.recolor.run'),
+    Button.broadcast('Run', 'fx.recolor.run'),
 ])
 
 panels['fx.jitter'] = Container([
-    Label.title('Jitter'),
+    title('Jitter'),
     Separator(),
     TextBlock('Randomly translate voxels'),
     Expander('Settings', '', True, [
         Value('Coverage', 'fx.jitter.coverage', 0.1, 0, 0.2, 0, 1, snap_frac=1000),
         Value.fraction('Probability Z', 'fx.jitter.probability_z', 0),
     ]),
-    Button('Run', 'fx.jitter.run'),
+    Button.broadcast('Run', 'fx.jitter.run'),
 ])
 
 panels['fx.smudge'] = Container([
-    Label.title('Smudge'),
+    title('Smudge'),
     Separator(),
     TextBlock('Randomly blend adjacent voxel color.'),
     Expander('Settings', '', True, [
         Value('Coverage', 'fx.smudge.coverage', 0.1, 0, 0.2, 0, 1, snap_frac=1000),
         Value.fraction('Probability Z', 'fx.smudge.probability_z', 0.333),
     ]),
-    Button('Run', 'fx.smudge.run'),
+    Button.broadcast('Run', 'fx.smudge.run'),
 ])
 
 panels['fx.reshape_canvas'] = Container([
-    Label.title('Reshape canvas'),
+    title('Reshape canvas'),
     Separator(),
     TextBlock('Nondestructive adjustment of canvas dimensions. Voxel order is maintained and reversible.'),
     Expander('Dimensions', '', True, [
-        Button('Get current dimensions', 'fx.reshape_canvas.get_current_dimensions'),
-        Value.canvas_size('Size X', 'fx.reshape_canvas.size_x', ''),
-        Value.canvas_size('Size Y', 'fx.reshape_canvas.size_y', ''),
-        Value.canvas_size('Size Z', 'fx.reshape_canvas.size_z', ''),
+        Button.broadcast('Get current dimensions', 'fx.reshape_canvas.get_current_dimensions'),
+        canvas_size('Size X', 'fx.reshape_canvas.size_x', ''),
+        canvas_size('Size Y', 'fx.reshape_canvas.size_y', ''),
+        canvas_size('Size Z', 'fx.reshape_canvas.size_z', ''),
     ]),
     Expander('Dangerous', '', False, [
         Checkbox('Allow any size', 'fx.reshape_canvas.any_size', False),
         TextBlock('Allow for dimensions that result in a canvas unequal to the actual number of stored voxels.'),
     ]),
-    Button('Set dimensions', 'fx.reshape_canvas.run'),
+    Button.broadcast('Set dimensions', 'fx.reshape_canvas.run'),
 ])
 
 ################################
@@ -628,7 +640,7 @@ panels['fx.reshape_canvas'] = Container([
 ################################
 
 panels['settings.misc'] = Container([
-    Label.title('Miscellaneous'),
+    title('Miscellaneous'),
     Separator(),
     Expander('Inputs', '', True, [
         Value('Slider sensitivity', 'settings.slider_sensitivity', 100, 20, 500, 0, 10000, snap_frac=1),
@@ -641,11 +653,11 @@ panels['settings.misc'] = Container([
         Checkbox('Reset render on flag', 'settings.reset_render_on_flag', True),
     ]),
     Separator(0),
-    Button('Apply changes', 'settings.misc.apply', action_data='settings.apply'),
+    Button.broadcast('Apply changes', 'settings.misc.apply', 'settings.apply'),
 ])
 
 panels['settings.pathtracer'] = Container([
-    Label.title('Pathtracer'),
+    title('Pathtracer'),
     Separator(),
     TextBlock('Applies to the "pathtraced" mode only.'),
     Expander('Iterations', '', False, [
@@ -665,10 +677,10 @@ panels['settings.pathtracer'] = Container([
     ]),
     Expander('Sky', '', False, [
         Expander('Presets', '', False, [
-            Button.run_command('Off', 'settings.sky_preset1', 'element settings.sky_intensity 3 0;element settings.sun_intensity 3 0;broadcast settings.apply;'),
-            Button.run_command('Dark', 'settings.sky_preset2', 'element settings.sky_intensity 3 0.2;element settings.sun_intensity 3 0;broadcast settings.apply;'),
-            Button.run_command('Default', 'settings.sky_preset3', 'element settings.sky_intensity 3 0.8;element settings.sun_intensity 3 2;broadcast settings.apply;'),
-            Button.run_command('Bright', 'settings.sky_preset4', 'element settings.sky_intensity 3 1;element settings.sun_intensity 3 10;broadcast settings.apply;'),
+            Button.command('Off', 'settings.sky_preset1', 'element settings.sky_intensity 3 0;element settings.sun_intensity 3 0;broadcast settings.apply;'),
+            Button.command('Dark', 'settings.sky_preset2', 'element settings.sky_intensity 3 0.2;element settings.sun_intensity 3 0;broadcast settings.apply;'),
+            Button.command('Default', 'settings.sky_preset3', 'element settings.sky_intensity 3 0.8;element settings.sun_intensity 3 2;broadcast settings.apply;'),
+            Button.command('Bright', 'settings.sky_preset4', 'element settings.sky_intensity 3 1;element settings.sun_intensity 3 10;broadcast settings.apply;'),
         ]),
         Separator(0),
         Value('Sky intensity', 'settings.sky_intensity', 0.8, 0, 2, 0, 100, snap_frac=100),
@@ -682,11 +694,11 @@ panels['settings.pathtracer'] = Container([
         TextBlock('How light is converted into your screen\'s RGB pixels'),
     ]),
     Separator(0),
-    Button('Apply changes', 'settings.pathtracer.apply', action_data='settings.apply'),
+    Button.broadcast('Apply changes', 'settings.pathtracer.apply', 'settings.apply'),
 ])
 
 panels['settings.normal_map'] = Container([
-    Label.title('Normal map'),
+    title('Normal map'),
     Separator(),
     TextBlock('Applies to the "normal map" mode in 2D only.'),
     Expander('Sampling', '', True, [
@@ -694,11 +706,11 @@ panels['settings.normal_map'] = Container([
         Value('Kernel size', 'settings.normal_map_kernel_size', 2, 2, 3, 2, 3, snap_frac=1),
     ]),
     Separator(0),
-    Button('Apply changes', 'settings.normal_map.apply', action_data='settings.apply'),
+    Button.broadcast('Apply changes', 'settings.normal_map.apply', 'settings.apply'),
 ])
 
 panels['settings.tips'] = Container([
-    Label.title('Tips'),
+    title('Tips'),
     Separator(),
     Expander('Set render mode', '', False, [
         TextBlock('Press the number keys 1-6 to quickly choose render mode "color", "shaded", "pathtraced", and so on.'),
@@ -717,7 +729,7 @@ panels['settings.tips'] = Container([
 ])
 
 panels['settings.credits'] = Container([
-    Label.title('Credits'),
+    title('Credits'),
     Separator(),
     Label('Created by awesome-llama'),
     Label('2025'),
@@ -731,12 +743,12 @@ panels['settings.credits'] = Container([
 ################################
 
 panels['project.compositor_mode'] = Container([
-    Button.run_command('1. Color', 'project.compositor_mode.1', 'compositor COLOR'),
-    Button.run_command('2. Shaded', 'project.compositor_mode.2', 'compositor SHADED'),
-    Button.run_command('3. Pathtraced', 'project.compositor_mode.3', 'compositor PATHTRACED'),
-    Button.run_command('4. Height', 'project.compositor_mode.4', 'compositor HEIGHT'),
-    Button.run_command('5. AO', 'project.compositor_mode.5', 'compositor AO'),
-    Button.run_command('6. Normal', 'project.compositor_mode.6', 'compositor NORMAL'),
+    Button.command('1. Color', 'project.compositor_mode.1', 'compositor COLOR'),
+    Button.command('2. Shaded', 'project.compositor_mode.2', 'compositor SHADED'),
+    Button.command('3. Pathtraced', 'project.compositor_mode.3', 'compositor PATHTRACED'),
+    Button.command('4. Height', 'project.compositor_mode.4', 'compositor HEIGHT'),
+    Button.command('5. AO', 'project.compositor_mode.5', 'compositor AO'),
+    Button.command('6. Normal', 'project.compositor_mode.6', 'compositor NORMAL'),
 ])
 
 
@@ -744,4 +756,4 @@ panels['project.compositor_mode'] = Container([
 #    Generate lists & save     #
 ################################
 
-save_panels(panels, "src/UI/")
+save_elements(panels, "src/UI/")
