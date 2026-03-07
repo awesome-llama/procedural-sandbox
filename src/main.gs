@@ -67,13 +67,14 @@ on "sys.check_mouse_off_screen" {
 %define PRESSED_WASD() ((key_pressed("d") or key_pressed("a")) or (key_pressed("w") or key_pressed("s")))
 %define PRESSED_MOVE_X() (key_pressed("d")-key_pressed("a"))
 %define PRESSED_MOVE_Y() (key_pressed("w")-key_pressed("s"))
+%define PRESSED_SHIFT() ($tw_is_turbowarp and key_pressed("shift"))
 
 onkey "any" {
     if (PRESSED_WASD()) {
         if (viewport_mode == ViewportMode.ALIGNED) {
             requested_render_resolution = 2;
             until (not PRESSED_WASD()) {
-                movement_speed = 200*(1+key_pressed("shift"));
+                movement_speed = 200 * (1+PRESSED_SHIFT());
                 cam_x += (PRESSED_MOVE_X() * ((dt*movement_speed)/cam_scale));
                 cam_y += (PRESSED_MOVE_Y() * ((dt*movement_speed)/cam_scale));
                 require_viewport_refresh = true;
@@ -84,7 +85,7 @@ onkey "any" {
         } elif (viewport_mode == ViewportMode.ORBIT) {
             # move the camera forwards or sideways horizontally, using current azimuth
             until (not PRESSED_WASD()) {
-                movement_speed = (((canvas_size_x+canvas_size_y)/2)/4)*(1+key_pressed("shift"));
+                movement_speed = (((canvas_size_x+canvas_size_y)/2)/4) * (1+PRESSED_SHIFT());
                 cam_x += ((PRESSED_MOVE_X()*cos(cam_azi)) - (PRESSED_MOVE_Y()*sin(cam_azi))) * ((dt*movement_speed)/cam_scale);
                 cam_y += ((PRESSED_MOVE_X()*sin(cam_azi)) + (PRESSED_MOVE_Y()*cos(cam_azi))) * ((dt*movement_speed)/cam_scale);
 
