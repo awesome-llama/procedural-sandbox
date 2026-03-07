@@ -34,34 +34,37 @@ on "sys.hard_reset" {
 }
 
 
+%define APPLY_SETTING(VARIABLE, ID) get_setting_from_id_shared_variable((ID)); VARIABLE = return_value;
+
+
 on "settings.apply" {
     # Interface
-    PS_slider_sensitivity = get_setting_from_id("settings.slider_sensitivity");
+    APPLY_SETTING(PS_slider_sensitivity, "settings.slider_sensitivity");
 
     # Render (misc.)
-    PS_render_resolution_default_orbit = get_setting_from_id("settings.resolution");
-    PS_reset_render_on_flag = get_setting_from_id("settings.reset_render_on_flag");
+    APPLY_SETTING(PS_render_resolution_default_orbit, "settings.resolution");
+    APPLY_SETTING(PS_reset_render_on_flag, "settings.reset_render_on_flag");
 
     # Pathtracer
-    PS_emission_intensity = get_setting_from_id("settings.emission_intensity");
+    APPLY_SETTING(PS_emission_intensity, "settings.emission_intensity");
 
-    PS_sky_intensity = get_setting_from_id("settings.sky_intensity");
+    APPLY_SETTING(PS_sky_intensity, "settings.sky_intensity");
 
-    PS_sun_intensity = get_setting_from_id("settings.sun_intensity");
-    PS_sun_bearing = get_setting_from_id("settings.sun_bearing");
-    PS_sun_elevation = get_setting_from_id("settings.sun_elevation");
+    APPLY_SETTING(PS_sun_intensity, "settings.sun_intensity");
+    APPLY_SETTING(PS_sun_bearing, "settings.sun_bearing");
+    APPLY_SETTING(PS_sun_elevation, "settings.sun_elevation");
 
-    PS_use_tone_map = get_setting_from_id("settings.use_tone_map");
+    APPLY_SETTING(PS_use_tone_map, "settings.use_tone_map");
 
-    PS_filter_size_fac_2D_PT = get_setting_from_id("settings.filter_size_fac_2D_PT");
-    PS_filter_size_fac_3D_PT = get_setting_from_id("settings.filter_size_fac_3D_PT");
+    APPLY_SETTING(PS_filter_size_fac_2D_PT, "settings.filter_size_fac_2D_PT");
+    APPLY_SETTING(PS_filter_size_fac_3D_PT, "settings.filter_size_fac_3D_PT");
 
-    PS_max_samples = get_setting_from_id("settings.max_samples");
-    PS_max_iteration_time = get_setting_from_id("settings.max_frame_time");
-    
+    APPLY_SETTING(PS_max_samples, "settings.max_samples");
+    APPLY_SETTING(PS_max_iteration_time, "settings.max_frame_time");
+
     # Normal map
-    PS_normal_map_intensity = get_setting_from_id("settings.normal_map_intensity");
-    PS_normal_map_kernel_size = get_setting_from_id("settings.normal_map_kernel_size");
+    APPLY_SETTING(PS_normal_map_intensity, "settings.normal_map_intensity");
+    APPLY_SETTING(PS_normal_map_kernel_size, "settings.normal_map_kernel_size");
 
 
 
@@ -72,4 +75,11 @@ on "settings.apply" {
     require_composite = true;
 
     print "changes applied", 3;
+}
+
+
+
+# gets the setting value and sets a variable manually (goboscript creates too many func return vars currently)
+proc get_setting_from_id_shared_variable element_id {
+    return_value = get_setting_from_id($element_id);
 }
