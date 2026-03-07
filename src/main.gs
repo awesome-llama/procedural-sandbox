@@ -48,14 +48,18 @@ on "sys.start_main_loop" {
 
         broadcast "sys.render_UI"; # always redraw, no erase. This goes to the UI sprite only.
         broadcast "sys.render_overlay";
+        broadcast "sys.check_mouse_off_screen";
+    }
+}
 
-        if (not ((mouse_x() > stage_min_x or mouse_x() < stage_max_x) or (mouse_y() > stage_min_y or mouse_y() < stage_max_y))) {
-            # out of bounds (this takes priority over every hovered element)
-            UI_hovered_group = "";
-            UI_hovered_element = "";
-            UI_last_hovered_group = "";
-            UI_last_hovered_element = "";
-        }
+
+on "sys.check_mouse_off_screen" {
+    if (not ((mouse_x() > stage_min_x or mouse_x() < stage_max_x) or (mouse_y() > stage_min_y or mouse_y() < stage_max_y))) {
+        # out of bounds (this takes priority over every hovered element)
+        UI_hovered_group = "";
+        UI_hovered_element = "";
+        UI_last_hovered_group = "";
+        UI_last_hovered_element = "";
     }
 }
 
@@ -174,6 +178,24 @@ on "sys.zoom_out" {
         require_composite = true;
     }
     require_viewport_refresh = true;
+}
+
+
+
+onkey "=" {
+    if (PS_render_resolution_default_orbit < 12) {
+        PS_render_resolution_default_orbit += 1;
+        requested_render_resolution = PS_render_resolution_default_orbit;
+        require_composite = true;
+    }
+}
+
+onkey "-" {
+    if (PS_render_resolution_default_orbit > 2) {
+        PS_render_resolution_default_orbit -= 1;
+        requested_render_resolution = PS_render_resolution_default_orbit;
+        require_composite = true;
+    }
 }
 
 

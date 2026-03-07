@@ -338,7 +338,7 @@ proc render_top_bar x, y {
     top_bar_button "zoom in", "zoom in", TOP_BAR_OFFSET(10), $y-10, false;
 
     if (iterative_compositor_paused and require_iterative_compositor) {
-        set_pen_color "#ffb3f8";
+        set_pen_color "#ffc43a";
         plainText TOP_BAR_OFFSET(11), $y-14, 1, "PAUSED";
     }
 }
