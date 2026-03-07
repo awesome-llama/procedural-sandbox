@@ -89,20 +89,22 @@ list quads;
 
 on "io.export_obj_surface.run" {
     delete UI_return;
+    setting_from_id "io.export_obj_surface.include_canvas_sides";
     setting_from_id "io.export_obj_surface.right_handed_z_up";
     setting_from_id "io.export_obj_surface.create_data_url";
-    export_obj_surface UI_return[1], UI_return[2];
+    export_obj_surface UI_return[1], UI_return[2], UI_return[3];
 }
-proc export_obj_surface right_handed_z_up, create_data_url {
-    delete verts;
-    delete vertex_ptrs;
+proc export_obj_surface include_canvas_sides, right_handed_z_up, create_data_url {
+    delete verts; # positions stored combined into a single value (from volume 1 larger than canvas)
+    delete vertex_ptrs; # stores pointers into verts list so that a face can reuse the same vertex
     delete quads;
 
     vertex_count_x = canvas_size_x + 1;
     vertex_count_y = canvas_size_y + 1;
+    vertex_count_z = canvas_size_z + 1;
     vertex_count_xy = vertex_count_x * vertex_count_y;
 
-    repeat (vertex_count_xy * (canvas_size_z+1)) {
+    repeat (vertex_count_xy * vertex_count_z) {
         add 0 to vertex_ptrs;
     }
 
@@ -118,28 +120,28 @@ proc export_obj_surface right_handed_z_up, create_data_url {
                     # check adj 6 voxels for air
                     
                     # -X
-                    if (canvas[INDEX_FROM_3D_CANVAS_INTS(ix-1, iy, iz, canvas_size_x, canvas_size_y)].opacity == 0) {
+                    if (canvas[INDEX_FROM_3D_CANVAS_INTS(ix-1, iy, iz, canvas_size_x, canvas_size_y)].opacity == 0 or ((ix < 1) and $include_canvas_sides)) {
                         _add_quad vi, vi+_DZ, vi+_DZ+_DY, vi+_DY;
                     }
                     # -Y
-                    if (canvas[INDEX_FROM_3D_CANVAS_INTS(ix, iy-1, iz, canvas_size_x, canvas_size_y)].opacity == 0) {
+                    if (canvas[INDEX_FROM_3D_CANVAS_INTS(ix, iy-1, iz, canvas_size_x, canvas_size_y)].opacity == 0 or ((iy < 1) and $include_canvas_sides)) {
                         _add_quad vi, vi+_DX, vi+_DX+_DZ, vi+_DZ;
                     }
                     # -Z
-                    if (canvas[INDEX_FROM_3D_CANVAS_INTS(ix, iy, iz-1, canvas_size_x, canvas_size_y)].opacity+0 == 0) { # add 0 to convert empty string
+                    if (canvas[INDEX_FROM_3D_CANVAS_INTS(ix, iy, iz-1, canvas_size_x, canvas_size_y)].opacity+"0" == 0 or (iz < 1)) { # add 0 to convert empty string
                         _add_quad vi, vi+_DY, vi+_DY+_DX, vi+_DX;
                     }
 
                     # +X
-                    if (canvas[INDEX_FROM_3D_CANVAS_INTS(ix+1, iy, iz, canvas_size_x, canvas_size_y)].opacity == 0) {
+                    if (canvas[INDEX_FROM_3D_CANVAS_INTS(ix+1, iy, iz, canvas_size_x, canvas_size_y)].opacity == 0 or ((ix > (canvas_size_x - 2)) and $include_canvas_sides)) {
                         _add_quad vi+_DX, vi+_DX+_DY, vi+_DX+_DY+_DZ, vi+_DX+_DZ;
                     }
                     # +Y
-                    if (canvas[INDEX_FROM_3D_CANVAS_INTS(ix, iy+1, iz, canvas_size_x, canvas_size_y)].opacity == 0) {
+                    if (canvas[INDEX_FROM_3D_CANVAS_INTS(ix, iy+1, iz, canvas_size_x, canvas_size_y)].opacity == 0 or ((iy > (canvas_size_y - 2)) and $include_canvas_sides)) {
                         _add_quad vi+_DY, vi+_DY+_DZ, vi+_DY+_DZ+_DX, vi+_DY+_DX;
                     }
                     # +Z
-                    if (canvas[INDEX_FROM_3D_CANVAS_INTS(ix, iy, iz+1, canvas_size_x, canvas_size_y)].opacity+0 == 0) { # add 0 to convert empty string
+                    if (canvas[INDEX_FROM_3D_CANVAS_INTS(ix, iy, iz+1, canvas_size_x, canvas_size_y)].opacity+"0" == 0 or (iz > (canvas_size_z - 2))) { # add 0 to convert empty string
                         _add_quad vi+_DZ, vi+_DZ+_DX, vi+_DZ+_DX+_DY, vi+_DZ+_DY;
                     }
                 }
@@ -158,7 +160,8 @@ proc export_obj_surface right_handed_z_up, create_data_url {
     delete text_buffer;
     add "# Created with awesome-llama's Procedural Sandbox" to text_buffer;
     add "# x:" & canvas_size_x & ", y:" & canvas_size_y & ", z:" & canvas_size_z to text_buffer;
-    add "o canvas" to text_buffer;
+    add "o canvas" to text_buffer; # object named canvas
+    add "s off" to text_buffer; # disable smooth shading
 
     # resolve vertex indices to coords
     i = 1;

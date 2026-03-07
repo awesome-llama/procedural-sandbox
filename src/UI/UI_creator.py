@@ -55,8 +55,8 @@ def btn_menu_set_page(label, page):
 
 panels['menu.io'] = Container([
     title('Import/export'),
-    Separator(),
-    btn_menu_set_page('New canvas', 'io.new_canvas'),
+    #Separator(),
+    #btn_menu_set_page('New canvas', 'io.new_canvas'),
     Separator(0, 5),
     btn_menu_set_page('Save canvas', 'io.save_canvas'),
     Button.broadcast('Load canvas', 'io.load_canvas.run'), # run button, no page
@@ -68,6 +68,7 @@ panels['menu.io'] = Container([
     Label('Textures', '#baaaba'),
     btn_menu_set_page('Import height map', 'io.import_height_map'),
     btn_menu_set_page('Import color map', 'io.import_color_map'),
+    Separator(0, 5),
     btn_menu_set_page('Export height map', 'io.export_height_map'),
     
     Separator(0, 5),
@@ -207,6 +208,7 @@ panels['io.export_ply_point_cloud'] = Container([
     Separator(),
     Expander('Settings', '', True, [
         Checkbox('Include 0 opacity voxels', 'io.export_ply_point_cloud.include_air', False),
+        Separator(),
         Checkbox('Create data URL', 'io.export_ply_point_cloud.create_data_url', True),
     ]),
     Button.broadcast('Export', 'io.export_ply_point_cloud.run'),
@@ -216,7 +218,9 @@ panels['io.export_obj_surface'] = Container([
     title('Export mesh surface'),
     Separator(),
     Expander('Settings', '', True, [
+        Checkbox('Include canvas sides', 'io.export_obj_surface.include_canvas_sides', True),
         Checkbox('Right-handed Z-up', 'io.export_obj_surface.right_handed_z_up', True),
+        Separator(),
         Checkbox('Create data URL', 'io.export_obj_surface.create_data_url', True),
     ]),
     Button.broadcast('Export', 'io.export_obj_surface.run'),
