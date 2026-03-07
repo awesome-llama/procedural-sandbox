@@ -403,6 +403,15 @@ proc draw_axes ox, oy, size {
         goto $ox+$size, $oy;
         pen_up;
 
+        if (compositor_mode == CompositorMode.PATHTRACED) {
+            set_pen_color "#ffff00";
+            set_pen_size 2;
+            calculate_sun_vector;
+            goto $ox+sun_direction.x*$size, $oy+sun_direction.y*$size;
+            pen_down;
+            pen_up;
+        }
+
     } elif (viewport_mode == ViewportMode.ORBIT) {
         if (compositor_mode == CompositorMode.PATHTRACED) {
             set_pen_color "#ffff00";
