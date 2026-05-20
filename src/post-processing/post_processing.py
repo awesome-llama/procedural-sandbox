@@ -4,6 +4,8 @@ import zipfile
 import subprocess
 import datetime
 import sys
+import os
+import hashlib
 
 import clean_up_blocks
 
@@ -29,6 +31,7 @@ class ScratchProject:
         self.destination_path = destination_path
         self.project_archive = zipfile.ZipFile(source_path, 'r')
         self.project_data: dict = json.loads(self.project_archive.read('project.json'))
+        self._additional_assets = []
 
 
     def __enter__(self):
@@ -48,6 +51,10 @@ class ScratchProject:
                         # Copy other files as-is
                         file_data = self.project_archive.read(item.filename)
                         new_archive.writestr(item, file_data)
+                
+                for item in self._additional_assets:
+                    new_archive.writestr(item[0], item[1])
+
             print(f'saved to {self.destination_path}')
         else:
             print('saving cancelled due to exception')
@@ -94,8 +101,7 @@ class ScratchProject:
 
 
 
-
-    def add_comment_to_target(self, target_name: str, text: str, x=0, y=0, width=200, height=200, minimized=False, blockId=None):
+    def add_comment(self, target_name: str, text: str, x=0, y=0, width=200, height=200, minimized=False, blockId=None):
         """Add a comment to a target"""
 
         target = self.get_target_by_name(target_name)
@@ -113,10 +119,41 @@ class ScratchProject:
 
 
 
+    def add_asset(self, file_path):
+        asset_hash = None
+        with open(file_path, "rb") as f:
+            data = f.read()
+            asset_hash = hashlib.md5(data).hexdigest()
+        
+            self._additional_assets.append((asset_hash + os.path.splitext(file_path)[1], data))
+
+        return asset_hash
+
+
 
     ################################
     #       Common processes       #
     ################################
+
+
+    def list_items_to_numbers(self, list_name, target_name='Stage'):
+        """Convert list items that are strings into numbers, if valid as such."""
+
+        target = self.get_target_by_name(target_name)
+
+        list_content = target['lists'][list_name][1]
+        for i in range(len(list_content)):
+            try:
+                list_content[i] = int(list_content[i])
+                continue
+            except: pass
+            
+            try:
+                list_content[i] = float(list_content[i])
+                continue
+            except: pass
+
+
 
     def order_sprites(self, order=['_', 'main', 'cmd']):
         """Order the sprites following a list of sprite names. Sprites not in the list will be placed at the end."""
@@ -165,7 +202,6 @@ class ScratchProject:
         """Move the TurboWarp config comment"""
 
         twconfig_comment = self.get_comment_by_id('Stage', 'twconfig')
-        if not twconfig_comment: raise Exception('Comment not found')
 
         twconfig_comment['x'] = x
         twconfig_comment['y'] = y
@@ -177,11 +213,8 @@ class ScratchProject:
     def add_build_comment(self, header:str|None = None, target_name='_'):
         """Add an informative comment to a sprite"""
 
-        target = self.get_target_by_name(target_name)
-        if not target: raise Exception('Target not found')
-
         try:
-            gs_ver = self.project_data['meta']['agent'].removeprefix('goboscript v')
+            gs_ver = self.project_data['meta']['agent'].removeprefix('goboscript ')
         except:
             gs_ver = '?'
 
@@ -194,15 +227,75 @@ class ScratchProject:
 
         comment_text = "\n".join([
             str(header),
-            f'build_date: {datetime.datetime.now(datetime.timezone.utc)}',
-            f'approx_json_size: {round(len(serialize_project_json(self.project_data))/1000)/1000} MB',
+            f'project_build_date: {datetime.datetime.now(datetime.timezone.utc)}',
+            f'project_git_hash: {git_hash}',
+            f'project_approx_json_size: {round(len(serialize_project_json(self.project_data))/1000)/1000} MB',
             f'goboscript_version: {gs_ver}',
             f'python_version: {sys.version_info.major}.{sys.version_info.minor}',
-            f'git_hash: {git_hash}',
         ])
         
-        self.add_comment_to_target(target_name, comment_text, x=500, width=500, height=600)
+        self.add_comment(target_name, comment_text, x=500, width=500, height=600)
         print(comment_text)
 
+
+
+
+    ################################
+    #     TurboWarp extensions     #
+    ################################
+
+
+
+    def register_extension(self, extension_name: str, extension_URL: str):
+        """Add a TurboWarp extension to the project."""
+
+        if 'extensions' not in self.project_data: self.project_data['extensions'] = []
+        if extension_name not in self.project_data['extensions']: self.project_data['extensions'].append(extension_name)
+
+        if 'extensionURLs' not in self.project_data: self.project_data['extensionURLs'] = {}
+        self.project_data['extensionURLs'][extension_name] = extension_URL
+    
+
+    
+    def get_custom_block_definition_by_proccode_substring(self, target_name: str, proccode_substring: str) -> tuple:
+        """Get the custom block definition id and content as a tuple."""
+
+        blocks = self.get_target_by_name(target_name)['blocks']
+        for block_id, block in blocks.items():
+            if block['opcode'] != 'procedures_definition': continue
+            prototype = blocks[block['inputs']['custom_block'][1]]
+            if proccode_substring in prototype['mutation']['proccode']: return (block_id, block)
+        raise Exception('Block not found')
+    
+
+
+    def replace_custom_block_definition_script(self, target_name: str, proccode_substring: str, new_blocks: dict):
+        """Replace the script under a custom block definition with a new one."""
+
+        blocks = self.get_target_by_name(target_name)['blocks']
+        block_id, block = self.get_custom_block_definition_by_proccode_substring(target_name, proccode_substring)
+
+        # disconnect blocks
+        old_next_id = blocks[block_id]['next']
+        old_next = blocks[old_next_id]
+        old_next['parent'] = None
+        old_next['topLevel'] = True
+        old_next['x'] = block.get('x', 0) + 1000
+        old_next['y'] = block.get('y', 0)
+
+
+        # add new blocks
+        blocks |= new_blocks
+
+        next_id = None
+        for nb_id, nb in new_blocks.items():
+            if nb['parent'] is None:
+                next_id = nb_id
+                break
+        if next_id is None: raise Exception("new_blocks lacks topmost block to connect to (searching for a parent of None)")
+        
+        blocks[next_id]['parent'] = block_id # reconnect
+        blocks[next_id]['topLevel'] = False
+        blocks[block_id]['next'] = next_id
 
 

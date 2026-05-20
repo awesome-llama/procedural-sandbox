@@ -26,8 +26,8 @@ TextImage is the supported image format for this project. Use the converter tool
 
 ## Dependencies
 
-- [goboscript](https://github.com/aspizu/goboscript/) commit `5a16edc`, not release build.
-- Python 3.12
+- [goboscript](https://github.com/aspizu/goboscript/) commit `54143f0`
+- Python 3.14
 
 
 ## Building
