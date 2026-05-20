@@ -1,13 +1,15 @@
 %include lib/common
 
-costumes "costumes/large.svg" as "large", "costumes/blank.svg" as "blank";
 hide;
 
-on "initalise" {
-    hide;
-}
+costumes
+"costumes/large.svg" as "large",
+"costumes/blank.svg" as "blank",
+"costumes/checker_dark.png" as "checker_dark";
+
 
 on "sys.render_viewport" {
+    render_background;
     if (viewport_mode == ViewportMode.ALIGNED) {
         render_edge_lines stage_max_x, stage_max_y;
         render_canvas_2D;
@@ -15,6 +17,28 @@ on "sys.render_viewport" {
         render_image stage_min_x+UI_sidebar_width, stage_min_y, render_size_x, render_size_y, render_resolution;
     }
 }
+
+
+
+# Render the background, which is a checker pattern.
+proc render_background {
+    # TODO: this is inefficient, it stamps more than needed and isn't centered
+    iy = floor((stage_size_y/360)/-2);
+    repeat (ceil(stage_size_y/360)+1) {
+        ix = floor((stage_size_x/480)/-2);
+        repeat (ceil(stage_size_x/480)+1) {
+            switch_costume "blank";
+            set_size "Infinity";
+            switch_costume "checker_dark";
+            goto ix*480, iy*360;
+            set_size 100;
+            stamp;
+            ix++;
+        }
+        iy++;
+    }
+}
+
 
 
 # Render the canvas. Optimised for 2D rendering, will clip to the edges of the screen.

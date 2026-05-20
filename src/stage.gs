@@ -1,6 +1,6 @@
 %include lib/common
 
-costumes "costumes/stage/darkchecker.png" as "darkchecker";
+costumes "costumes/grid_plain_dark.png";
 
 
 ################################

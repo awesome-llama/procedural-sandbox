@@ -4,3 +4,4 @@ no_sprite_fencing = true
 high_quality_pen = false
 stage_width = 640
 stage_height = 480
+bitmap_resolution = 2

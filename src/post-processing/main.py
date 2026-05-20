@@ -14,26 +14,13 @@ with post_processing.ScratchProject(PATH_SOURCE_PROJECT, PATH_TARGET_PROJECT) as
     project.remove_field_text()
     project.move_turbowarp_comment()
 
-    
-    # Fix the costume sizes
 
-    # backdrop checker
-    costume = project.get_costume_by_name('Stage', 'darkchecker')
-    costume['bitmapResolution'] = 1
-    # for some reason, not setting these lets the backdrop work for Scratch *and* TurboWarp custom resolution. I don't understand it.
-    if 'rotationCenterX' in costume: costume.pop('rotationCenterX')
-    if 'rotationCenterY' in costume: costume.pop('rotationCenterY')
+    # Fix the costume sizes
 
     # mouse position finder
     costume = project.get_costume_by_name('UI', 'mouse detect')
     costume['rotationCenterX'] = 240
     costume['rotationCenterY'] = 180
-
-    # thumbnail (960x720)
-    costume = project.get_costume_by_name('_', 'awesome-llama')
-    costume['bitmapResolution'] = 2
-    costume['rotationCenterX'] = 480
-    costume['rotationCenterY'] = 360
 
 
 
