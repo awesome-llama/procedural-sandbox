@@ -166,11 +166,13 @@ proc render_popup {
 
             clear_graphic_effects;
             switch_costume "hsv1";
+            set_size 200;
             goto UI_popup[3]+65, UI_y-40;
             stamp;
             switch_costume "hsv0";
             set_ghost_effect CP_s*100;
             stamp;
+            set_size 100;
             
             set_pen_color "#ffffff";
             set_pen_size 1;
