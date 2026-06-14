@@ -188,6 +188,27 @@ proc resample_xy origin_x, origin_y, ax, ay, a_size, bx, by, b_size {
     _write_temp_lists_to_canvas;
 }
 
+
+on "fx.repeated_symmetry.run" {
+    delete UI_return;
+    setting_from_id "fx.repeated_symmetry.steps";
+    setting_from_id "fx.repeated_symmetry.xy_bias";
+    repeated_symmetry UI_return[1], UI_return[2];
+    require_composite = true;
+}
+proc repeated_symmetry steps, xy_bias {
+    repeat ($steps) {
+        # choose a point to cut along
+        if (PROBABILITY($xy_bias)) {
+            local cut = RANDOM_Y();
+            clone_xy 0, cut, 1, 0, 0, 1, 0, cut, 1, 0, 0, -1, canvas_size_x, canvas_size_y/2;
+        } else {
+            local cut = RANDOM_X();
+            clone_xy cut, 0, 1, 0, 0, 1, cut, 0, -1, 0, 0, 1, canvas_size_x/2, canvas_size_y;
+        }
+    }
+}
+
 # copy a portion of the canvas to another location. Does not use a temp list.
 proc clone_xy src_origin_x, src_origin_y, src_ax, src_ay, src_bx, src_by, dest_origin_x, dest_origin_y, dest_ax, dest_ay, dest_bx, dest_by, size_a, size_b {
     layer_size = (canvas_size_x * canvas_size_y);
@@ -210,27 +231,6 @@ proc clone_xy src_origin_x, src_origin_y, src_ax, src_ay, src_bx, src_by, dest_o
         iy++;
     }
 }
-
-on "fx.repeated_symmetry.run" {
-    delete UI_return;
-    setting_from_id "fx.repeated_symmetry.steps";
-    setting_from_id "fx.repeated_symmetry.xy_bias";
-    repeated_symmetry UI_return[1], UI_return[2];
-    require_composite = true;
-}
-proc repeated_symmetry steps, xy_bias {
-    repeat ($steps) {
-        # choose a point to cut along
-        if (PROBABILITY($xy_bias)) {
-            local cut = RANDOM_Y();
-            clone_xy 0, cut, 1, 0, 0, 1, 0, cut, 1, 0, 0, -1, canvas_size_x, canvas_size_y/2;
-        } else {
-            local cut = RANDOM_X();
-            clone_xy cut, 0, 1, 0, 0, 1, cut, 0, -1, 0, 0, 1, canvas_size_x/2, canvas_size_y;
-        }
-    }
-}
-
 
 
 on "fx.crop_xy.run" {

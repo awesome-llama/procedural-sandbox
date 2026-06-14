@@ -594,6 +594,14 @@ panels['fx.misc_recolor'] = Container([
         Separator(0),
         Button.broadcast('Run', 'fx.misc_recolor.set_gamma'),
     ]),
+    Expander('Quantize HSV', '', True, [
+        Value('Hue', 'fx.misc_recolor.hue_steps', 6, 0, 64, 0, 'Infinity', snap_frac=1),
+        Value('Sat', 'fx.misc_recolor.sat_steps', 0, 0, 64, 0, 'Infinity', snap_frac=1),
+        Value('Val', 'fx.misc_recolor.val_steps', 0, 0, 64, 0, 'Infinity', snap_frac=1),
+        TextBlock('Set to 0 to disable.'),
+        Separator(0),
+        Button.broadcast('Run', 'fx.misc_recolor.quantize_hsv'),
+    ]),
 ])
 
 panels['fx.gradient_recolor'] = Container([

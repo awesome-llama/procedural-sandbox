@@ -3083,6 +3083,7 @@ proc glbfx_mirror_x keep_lower {
     # no rewrite or temp list required
 }
 
+
 on "fx.mirror.mirror_y" {
     glbfx_mirror_y true;
     require_composite = true;
@@ -3114,6 +3115,7 @@ proc glbfx_mirror_y keep_lower {
 
     # no rewrite or temp list required
 }
+
 
 on "fx.misc_recolor.change_hsv" {
     delete UI_return;
@@ -3149,6 +3151,7 @@ proc glbfx_change_hsv delta_hue, delta_sat, delta_val {
     }
 }
 
+
 on "fx.misc_recolor.set_gamma" {
     delete UI_return;
     setting_from_id "fx.misc_recolor.gamma_exp";
@@ -3176,6 +3179,40 @@ proc glbfx_set_gamma exponent {
         i++;
     }
 }
+
+
+on "fx.misc_recolor.quantize_hsv" {
+    delete UI_return;
+    setting_from_id "fx.misc_recolor.hue_steps";
+    setting_from_id "fx.misc_recolor.sat_steps";
+    setting_from_id "fx.misc_recolor.val_steps";
+    glbfx_quantize_hsv UI_return[1], UI_return[2], UI_return[3];
+    require_composite = true;
+}
+# apply a gamma correction to the voxel colors
+proc glbfx_quantize_hsv hue_steps, sat_steps, val_steps {
+    i = 1;
+    repeat (canvas_size_x * canvas_size_y * canvas_size_z) {
+        local HSV col = RGB_to_HSV(canvas[i].r, canvas[i].g, canvas[i].b);
+        if ($hue_steps > 0) {
+            col.h = round(col.h * $hue_steps) / $hue_steps;
+        }
+        if ($sat_steps > 0) {
+            col.s = round(col.s * $sat_steps) / $sat_steps;
+        }
+        if ($val_steps > 0) {
+            col.v = round(col.v * $val_steps) / $val_steps;
+        }
+
+        local RGB col_final = HSV_to_RGB(col.h, col.s, col.v);
+        canvas[i].r = col_final.r;
+        canvas[i].g = col_final.g;
+        canvas[i].b = col_final.b;
+
+        i++;
+    }
+}
+
 
 on "fx.gradient_recolor.run" {
     delete UI_return;
