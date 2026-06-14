@@ -219,7 +219,7 @@ on "fx.repeated_symmetry.run" {
     require_composite = true;
 }
 proc repeated_symmetry steps, xy_bias {
-    repeat ($steps-1) {
+    repeat ($steps) {
         # choose a point to cut along
         if (PROBABILITY($xy_bias)) {
             local cut = RANDOM_Y();
@@ -229,16 +229,7 @@ proc repeated_symmetry steps, xy_bias {
             clone_xy cut, 0, 1, 0, 0, 1, cut, 0, -1, 0, 0, 1, canvas_size_x/2, canvas_size_y;
         }
     }
-    # final mirror center of canvas
-    if (PROBABILITY($xy_bias)) {
-        local cut = canvas_size_y/2;
-        clone_xy 0, cut, 1, 0, 0, 1, 0, cut, 1, 0, 0, -1, canvas_size_x, canvas_size_y/2;
-    } else {
-        local cut = canvas_size_x/2;
-        clone_xy cut, 0, 1, 0, 0, 1, cut, 0, -1, 0, 0, 1, canvas_size_x/2, canvas_size_y;
-    }
 }
-
 
 
 
