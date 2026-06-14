@@ -417,15 +417,17 @@ on "gen.city.run" {
     generate_city UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6];
 }
 proc generate_city size_x, size_y, size_z, buildings, bridges, glow {
-    # template 1: pavement with dot
-    reset_generator 2, 2, 1;
-    set_depositor_from_sRGB_value random(0.5, 0.6);
-    draw_base_layer;
-    set_depositor_from_sRGB_value random(0.5, 0.6);
-    set_voxel 0, 0, 0;
-    add_canvas_as_template;
+    # template 1,2,3: pavement with dot
+    repeat (3) {
+        reset_generator 2, 2, 1;
+        set_depositor_from_sRGB_value random(0.5, 0.7);
+        draw_base_layer;
+        set_depositor_from_sRGB_value random(0.5, 0.7);
+        set_voxel 0, 0, 0;
+        add_canvas_as_template;
+    }
 
-    # template 2: skyscraper
+    # template 4: skyscraper
     clear_canvas 2, 2, 2;
     set_depositor_from_sRGB_value 0.45;
     draw_base_layer;
@@ -439,7 +441,7 @@ proc generate_city size_x, size_y, size_z, buildings, bridges, glow {
     set_voxel 1, 1, 1;
     add_canvas_as_template;
 
-    # template 3: skyscraper sandwich
+    # template 5: skyscraper sandwich
     clear_canvas 1, 1, 2;
     set_depositor_from_sRGB_value 0.65;
     set_voxel 0, 0, 0;
@@ -447,7 +449,7 @@ proc generate_city size_x, size_y, size_z, buildings, bridges, glow {
     set_voxel 0, 0, 1;
     add_canvas_as_template;
 
-    # template 4: dither
+    # template 6: dither
     clear_canvas 2, 2, 2;
     set_depositor_from_sRGB_value 0.62;
     draw_cuboid_corner_size 0, 0, 0, 2, 2, 2;
@@ -457,8 +459,20 @@ proc generate_city size_x, size_y, size_z, buildings, bridges, glow {
     set_voxel 1, 0, 1;
     set_voxel 0, 1, 1;
     add_canvas_as_template;
+    
+    # template 7: dither with light
+    clear_canvas 2, 2, 2;
+    set_depositor_from_sRGB_value random(0.4, 0.8);
+    draw_cuboid_corner_size 0, 0, 0, 2, 2, 2;
+    #set_depositor_from_HSV RANDOM_0_1(), RANDOM_0_1(), 0.9;
+    depositor_voxel.emission = 0.5 * $glow;
+    set_voxel 0, 0, 0;
+    set_voxel 1, 1, 0;
+    set_voxel 1, 0, 1;
+    set_voxel 0, 1, 1;
+    add_canvas_as_template;
 
-    # template 5: dither with air
+    # template 8: dither with air
     clear_canvas 2, 2, 2;
     set_depositor_from_sRGB_value random(0.4, 0.6);
     set_voxel 0, 0, 0;
@@ -478,16 +492,16 @@ proc generate_city size_x, size_y, size_z, buildings, bridges, glow {
     draw_base_layer;
 
     # patches of dot pavement
-    set_depositor_to_template 1, random(0,1), random(0,1), 0;
     repeat (placement_fac * 0.005) {
+        set_depositor_to_template random(1,3), 0, 0, 0;
         draw_cuboid_corner_size RANDOM_X(), RANDOM_Y(), 0, random(2,16), random(2,16), 1;
     }
 
     # dithered screens
     repeat (placement_fac * 0.005 * $buildings) {
-        set_depositor_to_template 5, random(1,4), random(0,1), random(0,1);
+        set_depositor_to_template 8, random(1,4), random(0,1), random(0,1);
 
-        if (PROBABILITY(0.33)) {
+        if (PROBABILITY(0.333)) {
             # horizontal
             draw_cuboid_corner_size RANDOM_X(), RANDOM_Y(), random(1,5), random(2,8), random(2,8), 1;
         } else {
@@ -532,11 +546,18 @@ proc generate_city size_x, size_y, size_z, buildings, bridges, glow {
     }
 
     # low sky bridges
-    repeat (placement_fac * 0.003 * $bridges) {
-        set_depositor_from_HSV RANDOM_0_1(), random(0.0, 0.4), random(0.2, 0.7);
-        depositor_replace = false;
-        random_walk_any RANDOM_X(), RANDOM_Y(), random(3,5), random(0,7)*45, random(2,4), random(5,32), 45;
-        depositor_replace = true;
+    repeat (placement_fac * (0.003 / 4) * $bridges) {
+        if (PROBABILITY(0.15 * $glow)) {
+            set_depositor_from_HSV random(1,6)/6, random(0,4)/10, random(6,10)/10;
+            depositor_voxel.emission = 1;
+        } else {
+            set_depositor_from_HSV random(1,6)/6, random(0,2)/5, random(2,7)/10;
+        }
+        repeat (4) {
+            depositor_replace = false;
+            random_walk_any RANDOM_X(), RANDOM_Y(), random(3,5), random(0,7)*45, random(2,4), random(5,32), 45;
+            depositor_replace = true;
+        }
     }
 
     # skyscrapers
@@ -575,7 +596,7 @@ proc generate_city size_x, size_y, size_z, buildings, bridges, glow {
         if (PROBABILITY(0.3)) {
             set_depositor_from_sRGB_value random(0.2, 0.9);
         } else {
-            set_depositor_to_template random(1,4), random(0,1), random(0,1), 0; # use any template
+            set_depositor_to_template random(1,7), random(0,1), random(0,1), 0; # use any template
         }
         draw_cuboid_corner_size c1x, c1y, c1z, dx, dy, dz;
 
@@ -586,8 +607,10 @@ proc generate_city size_x, size_y, size_z, buildings, bridges, glow {
             draw_cuboid_corner_size c1x+1, c1y+1, c1z+dz-1, dx-2, dy-2, 2;
 
         } else {
-            set_depositor_from_sRGB_value random(0.2, 0.6);
             local offset = random(0, 1);
+            if (offset == 0) {
+                set_depositor_from_sRGB_value random(0.2, 0.6);
+            }
             draw_cuboid_corner_size c1x+offset, c1y+offset, c1z+dz, dx-offset*2, dy-offset*2, 1;
         }
 
