@@ -111,7 +111,8 @@ panels['menu.fx'] = Container([
     Separator(0, 5),
     btn_menu_set_page('Crop XY', 'fx.crop_xy'),
     Separator(0, 5),
-    btn_menu_set_page('Gradient recolor', 'fx.recolor'),
+    btn_menu_set_page('Recolor', 'fx.misc_recolor'),
+    btn_menu_set_page('Gradient recolor', 'fx.gradient_recolor'),
     Separator(0, 5),
     btn_menu_set_page('Jitter', 'fx.jitter'),
     btn_menu_set_page('Smudge', 'fx.smudge'),
@@ -536,7 +537,7 @@ panels['fx.rotate'] = Container([
         Separator(0),
         Value('Origin X', 'fx.rotate.ox', 0, -256, 256, -4096, 4096),
         Value('Origin Y', 'fx.rotate.oy', 0, -256, 256, -4096, 4096),
-        Button.broadcast('Set origin  to 0,0', 'fx.rotate.set_origin_0'),
+        Button.broadcast('Set origin to 0,0', 'fx.rotate.set_origin_0'),
         Button.broadcast('Set origin to center', 'fx.rotate.set_origin_center'),
         Separator(0),
         Button.broadcast('Rotate', 'fx.rotate.run'),
@@ -578,26 +579,43 @@ panels['fx.crop_xy'] = Container([
     Button.broadcast('Crop', 'fx.crop_xy.run'),
 ])
 
-panels['fx.recolor'] = Container([
+panels['fx.misc_recolor'] = Container([
+    title('Recolor'),
+    Separator(),
+    Expander('Change HSV', '', True, [
+        Value('Hue', 'fx.misc_recolor.hue', 0, -1, 1, snap_frac=1000),
+        Value('Sat', 'fx.misc_recolor.sat', 0, -1, 1, -1, 'Infinity', snap_frac=1000),
+        Value('Val', 'fx.misc_recolor.val', 0, -1, 1, snap_frac=1000),
+        Separator(0),
+        Button.broadcast('Run', 'fx.misc_recolor.change_hsv'),
+    ]),
+    Expander('Gamma', '', True, [
+        Value('Exponent', 'fx.misc_recolor.gamma_exp', 1, 0.5, 4, snap_frac=1000),
+        Separator(0),
+        Button.broadcast('Run', 'fx.misc_recolor.set_gamma'),
+    ]),
+])
+
+panels['fx.gradient_recolor'] = Container([
     title('Gradient recolor'),
     Separator(),
     Expander('Channel weights', '', False, [
-        Value('Red', 'fx.recolor.weight_r', 0.25, 0, 1, snap_frac=1000),
-        Value('Green', 'fx.recolor.weight_g', 0.5,  0, 1, snap_frac=1000),
-        Value('Blue', 'fx.recolor.weight_b', 0.25, 0, 1, snap_frac=1000),
+        Value('Red', 'fx.gradient_recolor.weight_r', 0.25, 0, 1, snap_frac=1000),
+        Value('Green', 'fx.gradient_recolor.weight_g', 0.5, 0, 1, snap_frac=1000),
+        Value('Blue', 'fx.gradient_recolor.weight_b', 0.25, 0, 1, snap_frac=1000),
         TextBlock('All usually should add to 1'),
     ]),
     Expander('Input range', '', True, [
-        Value('Map 0 to value', 'fx.recolor.map_0', 0, -2, 2, snap_frac=1000),
-        Value('Map 1 to value', 'fx.recolor.map_1', 1, -2, 2, snap_frac=1000),
+        Value('Map 0 to value', 'fx.gradient_recolor.map_0', 0, -2, 2, snap_frac=1000),
+        Value('Map 1 to value', 'fx.gradient_recolor.map_1', 1, -2, 2, snap_frac=1000),
     ]),
     Expander('Output colors', '', True, [
-        Color('Val 0 to color', 'fx.recolor.col_0', '#000000'),
-        Color('Val 1 to color', 'fx.recolor.col_1', '#ffffff'),
+        Color('Val 0 to color', 'fx.gradient_recolor.col_0', '#000000'),
+        Color('Val 1 to color', 'fx.gradient_recolor.col_1', '#ffffff'),
     ]),
-    Checkbox('Interpolate in sRGB', 'fx.recolor.use_sRGB', True),
+    Checkbox('Interpolate in sRGB', 'fx.gradient_recolor.use_sRGB', True),
     Separator(0),
-    Button.broadcast('Run', 'fx.recolor.run'),
+    Button.broadcast('Run', 'fx.gradient_recolor.run'),
 ])
 
 panels['fx.jitter'] = Container([

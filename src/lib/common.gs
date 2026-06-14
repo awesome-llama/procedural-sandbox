@@ -189,7 +189,9 @@ struct template_metadata {
 %define INDEX_FROM_3D_NOWRAP_INTS(X,Y,Z,SIZE_X,SIZE_Y) (1 + ((((SIZE_X)*(SIZE_Y)) * (Z)) + (((SIZE_X)*(Y)) + (X))))
 
 
+
 # HSV to RGB transformation
+# https://scratch.mit.edu/projects/1291243836/
 # https://stackoverflow.com/questions/3018313/algorithm-to-convert-rgb-to-hsv-and-hsv-to-rgb-in-range-0-255-for-both
 func HSV_to_RGB(h, s, v) RGB {
     local hue = ($h % 1)*6; # [0,6)

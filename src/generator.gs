@@ -1133,7 +1133,7 @@ proc generate_extruded_grid cell_count, cell_size, cell_spacing, max_height, jit
         iy += total_cell_size;
     }
 
-    glbfx_recolor 0.25, 0.5, 0.25, 0, 1, $col1, $col2, true;
+    glbfx_gradient_recolor 0.25, 0.5, 0.25, 0, 1, $col1, $col2, true;
     generator_finished;
 }
 
@@ -3092,22 +3092,83 @@ proc glbfx_mirror_y keep_lower {
     # no rewrite or temp list required
 }
 
-
-on "fx.recolor.run" {
+on "fx.misc_recolor.change_hsv" {
     delete UI_return;
-    setting_from_id "fx.recolor.weight_r";
-    setting_from_id "fx.recolor.weight_g";
-    setting_from_id "fx.recolor.weight_b";
-    setting_from_id "fx.recolor.map_0";
-    setting_from_id "fx.recolor.map_1";
-    setting_from_id "fx.recolor.col_0";
-    setting_from_id "fx.recolor.col_1";
-    setting_from_id "fx.recolor.use_sRGB";
-    glbfx_recolor UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6], UI_return[7], UI_return[8];
+    setting_from_id "fx.misc_recolor.hue";
+    setting_from_id "fx.misc_recolor.sat";
+    setting_from_id "fx.misc_recolor.val";
+    glbfx_change_hsv UI_return[1], UI_return[2], UI_return[3];
     require_composite = true;
 }
-# remaps colors
-proc glbfx_recolor weight_r, weight_g, weight_b, map_0, map_1, col_0, col_1, use_sRGB {
+# change voxel colors in HSV space
+proc glbfx_change_hsv delta_hue, delta_sat, delta_val {
+    i = 1;
+    repeat (canvas_size_x * canvas_size_y * canvas_size_z) {
+        local HSV col = RGB_to_HSV(canvas[i].r, canvas[i].g, canvas[i].b);
+        col.h += $delta_hue;
+        if (col.h > 1) { col.h = 1; }
+        elif (col.h < 0) { col.h = 0; }
+
+        col.s *= ($delta_sat + 1); # -1 -> 0; 0 -> 1; 1 -> 2
+        if (col.s > 1) { col.s = 1; }
+        elif (col.s < 0) { col.s = 0; }
+
+        col.v += $delta_val;
+        if (col.v > 1) { col.v = 1; }
+        elif (col.v < 0) { col.v = 0; }
+        
+        local RGB col_final = HSV_to_RGB(col.h, col.s, col.v);
+
+        canvas[i].r = col_final.r;
+        canvas[i].g = col_final.g;
+        canvas[i].b = col_final.b;
+        i++;
+    }
+}
+
+on "fx.misc_recolor.set_gamma" {
+    delete UI_return;
+    setting_from_id "fx.misc_recolor.gamma_exp";
+    glbfx_set_gamma UI_return[1];
+    require_composite = true;
+}
+# apply a gamma correction to the voxel colors
+proc glbfx_set_gamma exponent {
+    i = 1;
+    repeat (canvas_size_x * canvas_size_y * canvas_size_z) {
+        new_val = POW(canvas[i].r, $exponent);
+        if (new_val > 1) { new_val = 1; }
+        elif (new_val < 0) { new_val = 0; }
+        canvas[i].r = new_val;
+        
+        new_val = POW(canvas[i].g, $exponent);
+        if (new_val > 1) { new_val = 1; }
+        elif (new_val < 0) { new_val = 0; }
+        canvas[i].g = new_val;
+        
+        new_val = POW(canvas[i].b, $exponent);
+        if (new_val > 1) { new_val = 1; }
+        elif (new_val < 0) { new_val = 0; }
+        canvas[i].b = new_val;
+        i++;
+    }
+}
+
+on "fx.gradient_recolor.run" {
+    delete UI_return;
+    setting_from_id "fx.gradient_recolor.weight_r";
+    setting_from_id "fx.gradient_recolor.weight_g";
+    setting_from_id "fx.gradient_recolor.weight_b";
+    setting_from_id "fx.gradient_recolor.map_0";
+    setting_from_id "fx.gradient_recolor.map_1";
+    setting_from_id "fx.gradient_recolor.col_0";
+    setting_from_id "fx.gradient_recolor.col_1";
+    setting_from_id "fx.gradient_recolor.use_sRGB";
+    glbfx_gradient_recolor UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6], UI_return[7], UI_return[8];
+    require_composite = true;
+}
+# remaps voxel colors using a gradient
+proc glbfx_gradient_recolor weight_r, weight_g, weight_b, map_0, map_1, col_0, col_1, use_sRGB {
     if $use_sRGB {
         # interpolate in sRGB. Assumes the map values are also sRGB values.
         local c0r = ((($col_0//65536)%256)/255);
