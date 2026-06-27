@@ -9,7 +9,7 @@ hide;
 list voxel temp_canvas;
 
 
-on "initalise" {
+on "initialize" {
     hide;
 }
 

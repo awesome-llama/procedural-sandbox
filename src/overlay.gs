@@ -5,7 +5,7 @@
 costumes "costumes/large.svg" as "large", "costumes/blank.svg" as "blank";
 hide;
 
-on "initalise" {
+on "initialize" {
     # initial deletion of lists happens in the stage to keep them global
 
     hide;

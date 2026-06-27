@@ -12,7 +12,7 @@ list XYZ raytracer_ray_origins;
 var XYZ raytracer_ray_direction;
 
 
-on "initalise" {
+on "initialize" {
     if (PS_reset_render_on_flag) {
         raytracer_ray_direction = XYZ {x:0, y:0, z:0}; # this would have to be a list if perspective rendering was done (or create a new script specifically for it)
         

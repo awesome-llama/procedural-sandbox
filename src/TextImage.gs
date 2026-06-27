@@ -26,7 +26,7 @@ var TI_image_size_x;
 var TI_image_size_y;
 
 
-on "initalise" {
+on "initialize" {
     hide;
 }
 

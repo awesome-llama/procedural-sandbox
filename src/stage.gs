@@ -10,7 +10,7 @@ costumes "costumes/grid_plain_dark.png";
 # delta time, the elapsed time since the last frame.
 var dt;
 
-# the project should be reset on first load to initalise variables
+# the project should be reset on first load to initialize variables
 var goboscript_init_done = false;
 
 # is it the user's first time clicking the green flag?
@@ -136,7 +136,7 @@ var PS_normal_map_kernel_size;
 
 ################################
 
-on "initalise" {
+on "initialize" {
     dt = 0;
     
     if (PS_reset_render_on_flag) {
@@ -203,7 +203,7 @@ onflag {
     }
 
     broadcast "sys.get_stage_size"; # this happens before init just in case anything needs stage size
-    broadcast "initalise"; # all receivers must complete within the frame, no loops allowed to start. Think of it as a soft reset.
+    broadcast "initialize"; # all receivers must complete within the frame, no loops allowed to start. Think of it as a soft reset.
     broadcast "sys.start_main_loop"; # schedule main loop start after init
 }
 

@@ -23,7 +23,7 @@ costumes
 hide;
 
 
-on "initalise" {
+on "initialize" {
     hide;
     unfenced_mouse_x = 0;
 

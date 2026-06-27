@@ -30,7 +30,7 @@ list agents;
 
 
 
-on "initalise" {
+on "initialize" {
     hide;
     depositor_mode = DepositorMode.DRAW;
     depositor_replace = true; # bool [false=keep existing (non-air voxel) intact | true=replace (incl. with new air)]

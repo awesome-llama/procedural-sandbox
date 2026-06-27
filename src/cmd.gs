@@ -5,7 +5,7 @@ hide;
 
 list command_split;
 
-on "initalise" {
+on "initialize" {
     hide;
     switch_costume "icon";
     delete command_split;
