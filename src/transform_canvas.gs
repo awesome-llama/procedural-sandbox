@@ -142,6 +142,7 @@ on "fx.rotate.run" {
     setting_from_id "fx.rotate.oy";
     setting_from_id "fx.rotate.angle";
     rotate_around UI_return[1], UI_return[2], UI_return[3];
+    require_composite = true;
 }
 proc rotate_around ox, oy, angle {
     local ax = cos(0-$angle);
