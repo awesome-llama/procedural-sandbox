@@ -31,6 +31,9 @@ list output;
 # commands
 var cmd_string;
 
+# pen text engine
+list PTE_font "data/5x7 printable ASCII.txt";
+
 
 ################################
 #            Canvas            #

@@ -1,4 +1,7 @@
 %include lib/common
+%include lib/text
+
+hide;
 
 costumes 
 "costumes/UI/icon.svg" as "icon", 
@@ -6,21 +9,10 @@ costumes
 "costumes/blank.svg" as "",
 "costumes/blank.svg" as "@ascii/",
 "costumes/blank.svg" as "blank",
-"costumes/UI/icons/triangle.svg",
-"costumes/UI/icons/fill.svg",
-"costumes/UI/icons/select.svg",
-"costumes/UI/icons/settings.svg",
-"costumes/UI/icons/texture.svg",
-"costumes/UI/icons/viewport 2D.svg",
-"costumes/UI/icons/viewport 3D.svg",
-"costumes/UI/icons/zoom in.svg",
-"costumes/UI/icons/zoom out.svg",
-"costumes/UI/icons/zoom fit.svg",
-"costumes/UI/icons/info.svg",
+"costumes/UI/icons/*",
 "costumes/UI/hsv0.png",
 "costumes/UI/hsv1.png",
 "costumes/UI/mouse detect.svg" as "mouse detect";
-hide;
 
 
 on "initialize" {
@@ -148,7 +140,7 @@ proc render_popup {
             } else {
                 set_pen_color THEME_COL_TEXT;
             }
-            plainText UI_popup[3]+5, UI_y-21, 1, "#" & RGB_num_to_hex_code(CP_col);
+            plain_text UI_popup[3]+5, UI_y-21, 1, "#" & RGB_num_to_hex_code(CP_col);
 
             UI_y -= 25;
 
@@ -281,13 +273,13 @@ proc render_project_messages {
             if (UI_last_hovered_group == "message") and (UI_last_hovered_element == msg_i) {
                 draw_rect (stage_min_x+10), msg_bottom_y + 1, (stage_size_x-20), 18, 3, "#202020"; # background
                 set_pen_color "#a03030";
-                plainText (stage_max_x-25), msg_bottom_y + 7, 1, "x"; # close indicator
+                plain_text (stage_max_x-25), msg_bottom_y + 7, 1, "x"; # close indicator
             } else {
                 draw_rect (stage_min_x+10), msg_bottom_y + 1, (stage_size_x-20), 18, 3, "#000000"; # background
             }
             
             set_pen_color "#00ffff";
-            plainText (stage_min_x+20), msg_bottom_y + 6, 1, project_messages[msg_i];
+            plain_text (stage_min_x+20), msg_bottom_y + 6, 1, project_messages[msg_i];
 
             msg_i += 2;
         }
@@ -309,7 +301,7 @@ proc tab_button x, width, text, hover_id {
         }
         set_pen_color "#ffffff";
     }
-    plainText $x+9, (stage_max_y-TOP_BAR_HEIGHT)+6, 1, $text;
+    plain_text $x+9, (stage_max_y-TOP_BAR_HEIGHT)+6, 1, $text;
     tab_offset += $width;
 }
 
@@ -341,7 +333,7 @@ proc render_top_bar x, y {
 
     if (iterative_compositor_paused and require_iterative_compositor) {
         set_pen_color "#ffc43a";
-        plainText TOP_BAR_OFFSET(11), $y-14, 1, "PAUSED";
+        plain_text TOP_BAR_OFFSET(11), $y-14, 1, "PAUSED";
     }
 }
 
@@ -375,15 +367,15 @@ on "sys.render_viewport_overlay" { render_viewport_overlay; }
 proc render_viewport_overlay {
     # Text
     set_pen_color THEME_COL_TEXT;
-    plainText stage_min_x+UI_sidebar_width+5, stage_max_y-TOP_BAR_HEIGHT-10, 1, ("canvas size: " & ((((canvas_size_x & ", ") & canvas_size_y) & ", ") & canvas_size_z));
-    plainText stage_min_x+UI_sidebar_width+5, stage_max_y-TOP_BAR_HEIGHT-20, 1, ("cam scale: " & round(cam_scale*100)/100);
-    plainText stage_min_x+UI_sidebar_width+5, stage_max_y-TOP_BAR_HEIGHT-30, 1, (compositor_mode);
+    plain_text stage_min_x+UI_sidebar_width+5, stage_max_y-TOP_BAR_HEIGHT-10, 1, ("canvas size: " & ((((canvas_size_x & ", ") & canvas_size_y) & ", ") & canvas_size_z));
+    plain_text stage_min_x+UI_sidebar_width+5, stage_max_y-TOP_BAR_HEIGHT-20, 1, ("cam scale: " & round(cam_scale*100)/100);
+    plain_text stage_min_x+UI_sidebar_width+5, stage_max_y-TOP_BAR_HEIGHT-30, 1, (compositor_mode);
     
     if (require_iterative_compositor) {
-        plainText stage_min_x+UI_sidebar_width+5, stage_max_y-TOP_BAR_HEIGHT-40, 1, ("samples: " & MIN(counted_samples, PS_max_samples) & "/" & PS_max_samples);
+        plain_text stage_min_x+UI_sidebar_width+5, stage_max_y-TOP_BAR_HEIGHT-40, 1, ("samples: " & MIN(counted_samples, PS_max_samples) & "/" & PS_max_samples);
     }
     
-    #plainText stage_min_x+UI_sidebar_width+5, stage_max_y-TOP_BAR_HEIGHT-50, 1, ("timer: " & floor(( 100 * ((86400 * days_since_2000()) % 1))));
+    #plain_text stage_min_x+UI_sidebar_width+5, stage_max_y-TOP_BAR_HEIGHT-50, 1, ("timer: " & floor(( 100 * ((86400 * days_since_2000()) % 1))));
   
     # Axes
     draw_axes stage_min_x+UI_sidebar_width+15, stage_min_y+15, 10;
@@ -470,7 +462,7 @@ proc render_modular_element index, x, y, width, panel_id {
         } else {
             set_pen_color UI_data[$index+2];
         }
-        plainText $x, $y-TXT_Y_OFFSET, 1, UI_data[$index+1];
+        plain_text $x, $y-TXT_Y_OFFSET, 1, UI_data[$index+1];
         UI_y -= LINEHIGHT;
         render_modular_element $index+3, $x, UI_y, $width, $panel_id;
 
@@ -481,7 +473,7 @@ proc render_modular_element index, x, y, width, panel_id {
         } else {
             set_pen_color UI_data[$index+2];
         }
-        wrappedText $x, $y-TXT_Y_OFFSET, 1, UI_data[$index+1], $width;
+        wrapped_text $x, $y-TXT_Y_OFFSET, 1, UI_data[$index+1], $width;
         UI_y += (y_offset-($y+4));
         render_modular_element $index+3, $x, UI_y, $width, $panel_id;
 
@@ -508,14 +500,14 @@ proc render_modular_element index, x, y, width, panel_id {
         }
         
         set_pen_color THEME_COL_TEXT;
-        plainText $x+8, $y-TXT_Y_OFFSET, 1, UI_data[$index+1];
+        plain_text $x+8, $y-TXT_Y_OFFSET, 1, UI_data[$index+1];
         UI_y -= (LINEHIGHT+2);
         render_modular_element $index+5, $x, UI_y, $width, $panel_id;
 
     } elif (elem_type == "CHECKBOX") {
         # [type, label, id, checked, default]
         set_pen_color THEME_COL_TEXT;
-        plainText $x, $y-TXT_Y_OFFSET, 1, UI_data[$index+1];
+        plain_text $x, $y-TXT_Y_OFFSET, 1, UI_data[$index+1];
         
         UI_check_touching_mouse (($x+$width)-LINEHIGHT), $y, LINEHIGHT, LINEHIGHT, $panel_id, $index;
         if (IS_HOVERED_MODULAR_PANEL()) {
@@ -558,7 +550,7 @@ proc render_modular_element index, x, y, width, panel_id {
 
             # text
             set_pen_color THEME_COL_TEXT;
-            plainText $x+5, $y-TXT_Y_OFFSET, 1, (UI_data[$index+1] & ": " & UI_data[$index+3]);
+            plain_text $x+5, $y-TXT_Y_OFFSET, 1, (UI_data[$index+1] & ": " & UI_data[$index+3]);
 
             if (IS_HOVERED_MODULAR_PANEL()) {
                 set_ghost_effect 50;
@@ -580,8 +572,8 @@ proc render_modular_element index, x, y, width, panel_id {
             }
             
             set_pen_color THEME_COL_TEXT;
-            plainText $x, $y-TXT_Y_OFFSET, 1, UI_data[$index+1];
-            plainText (($x+$width)-INPUT_WIDTH)+3, $y-TXT_Y_OFFSET, 1, UI_data[$index+3];
+            plain_text $x, $y-TXT_Y_OFFSET, 1, UI_data[$index+1];
+            plain_text (($x+$width)-INPUT_WIDTH)+3, $y-TXT_Y_OFFSET, 1, UI_data[$index+3];
             
             if (IS_HOVERED_MODULAR_PANEL()) {
                 set_ghost_effect 50;
@@ -601,7 +593,7 @@ proc render_modular_element index, x, y, width, panel_id {
     } elif (elem_type == "COLOR") {
         # [type, label, id, color, default]
         set_pen_color THEME_COL_TEXT;
-        plainText $x, $y-TXT_Y_OFFSET, 1, UI_data[$index+1];
+        plain_text $x, $y-TXT_Y_OFFSET, 1, UI_data[$index+1];
         
         UI_check_touching_mouse (($x+$width)-32), $y, 32, LINEHIGHT, $panel_id, $index;
         if (IS_HOVERED_MODULAR_PANEL()) {
@@ -645,7 +637,7 @@ proc render_modular_element index, x, y, width, panel_id {
         }
 
         set_pen_color THEME_COL_TEXT;
-        plainText $x+17, $y-TXT_Y_OFFSET, 1, UI_data[$index+1]; # label
+        plain_text $x+17, $y-TXT_Y_OFFSET, 1, UI_data[$index+1]; # label
 
         if (UI_data[$index+3] == 1) { # open
             draw_triangle $x+8, ($y-9), -90;
@@ -893,97 +885,6 @@ onkey "v" {
     }
 }
 
-
-
-################################
-#       Text renderers         #
-################################
-
-# For more info see: https://scratch.mit.edu/projects/934459716/
-
-list PTE_font "data/5x7 printable ASCII.txt";
-
-%define CURR_COST_CHAR_INDEX() (costume_number() + 5)
-
-
-proc plainText x, y, size, text {
-    set_pen_size $size;
-    x_offset = $x;
-    y_offset = $y;
-    txt_i = 1;
-    switch_costume "large";
-    repeat length $text {
-        switch_costume $text[txt_i];
-        font_char_index = PTE_font[CURR_COST_CHAR_INDEX()];
-        switch_costume "large";
-        font_i = 3 + font_char_index;
-        repeat PTE_font[5 + font_char_index] {
-            font_i += 4;
-            goto 
-                x_offset + $size * PTE_font[font_i + 1],
-                y_offset + $size * PTE_font[font_i + 2];
-            pen_down;
-            repeat PTE_font[font_i] {
-                font_i += 2;
-                goto 
-                    x_offset + $size * PTE_font[font_i + 1],
-                    y_offset + $size * PTE_font[font_i + 2];
-            }
-            pen_up;
-        }
-        x_offset += $size * (2 + PTE_font[2 + font_char_index]);
-        txt_i += 1;
-    }
-    switch_costume "icon";
-}
-
-
-proc wrappedText x, y, size, text, wrap_width {
-    set_pen_size $size;
-    x_offset = $x;
-    y_offset = $y;
-    txt_i = 1;
-    switch_costume "large";
-    repeat length $text {
-        if ($text[txt_i] == " ") {
-            # search for the next space to ensure the word fits in the line
-            txt_j = txt_i + 1;
-            future_x = (x_offset - $x) + $size * 5; # width of space added
-            until $text[txt_j] == " " or txt_j > length($text) or future_x >= $wrap_width {
-                txt_j += 1;
-                switch_costume $text[txt_j];
-                future_x += $size * (2 + PTE_font[2 + PTE_font[CURR_COST_CHAR_INDEX()]]);
-            }
-            if future_x >= $wrap_width {
-                x_offset = $x;
-                y_offset -= $size * 10;
-                txt_i += 1; # skip the space as it was used to go to the next line
-            }
-        }
-
-        switch_costume $text[txt_i];
-        font_char_index = PTE_font[CURR_COST_CHAR_INDEX()];
-        switch_costume "large";
-        font_i = 3 + font_char_index;
-        repeat PTE_font[5 + font_char_index] {
-            font_i += 4;
-            goto 
-                x_offset + $size * PTE_font[font_i + 1],
-                y_offset + $size * PTE_font[font_i + 2];
-            pen_down;
-            repeat PTE_font[font_i] {
-                font_i += 2;
-                goto 
-                    x_offset + $size * PTE_font[font_i + 1],
-                    y_offset + $size * PTE_font[font_i + 2];
-            }
-            pen_up;
-        }
-        x_offset += $size * (2 + PTE_font[2 + font_char_index]);
-        txt_i += 1;
-    }
-    switch_costume "icon";
-}
 
 
 ################################
