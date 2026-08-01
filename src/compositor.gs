@@ -1,7 +1,8 @@
 %include lib/common
 
-costumes "costumes/compositor/icon.svg" as "icon";
 hide;
+
+costumes "costumes/compositor/icon.svg" as "icon";
 
 list buffer_ao; # ambient occlusion
 list buffer_topmost; # elevation index of topmost voxel (really just a heightmap)
@@ -12,7 +13,7 @@ list XYZ raytracer_ray_origins;
 var XYZ raytracer_ray_direction;
 
 
-on "initialize" {
+on "sys.initialize" {
     if (PS_reset_render_on_flag) {
         raytracer_ray_direction = XYZ {x:0, y:0, z:0}; # this would have to be a list if perspective rendering was done (or create a new script specifically for it)
         

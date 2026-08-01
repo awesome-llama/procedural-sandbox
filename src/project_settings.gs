@@ -3,6 +3,8 @@
 
 %include lib/common
 
+hide;
+
 costumes "costumes/blank.svg" as "blank";
 
 

@@ -15,7 +15,7 @@ costumes
 "costumes/UI/mouse detect.svg" as "mouse detect";
 
 
-on "initialize" {
+on "sys.initialize" {
     hide;
     unfenced_mouse_x = 0;
 

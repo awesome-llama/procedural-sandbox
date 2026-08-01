@@ -1,11 +1,12 @@
 %include lib/common
 
-costumes "costumes/cmd/icon.svg" as "icon";
 hide;
+
+costumes "costumes/cmd/icon.svg" as "icon";
 
 list command_split;
 
-on "initialize" {
+on "sys.initialize" {
     hide;
     switch_costume "icon";
     delete command_split;

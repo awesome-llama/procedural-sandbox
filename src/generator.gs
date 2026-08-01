@@ -1,10 +1,10 @@
 %include lib/common
 
-%define COMPILE_MAIN_GENERATORS
-
-costumes "costumes/generator/icon.svg" as "icon";
 hide;
 
+costumes "costumes/generator/icon.svg" as "icon";
+
+%define COMPILE_MAIN_GENERATORS
 
 # the "depositor" is a description of what voxel will be placed by the procedural tools. It may be a single voxel or it may be a 3D template.
 var depositor_mode = DepositorMode.DRAW;
@@ -30,7 +30,7 @@ list agents;
 
 
 
-on "initialize" {
+on "sys.initialize" {
     hide;
     depositor_mode = DepositorMode.DRAW;
     depositor_replace = true; # bool [false=keep existing (non-air voxel) intact | true=replace (incl. with new air)]

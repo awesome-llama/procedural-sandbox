@@ -2,10 +2,11 @@
 
 %include lib/common
 
-%define PROJECT "PSB_62182952"
+hide;
 
 costumes "costumes/TextImage/icon.svg" as "icon", "costumes/blank.svg" as "@ascii/";
-hide;
+
+%define PROJECT "PSB_62182952"
 
 list layers;
 list image_buffer;
@@ -26,7 +27,7 @@ var TI_image_size_x;
 var TI_image_size_y;
 
 
-on "initialize" {
+on "sys.initialize" {
     hide;
 }
 

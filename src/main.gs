@@ -1,7 +1,8 @@
 %include lib/common
 
-costumes "costumes/main/icon.svg" as "icon";
 hide;
+
+costumes "costumes/main/icon.svg" as "icon";
 
 
 # 2^(1/increment)

@@ -1,7 +1,8 @@
 # Sample the stage size. See https://scratch.mit.edu/projects/560529322/
 
-costumes "costumes/stage_size/icon.svg" as "icon", "costumes/blank.svg" as "blank";
 hide;
+
+costumes "costumes/stage_size/icon.svg" as "icon", "costumes/blank.svg" as "blank";
 
 
 on "sys.hard_reset" {

@@ -2,10 +2,11 @@
 
 %include lib/common
 
-costumes "costumes/large.svg" as "large", "costumes/blank.svg" as "blank";
 hide;
 
-on "initialize" {
+costumes "costumes/large.svg" as "large", "costumes/blank.svg" as "blank";
+
+on "sys.initialize" {
     # initial deletion of lists happens in the stage to keep them global
 
     hide;

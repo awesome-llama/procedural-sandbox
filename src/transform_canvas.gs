@@ -1,15 +1,16 @@
-%include lib/common
-
 # User-invoked transformations. Any transformations needed in the generator should be implemented there only.
 
-costumes "costumes/transform_canvas/icon.svg" as "icon";
+%include lib/common
+
 hide;
+
+costumes "costumes/transform_canvas/icon.svg" as "icon";
 
 # lists used to store the canvas temporarily
 list voxel temp_canvas;
 
 
-on "initialize" {
+on "sys.initialize" {
     hide;
 }
 

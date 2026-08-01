@@ -1,7 +1,8 @@
 %include lib/common
 
-costumes "costumes/blank.svg" as "blank";
 hide;
+
+costumes "costumes/blank.svg" as "blank";
 
 
 # generate a hash from the current canvas for an easy way to verify if a canvas is identical

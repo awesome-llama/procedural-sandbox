@@ -139,7 +139,7 @@ var PS_normal_map_kernel_size;
 
 ################################
 
-on "initialize" {
+on "sys.initialize" {
     dt = 0;
     
     if (PS_reset_render_on_flag) {
@@ -206,7 +206,7 @@ onflag {
     }
 
     broadcast "sys.get_stage_size"; # this happens before init just in case anything needs stage size
-    broadcast "initialize"; # all receivers must complete within the frame, no loops allowed to start. Think of it as a soft reset.
+    broadcast "sys.initialize"; # all receivers must complete within the frame, no loops allowed to start. Think of it as a soft reset.
     broadcast "sys.start_main_loop"; # schedule main loop start after init
 }
 
