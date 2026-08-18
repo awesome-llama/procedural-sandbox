@@ -10,7 +10,6 @@ PATH_TARGET_PROJECT = os.path.join(ROOT_DIR, 'Procedural Sandbox.sb3')
 
 with post_processing.ScratchProject(PATH_SOURCE_PROJECT, PATH_TARGET_PROJECT) as project:
     project.order_sprites(['_', 'main', 'stage_size', 'UI', 'transform_canvas', 'generator', 'compositor', 'renderer', 'overlay', 'TextImage', 'export_3D', 'project_settings', 'cmd', 'debug'])
-    project.clean_up_blocks()
     project.remove_field_text()
     project.move_turbowarp_comment()
 

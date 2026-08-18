@@ -7,8 +7,6 @@ import sys
 import os
 import hashlib
 
-import clean_up_blocks
-
 random.seed(0)
 
 
@@ -173,14 +171,6 @@ class ScratchProject:
         for i, tgt in enumerate(self.project_data['targets']):
             if tgt['name'] != 'Stage':
                 tgt['layerOrder'] = i
-
-
-
-    def clean_up_blocks(self):
-        """Move the blocks in all the sprites so they don't overlap."""
-
-        for target in self.project_data['targets']:
-            clean_up_blocks.clean_target(target)
 
 
 

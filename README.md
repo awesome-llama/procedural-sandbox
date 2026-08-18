@@ -10,7 +10,7 @@ A Scratch project that procedurally generates image textures. You could think of
 This project intends on:
 
 - Exploring ways to generate source textures for future Scratch games, especially 3D games like *[The Mast](https://scratch.mit.edu/projects/861541218/)*.
-- Testing goboscript, which is a programming language that compiles to Scratch.
+- Testing [goboscript](https://github.com/aspizu/goboscript/), which is a programming language that compiles to Scratch.
 - Developing Python-based tools for generating data and editing projects.
 - Further developing user interface handling for Scratch projects.
 - Experimenting with exporting to different file formats such as [TextImage](https://github.com/awesome-llama/TextImage) and a way to download these files using [data URLs](https://developer.mozilla.org/en-US/docs/Web/URI/Reference/Schemes/data).
@@ -26,7 +26,7 @@ TextImage is the supported image format for this project. Use the converter tool
 
 ## Dependencies
 
-- [goboscript](https://github.com/aspizu/goboscript/) commit `54143f0`
+- [goboscript](https://github.com/aspizu/goboscript/) commit `104fd6f`
 - Python 3.14
 
 
