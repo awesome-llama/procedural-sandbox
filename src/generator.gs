@@ -518,7 +518,7 @@ proc generate_city size_x, size_y, size_z, buildings, bridges, glow {
     # pavement lights
     repeat (placement_fac * 0.01 * $buildings * $glow) {
         local c1x = RANDOM_X();
-        local c1y = RANDOM_X();
+        local c1y = RANDOM_Y();
         set_depositor_from_sRGB_value 0.4;
         set_voxel c1x, c1y, 1;
         set_voxel c1x, c1y, 4;
@@ -531,7 +531,7 @@ proc generate_city size_x, size_y, size_z, buildings, bridges, glow {
     # street cuboids
     repeat (placement_fac * 0.015 * $buildings) {
         local c1x = RANDOM_X();
-        local c1y = RANDOM_X();
+        local c1y = RANDOM_Y();
         local dx = random(2,12);
         local dy = random(2,12);
 
@@ -563,7 +563,7 @@ proc generate_city size_x, size_y, size_z, buildings, bridges, glow {
     # skyscrapers
     repeat (placement_fac * 0.008 * $buildings) {
         local c1x = RANDOM_X();
-        local c1y = RANDOM_X();
+        local c1y = RANDOM_Y();
         local c1z = random(3,6);
         local dx = random(2,12);
         local dy = random(2,12);
