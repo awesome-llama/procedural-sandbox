@@ -24,7 +24,7 @@ instructions = [
     ['mul', [ADR, VAL, VAL], 10, 'MEM1 = MEM2 * MEM3;iptr += $SIZE;'], # multiply
     ['div', [ADR, VAL, VAL], 10, 'MEM1 = MEM2 / MEM3;iptr += $SIZE;'], # divide
     ['mod', [ADR, VAL, VAL], 20, 'MEM1 = MEM2 % MEM3;iptr += $SIZE;'], # modulo
-    ['pow', [ADR, VAL, VAL], 50, 'MEM2 = POW(MEM3, MEM4);iptr += $SIZE;'], # power
+    ['pow', [ADR, VAL, VAL], 50, 'MEM1 = POW(MEM2, MEM3);iptr += $SIZE;'], # power
 
     ['eq', [ADR, VAL, VAL], 15, 'MEM1 = MEM2 == MEM3;iptr += $SIZE;'], # equality
     ['lt', [ADR, VAL, VAL], 15, 'MEM1 = MEM2 < MEM3;iptr += $SIZE;'], # less than

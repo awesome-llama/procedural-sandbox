@@ -1644,8 +1644,8 @@ list label_addresses; # location in instructions
 list unresolved_jump_targets; # instruction addresses that need a second pass to replace with label addresses
 
 # number of instructions: 67
-list instruction_names = ["set","add","sub","mul","div","inc","eq","lt","gt","and","or","not","lteq","gteq","dec","mod","jump","jump_if_true","jump_if_false","jump_by","min","max","call","return","random","pow","abs","round","floor","ceil","sqrt","sin","cos","tan","select","lerp","asin","acos","atan","atan2","mag2","ln","log","antiln","antilog","letter_of","join","clear_canvas","add_canvas_as_template","reset_depositor","set_depositor_to_air","set_depositor_from_sRGB","set_depositor_from_HSV","set_depositor_from_voxel","set_depositor_to_template","set_depositor_opacity","set_depositor_emission","set_voxel","draw_ray","draw_cuboid_corner_size","draw_sphere","draw_cylinder","generate_value_noise","get_depositor","get_canvas_size","unlerp","print"];
-list instruction_args = ["AV","AVV","AVV","AVV","AVV","A","AVV","AVV","AVV","AVV","AVV","AV","AVV","AVV","A","AVV","L","LV","LV","LV","AVV","AVV","L","","AVV","AVV","AV","AV","AV","AV","AV","AV","AV","AV","AVVV","AVVV","AV","AV","AV","AVV","AVV","AV","AV","AV","AV","AVV","AVV","VVV","","","","VVV","VVV","VVV","VVVV","V","V","VVV","VVVVVVV","VVVVVV","VVVV","VVVVV","VVVVV","AAAAA","AAA","AVVV","V"];
+list instruction_names = ["set","add","sub","mul","div","inc","eq","lt","gt","and","or","not","lteq","gteq","dec","mod","jump","jump_if_true","jump_if_false","jump_by","min","max","call","return","random","pow","abs","round","floor","ceil","sqrt","sin","cos","tan","select","lerp","asin","acos","atan","atan2","mag2","ln","log","antiln","antilog","letter_of","join","clear_canvas","get_canvas_size","add_canvas_as_template","reset_depositor","set_depositor_to_air","set_depositor_from_sRGB","set_depositor_from_HSV","set_depositor_from_voxel","set_depositor_to_template","set_depositor_opacity","set_depositor_emission","get_depositor","set_voxel","draw_ray","draw_cuboid_corner_size","draw_sphere","draw_cylinder","generate_value_noise","unlerp","print"];
+list instruction_args = ["AV","AVV","AVV","AVV","AVV","A","AVV","AVV","AVV","AVV","AVV","AV","AVV","AVV","A","AVV","L","LV","LV","V","AVV","AVV","L","","AVV","AVV","AV","AV","AV","AV","AV","AV","AV","AV","AVVV","AVVV","AV","AV","AV","AVV","AVV","AV","AV","AV","AV","AVV","AVV","VVV","AAA","","","","VVV","VVV","VVV","VVVV","V","V","AAAAA","VVV","VVVVVVV","VVVVVV","VVVV","VVVVV","VVVV","AVVV","V"];
 
 on "gen.lang.input_code" {
     stop_other_scripts;
@@ -2118,7 +2118,7 @@ proc language_run {
                         if (opcode < 27) {
                             if (opcode < 26) {
                                 # 25: pow
-                                MEM2 = POW(MEM3, MEM4);iptr += 4;
+                                MEM1 = POW(MEM2, MEM3);iptr += 4;
                             } else {
                                 # 26: abs
                                 MEM1 = abs(MEM2);iptr += 3;
@@ -2227,11 +2227,11 @@ proc language_run {
                                 }
                             } else {
                                 if (opcode < 49) {
-                                    # 48: add_canvas_as_template
-                                    add_canvas_as_template;iptr += 1;
+                                    # 48: get_canvas_size
+                                    MEM1=canvas_size_x;MEM2=canvas_size_y;MEM3=canvas_size_z;iptr += 4;
                                 } else {
-                                    # 49: reset_depositor
-                                    reset_depositor;iptr += 1;
+                                    # 49: add_canvas_as_template
+                                    add_canvas_as_template;iptr += 1;
                                 }
                             }
                         }
@@ -2241,37 +2241,37 @@ proc language_run {
                         if (opcode < 54) {
                             if (opcode < 52) {
                                 if (opcode < 51) {
-                                    # 50: set_depositor_to_air
-                                    set_depositor_to_air;iptr += 1;
+                                    # 50: reset_depositor
+                                    reset_depositor;iptr += 1;
                                 } else {
-                                    # 51: set_depositor_from_sRGB
-                                    set_depositor_from_sRGB MEM1, MEM2, MEM3;iptr += 4;
+                                    # 51: set_depositor_to_air
+                                    set_depositor_to_air;iptr += 1;
                                 }
                             } else {
                                 if (opcode < 53) {
-                                    # 52: set_depositor_from_HSV
-                                    set_depositor_from_HSV MEM1, MEM2, MEM3;iptr += 4;
+                                    # 52: set_depositor_from_sRGB
+                                    set_depositor_from_sRGB MEM1, MEM2, MEM3;iptr += 4;
                                 } else {
-                                    # 53: set_depositor_from_voxel
-                                    set_depositor_from_voxel MEM1, MEM2, MEM3;iptr += 4;
+                                    # 53: set_depositor_from_HSV
+                                    set_depositor_from_HSV MEM1, MEM2, MEM3;iptr += 4;
                                 }
                             }
                         } else {
                             if (opcode < 56) {
                                 if (opcode < 55) {
-                                    # 54: set_depositor_to_template
-                                    set_depositor_to_template MEM1, MEM2, MEM3, MEM4;iptr += 5;
+                                    # 54: set_depositor_from_voxel
+                                    set_depositor_from_voxel MEM1, MEM2, MEM3;iptr += 4;
                                 } else {
-                                    # 55: set_depositor_opacity
-                                    depositor_voxel.opacity=MEM1;iptr += 2;
+                                    # 55: set_depositor_to_template
+                                    set_depositor_to_template MEM1, MEM2, MEM3, MEM4;iptr += 5;
                                 }
                             } else {
                                 if (opcode < 57) {
-                                    # 56: set_depositor_emission
-                                    depositor_voxel.emission=MEM1;iptr += 2;
+                                    # 56: set_depositor_opacity
+                                    depositor_voxel.opacity=MEM1;iptr += 2;
                                 } else {
-                                    # 57: set_voxel
-                                    set_voxel MEM1, MEM2, MEM3;iptr += 4;
+                                    # 57: set_depositor_emission
+                                    depositor_voxel.emission=MEM1;iptr += 2;
                                 }
                             }
                         }
@@ -2279,34 +2279,34 @@ proc language_run {
                         if (opcode < 62) {
                             if (opcode < 60) {
                                 if (opcode < 59) {
-                                    # 58: draw_ray
-                                    draw_ray MEM1, MEM2, MEM3, MEM4, MEM5, MEM6, MEM7;iptr += 8;
+                                    # 58: get_depositor
+                                    MEM1=depositor_voxel.r;MEM2=depositor_voxel.g;MEM3=depositor_voxel.b;MEM4=depositor_voxel.opacity;MEM5=depositor_voxel.emission;iptr += 6;
                                 } else {
-                                    # 59: draw_cuboid_corner_size
-                                    draw_cuboid_corner_size MEM1, MEM2, MEM3, MEM4, MEM5, MEM6;iptr += 7;
+                                    # 59: set_voxel
+                                    set_voxel MEM1, MEM2, MEM3;iptr += 4;
                                 }
                             } else {
                                 if (opcode < 61) {
-                                    # 60: draw_sphere
-                                    draw_sphere MEM1, MEM2, MEM3, MEM4;iptr += 5;
+                                    # 60: draw_ray
+                                    draw_ray MEM1, MEM2, MEM3, MEM4, MEM5, MEM6, MEM7;iptr += 8;
                                 } else {
-                                    # 61: draw_cylinder
-                                    draw_cylinder MEM1, MEM2, MEM3, MEM4, MEM5;iptr += 6;
+                                    # 61: draw_cuboid_corner_size
+                                    draw_cuboid_corner_size MEM1, MEM2, MEM3, MEM4, MEM5, MEM6;iptr += 7;
                                 }
                             }
                         } else {
                             if (opcode < 64) {
                                 if (opcode < 63) {
-                                    # 62: generate_value_noise
-                                    generate_value_noise MEM1, MEM2, MEM3, MEM4, true;iptr += 6;
+                                    # 62: draw_sphere
+                                    draw_sphere MEM1, MEM2, MEM3, MEM4;iptr += 5;
                                 } else {
-                                    # 63: get_depositor
-                                    MEM1=depositor_voxel.r;MEM2=depositor_voxel.g;MEM3=depositor_voxel.b;MEM4=depositor_voxel.opacity;MEM5=depositor_voxel.emission;iptr += 6;
+                                    # 63: draw_cylinder
+                                    draw_cylinder MEM1, MEM2, MEM3, MEM4, MEM5;iptr += 6;
                                 }
                             } else {
                                 if (opcode < 65) {
-                                    # 64: get_canvas_size
-                                    MEM1=canvas_size_x;MEM2=canvas_size_y;MEM3=canvas_size_z;
+                                    # 64: generate_value_noise
+                                    generate_value_noise MEM1, MEM2, MEM3, MEM4, true;iptr += 5;
                                 } else {
                                     if (opcode < 66) {
                                         # 65: unlerp
