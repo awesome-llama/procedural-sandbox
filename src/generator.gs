@@ -929,8 +929,7 @@ proc generate_elementary_cellular_automata size_x, size_y, extrude_z, rule, rand
         repeat canvas_size_x {
             if (PROBABILITY(0.5)) {
                 add 1 to custom_grid;
-                #set_voxel ix, (canvas_size_y-1), 0;
-                draw_column ix, (canvas_size_y-2)-iy, 0, canvas_size_z;
+                draw_column ix, (canvas_size_y-1), 0, canvas_size_z;
             } else {
                 add 0 to custom_grid;
             }
@@ -941,7 +940,7 @@ proc generate_elementary_cellular_automata size_x, size_y, extrude_z, rule, rand
             add 0 to custom_grid;
         }
         custom_grid[1+canvas_size_x//2] = 1;
-        set_voxel canvas_size_x//2, (canvas_size_y-1), 0;
+        draw_column canvas_size_x//2, (canvas_size_y-1), 0, canvas_size_z;
     }
 
     # iterate and set voxels
@@ -955,7 +954,6 @@ proc generate_elementary_cellular_automata size_x, size_y, extrude_z, rule, rand
             custom_grid[iy*canvas_size_x + ix + 1]*2 + \
             custom_grid[iy*canvas_size_x + (ix+1)%canvas_size_x + 1]] {
                 add 1 to custom_grid;
-                #set_voxel ix, (canvas_size_y-2)-iy, 0;
                 draw_column ix, (canvas_size_y-2)-iy, 0, canvas_size_z;
             } else {
                 add 0 to custom_grid;
