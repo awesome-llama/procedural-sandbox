@@ -92,7 +92,7 @@ on "gen.ballpit.run" {
     setting_from_id "gen.ballpit.variance_glow";
     generate_ballpit UI_return[1], UI_return[2], UI_return[3], UI_return[4], UI_return[5], UI_return[6], UI_return[7], UI_return[8], UI_return[9], UI_return[10], UI_return[11], UI_return[12]; 
 }
-%define AVG_VOL_OF_SPHERE(RAD1,RAD2) (1.04719755 * (((RAD2*RAD2*RAD2*RAD2)-(RAD1*RAD1*RAD1*RAD1))/(RAD2*RAD1)))
+%define AVG_VOL_OF_SPHERE(RAD1,RAD2) (1.04719755 * ((RAD1)*(RAD1)*(RAD1) + (RAD1)*(RAD1)*(RAD2) + (RAD1)*(RAD2)*(RAD2) + (RAD2)*(RAD2)*(RAD2)))
 proc generate_ballpit size_x, size_y, size_z, ground_col, rad_min, rad_max, density, ball_col, var_hue, var_sat, var_val, var_glow {
     reset_generator $size_x, $size_y, $size_z;
 
