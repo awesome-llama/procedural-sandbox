@@ -201,7 +201,7 @@ proc _try_place_IC x, y, size_x, has_legs_x, size_y, has_legs_y {
     local bb_start_x = $x-2;
     local bb_size_x = ($size_x*2)+3+4;
     local bb_size_y = ($size_y*2)+3+4;
-    if (custom_grid[INDEX_FROM_2D(bb_start_y+bb_size_y, bb_start_y+bb_size_y, canvas_size_x, canvas_size_y)] > 0) {
+    if (custom_grid[INDEX_FROM_2D(bb_start_x+bb_size_x, bb_start_y+bb_size_y, canvas_size_x, canvas_size_y)] > 0) {
         # optimisation by checking the opposite corner as a quick way to abandon it
         stop_this_script; # not vacant
     }
