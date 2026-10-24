@@ -100,11 +100,6 @@ onkey "any" {
     }
 }
 
-proc move_camera dx, dy {
-    cam_x += $dx;
-    cam_y += $dy;
-}
-
 
 %define UPDATE_MOUSE() prev_mouse_x = mouse_x(); prev_mouse_y = mouse_y();
 

@@ -689,12 +689,12 @@ on "sys.stage_clicked" {
             if (answer() != "") {
                 if (answer()[1] == "#") {
                     if (length answer() == 7) {
-                        set_setting_from_id "popup.color_picker.color", 0+("0x"&answer()[2]&answer()[3]&answer()[4]&answer()[5]&answer()[6]&answer()[7]);
+                        set_setting_from_id "popup.color_picker.color", "0"+("0x"&answer()[2]&answer()[3]&answer()[4]&answer()[5]&answer()[6]&answer()[7]);
                         set_color_picker_sliders_from_color;
                     }
                 } else {
                     if (length answer() == 6) {
-                        set_setting_from_id "popup.color_picker.color", 0+("0x"&answer());
+                        set_setting_from_id "popup.color_picker.color", "0"+("0x"&answer());
                         set_color_picker_sliders_from_color;
                     }
                 }

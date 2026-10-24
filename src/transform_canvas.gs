@@ -256,7 +256,7 @@ proc crop x, y, z, size_x, size_y, size_z {
     repeat $size_z {
         iy = $y;
         repeat $size_y {
-            ix = $z;
+            ix = $x;
             repeat $size_x {
                 local index = INDEX_FROM_3D(ix, iy, iz, canvas_size_x, canvas_size_y, canvas_size_z);
                 add canvas[index] to temp_canvas;
